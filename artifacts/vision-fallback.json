@@ -1,0 +1,24 @@
+{
+  "runAt": "2026-10-28T17:44:18.004Z",
+  "faultInjectedDelayMs": 1800,
+  "status": "unavailable-slow",
+  "message": "Silhouette too slow on this device. Bounding-box tracking continues.",
+  "observedTracks": [
+    {
+      "id": "track-1",
+      "class": "dog",
+      "attributes": [],
+      "box": [
+        0.21640625,
+        0.12083333333333332,
+        0.4578125,
+        0.6722222222222223
+      ],
+      "confidence": 0.6067499999999999,
+      "seenAt": 1793209457099,
+      "classifiedAt": 1793209456313
+    }
+  ],
+  "model": "Actual local MagicTouch legacy; outgoing result delivery delayed deliberately",
+  "scope": "Fallback handling, not a passing silhouette quality benchmark"
+}

@@ -1,0 +1,35 @@
+{
+  "runAt": "2026-10-28T17:36:48.154Z",
+  "mode": "Bounding-box mode; no silhouette-contact claim",
+  "tracks": [
+    {
+      "id": "track-2",
+      "class": "dog",
+      "attributes": [],
+      "box": [
+        0.20703125,
+        0.11944444444444445,
+        0.4921875,
+        0.6861111111111111
+      ],
+      "confidence": 0.7434687499999999,
+      "seenAt": 1793209008072,
+      "classifiedAt": 1793209007174
+    }
+  ],
+  "actor": {
+    "id": "1468511b-3c59-4811-94e7-5787c64eac73",
+    "name": "Juniper",
+    "color": "#ae80ff",
+    "cosmetic": "",
+    "x": 0.453125,
+    "y": 0.11944444444444445,
+    "animation": "sit",
+    "message": "Found the dog. Let's go!",
+    "target": "track-2",
+    "lastActive": 1793209004838,
+    "animationAt": 1793209007587
+  },
+  "metrics": "1 visible objects · 8 ms sample · detector 385 ms · metadata queue ≤ 1 · epoch 1793209000567",
+  "workerLatencyMs": "385"
+}

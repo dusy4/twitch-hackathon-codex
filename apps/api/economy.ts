@@ -2,6 +2,51 @@ import { GameError } from "./compiler.js";
 import { randomUUID, createHmac } from "node:crypto";
 import { catalog } from "../../packages/shared/contracts.js";
 import type { Database, SQL } from "./db.js";
+import type { EquipmentSlot } from "../../packages/shared/equipment.js";
+
+export async function equip(
+  db: Database,
+  who: string,
+  slot: EquipmentSlot,
+  itemId: string | null,
+) {
+  return db.transaction(async (tx) => {
+    const player = (
+      await tx.query(
+        "SELECT id FROM accounts WHERE id=$1 AND deleted=false FOR UPDATE",
+        [who],
+      )
+    ).rows[0];
+    if (!player) throw new GameError("DELETED", "Account is unavailable", 403);
+    if (itemId !== null) {
+      if (!catalog.some((item) => item.id === itemId && item.slot === slot))
+        throw new GameError("UNKNOWN_COSMETIC", "Unknown cosmetic", 404);
+      const owned = await tx.query(
+        "SELECT 1 FROM inventory WHERE account_id=$1 AND item_id=$2",
+        [who, itemId],
+      );
+      if (!owned.rows.length)
+        throw new GameError(
+          "NOT_OWNED",
+          "Unlock this item in the shop first",
+          403,
+        );
+    }
+    // Row lock plus a single JSONB update preserves changes to other slots.
+    const changed = (
+      await tx.query(
+        "UPDATE accounts SET equipment=CASE WHEN $3::text IS NULL THEN equipment-$2::text ELSE jsonb_set(equipment,ARRAY[$2::text],to_jsonb($3::text)) END WHERE id=$1 RETURNING *",
+        [who, slot, itemId],
+      )
+    ).rows[0];
+    changed.cosmetic = changed.equipment.skin || "";
+    await tx.query("UPDATE accounts SET cosmetic=$2 WHERE id=$1", [
+      who,
+      changed.cosmetic,
+    ]);
+    return changed;
+  });
+}
 export async function account(
   db: SQL,
   twitchId: string,

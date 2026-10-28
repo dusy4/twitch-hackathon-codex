@@ -8,10 +8,11 @@ import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { publicDocument } from "./ssr.js";
 import { profileCard } from "./cards.js";
+import { equipmentSlots } from "../../packages/shared/equipment.js";
 import { z } from "zod";
 import { Database } from "./db.js";
 import { Security, hash, secret, verifyWebhook } from "./security.js";
-import { account, buy, reverse } from "./economy.js";
+import { account, buy, equip, reverse } from "./economy.js";
 import { World } from "./world.js";
 import { Twitch } from "./twitch.js";
 import { GameError } from "./compiler.js";
@@ -42,6 +43,7 @@ export async function createApp(
     fetcher?: typeof fetch;
     demo?: boolean;
     origin?: string;
+    webRoot?: string;
   } = {},
 ) {
   if (
@@ -304,6 +306,7 @@ export async function createApp(
         name: who.name,
         color: who.color,
         cosmetic: who.cosmetic,
+        equipment: who.equipment,
         privacy: who.privacy,
         demo: who.demo,
       },
@@ -593,7 +596,7 @@ export async function createApp(
     const channel = q.scope === "channel" ? q.channelId || "" : null;
     const raw = (
       await db.query(
-        `SELECT a.id, CASE WHEN a.privacy='anonymous' THEN 'Rift traveler' ELSE a.name END AS name,a.color,a.cosmetic,a.demo,COALESCE(sum(l.score_delta),0)::text AS score,max(l.score_at) AS first_at FROM accounts a JOIN ledger l ON a.id=l.account_id WHERE a.privacy<>'hidden' AND a.deleted=false AND l.score_at >= $1 AND l.score_at < $2 AND ($3::text IS NULL OR l.channel_id=$3) GROUP BY a.id HAVING sum(l.score_delta)>0 ORDER BY sum(l.score_delta) DESC,max(l.score_at),a.id`,
+        `SELECT a.id, CASE WHEN a.privacy='anonymous' THEN 'Rift traveler' ELSE a.name END AS name,a.color,a.cosmetic,a.equipment,a.demo,COALESCE(sum(l.score_delta),0)::text AS score,max(l.score_at) AS first_at FROM accounts a JOIN ledger l ON a.id=l.account_id WHERE a.privacy<>'hidden' AND a.deleted=false AND l.score_at >= $1 AND l.score_at < $2 AND ($3::text IS NULL OR l.channel_id=$3) GROUP BY a.id HAVING sum(l.score_delta)>0 ORDER BY sum(l.score_delta) DESC,max(l.score_at),a.id`,
         [start, end, channel],
       )
     ).rows;
@@ -679,7 +682,7 @@ export async function createApp(
       throw new GameError("BAD_TOKEN", "Invalid card link.", 401);
     const player = (
       await db.query(
-        "SELECT id,name,color,demo FROM accounts WHERE id=$1 AND share_version=$2 AND privacy='public' AND deleted=false",
+        "SELECT id,name,color,cosmetic,equipment,demo FROM accounts WHERE id=$1 AND share_version=$2 AND privacy='public' AND deleted=false",
         [p.account, p.version],
       )
     ).rows[0];
@@ -712,7 +715,7 @@ export async function createApp(
     const id = (req.params as any).id;
     const player = (
       await db.query(
-        `SELECT id,name,color,cosmetic,privacy,demo FROM accounts WHERE id=$1 AND deleted=false`,
+        `SELECT id,name,color,cosmetic,equipment,privacy,demo FROM accounts WHERE id=$1 AND deleted=false`,
         [id],
       )
     ).rows[0];
@@ -846,28 +849,33 @@ export async function createApp(
     );
     return buy(db, auth(req).id, d.itemId, d.idempotencyKey);
   });
-  app.post("/v1/me/cosmetics/:id/equip", async (req) => {
-    const who = auth(req),
-      id = (req.params as any).id;
-    const owned = await db.query(
-      "SELECT 1 FROM inventory WHERE account_id=$1 AND item_id=$2",
-      [who.id, id],
-    );
-    if (!owned.rows.length)
-      throw new GameError(
-        "NOT_OWNED",
-        "Unlock this item in the shop first",
-        403,
-      );
-    await db.query("UPDATE accounts SET cosmetic=$2 WHERE id=$1", [who.id, id]);
+  const syncEquipment = (who: Record<string, any>) => {
     for (const w of worlds.values()) {
-      const a = w.state.avatars.find((a) => a.id === who.id);
-      if (a) {
-        a.cosmetic = id;
-        a.color = catalog.find((c) => c.id === id)?.color || a.color;
+      const avatar = w.state.avatars.find((a) => a.id === who.id);
+      if (avatar) {
+        avatar.equipment = who.equipment;
+        avatar.cosmetic = who.cosmetic;
+        avatar.color = who.color;
       }
     }
-    return { ok: true };
+    return { ok: true, equipment: who.equipment };
+  };
+  app.post("/v1/me/cosmetics/:id/equip", async (req) => {
+    const id = (req.params as any).id;
+    const item = catalog.find((item) => item.id === id);
+    if (!item) throw new GameError("UNKNOWN_COSMETIC", "Unknown cosmetic", 404);
+    return syncEquipment(
+      await equip(
+        db,
+        auth(req).id,
+        item.slot as (typeof equipmentSlots)[number],
+        id,
+      ),
+    );
+  });
+  app.delete("/v1/me/equipment/:slot", async (req) => {
+    const slot = z.enum(equipmentSlots).parse((req.params as any).slot);
+    return syncEquipment(await equip(db, auth(req).id, slot, null));
   });
   app.get("/v1/quests", async (req) => {
     const channelId = (req.query as any).channelId;
@@ -934,8 +942,11 @@ export async function createApp(
     ]);
     const w = await world(c.id);
     const visionChanged = w.state.config.vision !== config.vision;
+    const geometryChanged =
+      JSON.stringify(w.state.config.geometry) !==
+      JSON.stringify(config.geometry);
     w.state.config = config;
-    if (visionChanged) w.sceneReset();
+    if (visionChanged || geometryChanged) w.sceneReset();
     if (config.paused) w.stop();
     return { ok: true };
   });
@@ -1603,8 +1614,9 @@ export async function createApp(
       }, 30000),
     );
   }
-  if (existsSync(resolve("dist/web/index.html"))) {
-    const htmlTemplate = await readFile(resolve("dist/web/index.html"), "utf8");
+  const webRoot = resolve(options.webRoot || "dist/web");
+  if (existsSync(resolve(webRoot, "index.html"))) {
+    const htmlTemplate = await readFile(resolve(webRoot, "index.html"), "utf8");
     for (const path of ["/", "/leaderboard", "/live", "/players/:id"])
       app.get(path, async (req, reply) =>
         reply
@@ -1618,7 +1630,7 @@ export async function createApp(
             ),
           ),
       );
-    await app.register(staticFiles, { root: resolve("dist/web"), prefix: "/" });
+    await app.register(staticFiles, { root: webRoot, prefix: "/" });
     app.setNotFoundHandler((req, reply) => {
       if (req.url.startsWith("/v1/"))
         return reply.code(404).send({

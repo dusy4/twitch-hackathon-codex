@@ -1,5 +1,26 @@
 import type { SceneTrack } from "./contracts.js";
 export type GrayFrame = { width: number; height: number; pixels: Float32Array };
+export type TimedGrayFrame = { at: number; frame: GrayFrame };
+/** Reconcile a delayed classification through observed motion; gaps/occlusion never get invented timestamps. */
+export function replayTrackFrames(
+  origin: TimedGrayFrame,
+  history: TimedGrayFrame[],
+  tracks: SceneTrack[],
+  now: number,
+) {
+  if (now < origin.at || now - origin.at > 2000) return null;
+  let latest = origin,
+    current = tracks;
+  for (const observed of history) {
+    if (observed.at <= latest.at || observed.at > now) continue;
+    if (observed.at - latest.at > 250) return null;
+    current = trackFrame(latest.frame, observed.frame, current, observed.at);
+    if (!current.length) return null;
+    latest = observed;
+  }
+  if (now - latest.at > 250) return null;
+  return { tracks: current, latest };
+}
 /** Small image-space patch matcher. Ephemeral motion only, never identity recognition. */
 export function trackFrame(
   previous: GrayFrame,

@@ -1,3 +1,5 @@
+# ORIGINAL HANDOFF REFERENCE ONLY. The implemented app uses .env.example and port 3400.
+# Names and ports below describe the suggested architecture, not the current runtime.
 # Documentation only. Do not commit real secrets.
 NODE_ENV=development
 WEB_PUBLIC_URL=http://localhost:3000

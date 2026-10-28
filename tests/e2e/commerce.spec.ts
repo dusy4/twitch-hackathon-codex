@@ -8,7 +8,7 @@ test("verified quest earnings buy and equip a cosmetic without reducing lifetime
   );
   await page.goto("/dashboard");
   await page.getByRole("button", { name: "Try creator simulator" }).click();
-  for (let n = 0; n < 2; n++) {
+  for (let n = 0; n < 4; n++) {
     await page
       .locator('#quest-form input[name="title"]')
       .fill(`QA dance quest ${n + 1}`);
@@ -33,7 +33,7 @@ test("verified quest earnings buy and equip a cosmetic without reducing lifetime
         Number((await (await page.request.get("/v1/me")).json()).wallet),
       { timeout: 10000 },
     )
-    .toBeGreaterThanOrEqual(220);
+    .toBeGreaterThanOrEqual(450);
   const before = await (await page.request.get("/v1/me")).json();
   await page.getByRole("link", { name: "The outfitter", exact: true }).click();
   await page.locator('[data-item="violet-mage"]').click();
@@ -44,6 +44,31 @@ test("verified quest earnings buy and equip a cosmetic without reducing lifetime
   expect(Number(after.wallet)).toBe(Number(before.wallet) - 150);
   expect(Number(after.earned)).toBe(Number(before.earned));
   expect(after.user.cosmetic).toBe("violet-mage");
+  await page.locator('[data-item="star-crown"]').click();
+  await expect(page.locator("#toast")).toContainText("Cosmetic unlocked");
+  await page.locator('[data-item="star-crown"]').click();
+  await expect(page.locator("#toast")).toContainText("equipped");
+  await page.reload();
+  await expect(page.locator("#equipment")).toContainText("skin · Violet mage");
+  await expect(page.locator("#equipment")).toContainText("hat · Star crown");
+  const equipped = await (await page.request.get("/v1/me")).json();
+  expect(equipped.user.equipment).toEqual({
+    skin: "violet-mage",
+    hat: "star-crown",
+  });
+  expect(Number(equipped.wallet)).toBe(Number(before.wallet) - 450);
+  await page.screenshot({
+    path: "artifacts/chromium-equipment.png",
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Remove hat", exact: true }).click();
+  await expect(page.locator("#equipment")).toContainText("hat · None");
+  expect(
+    (await (await page.request.get("/v1/me")).json()).user.equipment,
+  ).toEqual({ skin: "violet-mage" });
+  // Ownership survives removal, so equipping again costs no Shards.
+  await page.locator('[data-item="star-crown"]').click();
+  await expect(page.locator("#equipment")).toContainText("hat · Star crown");
   await page.goto(`/players/${after.user.id}`);
   await expect(
     page.getByRole("heading", { name: /Mossling/, level: 1 }),

@@ -1,5 +1,5 @@
 {
-  "runAt": "2026-10-28T08:28:30.908Z",
+  "runAt": "2026-10-28T17:41:49.917Z",
   "scope": "Automated WCAG A/AA subset; does not establish full accessibility conformance",
   "reports": [
     {
@@ -36,6 +36,10 @@
     },
     {
       "path": "/dashboard",
+      "violations": []
+    },
+    {
+      "path": "/capture",
       "violations": []
     }
   ]

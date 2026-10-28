@@ -4,8 +4,12 @@ import {
   type ActionPlan,
   type ActionStep,
   type SceneTrack,
+  type SourceGeometry,
+  transformPoint,
+  defaultConfig,
 } from "../../packages/shared/contracts.js";
 import { z } from "zod";
+import { TRACK_TTL_MS } from "../../packages/shared/tracker.js";
 import {
   animationNames,
   animationAliases,
@@ -32,6 +36,7 @@ export function localCompile(
   tracks: SceneTrack[],
   x = 0.5,
   y = 0.78,
+  geometry: SourceGeometry = defaultConfig.geometry,
 ): ActionPlan | null {
   let prompt = input
     .trim()
@@ -55,6 +60,85 @@ export function localCompile(
       "CONSENT_REQUIRED",
       "Use a party invitation before directing another avatar.",
     );
+  const clauses = prompt
+    .split(/\s*(?:;|\b(?:and\s+)?then\b)\s*/)
+    .map((s) => s.replace(/^,|,$/g, "").trim());
+  if (clauses.length > 1) {
+    if (clauses.length > 8 || clauses.some((s) => !s))
+      throw new GameError(
+        "PLAN_BUDGET",
+        "Use one to eight complete instructions joined with “then”.",
+      );
+    let reference: SceneTrack | undefined,
+      attached: string | null = null;
+    const steps: ActionStep[] = [];
+    for (let index = 0; index < clauses.length; index++) {
+      let clause = clauses[index];
+      if (/\b(it|that object)\b/.test(clause)) {
+        if (!reference)
+          throw new GameError(
+            "TARGET_REQUIRED",
+            "Name a visible target before referring to it.",
+          );
+        clause = clause.replace(
+          /\b(it|that object)\b/g,
+          `the ${reference.class}`,
+        );
+      }
+      const leaf = localCompile(clause, tracks, x, y, geometry);
+      if (!leaf) return null;
+      let part = leaf.steps.map((s) => ({ ...s }));
+      const target = part.find((s) => s.target)?.target;
+      if (
+        index < clauses.length - 1 &&
+        target &&
+        !/\b(sit|dance|backflip|wave|follow)\b/.test(clause)
+      )
+        part = part.filter(
+          (s) => s.op !== "play_animation" && s.op !== "attach_to_track",
+        );
+      if (target && target === attached)
+        part = part.filter((s) => s.op !== "navigate");
+      if (
+        !target &&
+        attached &&
+        !/^(left|right|up|down|stop|stand|detach)$/.test(clause)
+      )
+        part = part.map((s) =>
+          s.op === "play_animation" || s.op === "jump"
+            ? { ...s, target: attached }
+            : s,
+        );
+      for (const s of part) {
+        if (s.target) {
+          reference = tracks.find((t) => t.id === s.target);
+          attached = s.target;
+          if (reference) {
+            [x, y] = transformPoint(
+              reference.anchor?.[0] ?? reference.box[0] + reference.box[2] / 2,
+              reference.anchor?.[1] ?? reference.box[1],
+              geometry,
+            );
+          }
+        } else if (s.op === "navigate" && s.x !== null && s.y !== null) {
+          x = s.x;
+          y = s.y;
+          attached = null;
+        } else if (s.op === "stop" || s.op === "detach") attached = null;
+        steps.push(s);
+      }
+    }
+    if (steps.length > 8 || steps.reduce((n, s) => n + s.durationMs, 0) > 15000)
+      throw new GameError(
+        "PLAN_BUDGET",
+        "Keep choreography within eight steps and fifteen seconds. Try fewer instructions.",
+      );
+    return Plan.parse({
+      version: 1,
+      steps,
+      message: `Choreography: ${clauses.join(" → ").slice(0, 140)}`,
+    });
+  }
   const movement: Record<string, [number, number]> = {
     left: [-0.13, 0],
     right: [0.13, 0],
@@ -122,7 +206,9 @@ export function localCompile(
   if (cls) {
     let matches = tracks.filter(
       (t) =>
-        t.class === cls && t.confidence >= 0.6 && Date.now() - t.seenAt < 1200,
+        t.class === cls &&
+        t.confidence >= 0.6 &&
+        Date.now() - t.seenAt < TRACK_TTL_MS,
     );
     if (/red/.test(prompt))
       matches = matches.filter(
@@ -189,11 +275,16 @@ export const modelSchema = {
     steps: { type: "array", items: z.toJSONSchema(Step) },
   },
 };
-export function validatePlan(plan: unknown, tracks: SceneTrack[]): ActionPlan {
+export function validatePlan(
+  plan: unknown,
+  tracks: SceneTrack[],
+  now = Date.now(),
+): ActionPlan {
   const p = Plan.parse(plan);
   let spawned = 0;
   let dragonAvailable = false;
   for (const s of p.steps) {
+    if (s.op === "emote") s.op = "play_animation";
     if (
       [
         "climb",
@@ -232,7 +323,12 @@ export function validatePlan(plan: unknown, tracks: SceneTrack[]): ActionPlan {
       );
     if (
       s.target &&
-      !tracks.some((t) => t.id === s.target && Date.now() - t.seenAt < 1200)
+      !tracks.some(
+        (t) =>
+          t.id === s.target &&
+          now - t.seenAt < TRACK_TTL_MS &&
+          (t.classifiedAt === undefined || now - t.classifiedAt < 2000),
+      )
     )
       throw new GameError("STALE_TARGET", "The target is no longer visible.");
     if (s.op === "spawn_catalog_asset" && s.name !== "dragon_small")
@@ -246,11 +342,16 @@ export function validatePlan(plan: unknown, tracks: SceneTrack[]): ActionPlan {
         "Two temporary objects per action are allowed.",
       );
     if (
-      ["group_invite", "interact_virtual_object", "say_bubble"].includes(s.op)
+      [
+        "group_invite",
+        "interact_virtual_object",
+        "say_bubble",
+        "face_target",
+      ].includes(s.op)
     )
       throw new GameError(
         "UNSUPPORTED_ACTION",
-        "Use the invitation controls for multiplayer interactions.",
+        "That action is not implemented. Use a supported movement, animation or party control.",
       );
     if (
       s.op === "play_animation" &&
@@ -268,6 +369,7 @@ export async function compileAI(
   tracks: SceneTrack[],
   fetcher: typeof fetch = fetch,
 ) {
+  const observedAt = Date.now();
   if (process.env.ALLOW_PAID_AI !== "true" || !process.env.OPENAI_API_KEY)
     throw new GameError(
       "AI_UNAVAILABLE",
@@ -312,5 +414,5 @@ export async function compileAI(
       "AI_REFUSAL",
       "The choreographer could not make that action.",
     );
-  return validatePlan(JSON.parse(raw), tracks);
+  return validatePlan(JSON.parse(raw), tracks, observedAt);
 }

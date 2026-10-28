@@ -1,0 +1,35 @@
+{
+  "runAt": "2026-10-28T17:49:37.324Z",
+  "result": "passed",
+  "scope": "Synthetic isolated PostgreSQL 17 fixture; no production data or provider calls",
+  "archiveBytes": 37619,
+  "archiveSha256": "993a25a31536bece3ea9e9debd87c3298b400e7eac68b2dd25c73a05b7b2d5d3",
+  "backupMs": 236,
+  "restoreMs": 371,
+  "verified": [
+    "exact records across eight tables",
+    "startup migration preservation",
+    "wallet/ledger reconciliation",
+    "append-only trigger",
+    "inventory and combined equipment",
+    "saved world recovery",
+    "synthetic token decryption with original key",
+    "wrong key rejection",
+    "post-backup source changes excluded"
+  ],
+  "rowCounts": {
+    "accounts": 1,
+    "wallets": 1,
+    "ledger": 4,
+    "inventory": 3,
+    "channels": 1,
+    "world_saves": 1,
+    "avatar_presence": 0,
+    "twitch_connections": 1
+  },
+  "limitations": [
+    "Small fixture, not a production RTO/RPO benchmark",
+    "No managed backup, cloud failure or live provider revalidation",
+    "Temporary fixture encryption key is discarded"
+  ]
+}

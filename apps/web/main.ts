@@ -6,6 +6,7 @@ import type {
 } from "../../packages/shared/contracts.js";
 import { emoteNames as allEmotes } from "../../packages/shared/animations.js";
 import { defaultConfig } from "../../packages/shared/settings.js";
+import type { DuelState } from "../../packages/shared/duels.js";
 const emoteNames = allEmotes.filter(
   (name) => !["wave", "dance", "sit", "jump", "backflip"].includes(name),
 );
@@ -38,8 +39,14 @@ function toast(message: string, error = false) {
   el.className = `visible ${error ? "error" : ""}`;
   setTimeout(() => (el.className = ""), 4500);
 }
-async function api(path: string, method = "GET", data?: unknown) {
+async function api(
+  path: string,
+  method = "GET",
+  data?: unknown,
+  signal?: AbortSignal,
+) {
   const res = await fetch(path, {
+    signal,
     method,
     headers: {
       ...(data !== undefined ? { "Content-Type": "application/json" } : {}),
@@ -62,7 +69,18 @@ function bind(
   const el = document.querySelector(selector);
   if (!el) return;
   el.addEventListener(event, (e) => {
-    Promise.resolve(action(e)).catch((error) => toast(error.message, true));
+    const fail = (error: unknown) =>
+      toast(
+        error instanceof Error
+          ? error.message
+          : "That action could not complete.",
+        true,
+      );
+    try {
+      Promise.resolve(action(e)).catch(fail);
+    } catch (error) {
+      fail(error);
+    }
   });
 }
 function navigate(path: string) {
@@ -116,15 +134,24 @@ function startWorld(id: string, token?: string) {
     if (closed) return;
     const params = new URLSearchParams({ room: id });
     if (token) params.set("token", token);
-    socket = new WebSocket(
+    const connection = new WebSocket(
       `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/v1/socket?${params}`,
     );
+    socket = connection;
+    let lastSequence = -1;
     socket.onmessage = (e) => {
+      if (closed || socket !== connection) return;
       const event = JSON.parse(e.data);
+      if (typeof event.sequence === "number") {
+        if (event.sequence < lastSequence) return;
+        lastSequence = event.sequence;
+      }
       if (event.type === "world.snapshot") {
         state = event.payload;
         updateWorldUI();
       } else {
+        if (event.type === "duel.started" || event.type === "duel.changed")
+          receiveDuel(event.payload);
         if (event.type === "raid.started") {
           renderer?.sound("raid", state?.config.audio);
           addFeed(
@@ -145,16 +172,28 @@ function startWorld(id: string, token?: string) {
           toast("A traveler sent a party invitation.");
           void refreshInvitations();
         }
-        if (event.type === "action.failed")
+        if (
+          event.type === "action.step" &&
+          event.payload.actorId === me.user?.id
+        )
+          addFeed(
+            `Step ${event.payload.step + 1}/${event.payload.total}: ${event.payload.name || event.payload.op}`,
+          );
+        if (
+          event.type === "action.failed" &&
+          event.payload.actorId === me.user?.id
+        )
           addFeed(`Action ended: ${event.payload.status}`);
       }
     };
     socket.onopen = () => {
+      if (closed || socket !== connection) return;
       const c = document.querySelector("#connection");
       if (c) c.textContent = "● CONNECTED";
       document.querySelector(".connection-warning")?.remove();
     };
     socket.onclose = () => {
+      if (socket !== connection) return;
       const c = document.querySelector("#connection");
       if (c) c.textContent = "RECONNECTING";
       if (!closed) {
@@ -206,7 +245,9 @@ function updateWorldUI() {
     "#mode",
     state.mode === "SIMULATOR"
       ? "SIMULATOR · NOT A LIVE TWITCH BROADCAST"
-      : "TWITCH WORLD · EVENTSUB CONNECTED",
+      : state.mode === "LIVE TWITCH"
+        ? "TWITCH WORLD · ACCOUNT LINKED"
+        : "OFFLINE · TWITCH DISCONNECTED",
   );
   set("#world-title", state.config.title);
   set("#players-count", String(state.avatars.length));
@@ -250,14 +291,17 @@ function updateWorldUI() {
     }
   }
   updateDuelUI();
+  updateTargetSelect(state.tracks);
+}
+function updateTargetSelect(tracks: WorldSnapshot["tracks"]) {
   const targetSelect = document.querySelector<HTMLSelectElement>("#target");
   if (targetSelect) {
-    const key = state.tracks.map((t) => t.id).join(",");
+    const key = tracks.map((t) => t.id).join(",");
     if (targetSelect.dataset.key !== key) {
       const selected = targetSelect.value;
       targetSelect.innerHTML =
         '<option value="">Automatic target</option>' +
-        state.tracks
+        tracks
           .map(
             (t) =>
               `<option value="${esc(t.id)}">${esc(t.class)} · ${Math.round(t.confidence * 100)}%</option>`,
@@ -268,6 +312,7 @@ function updateWorldUI() {
     }
   }
 }
+
 function addFeed(message: string) {
   feed.unshift(message);
   feed = feed.slice(0, 12);
@@ -412,6 +457,7 @@ async function leaderboard() {
   };
 }
 async function controller() {
+  const controllerGeneration = generation;
   if (
     requireAccount(
       "Connect your account to claim a character and control only your own avatar.",
@@ -423,12 +469,16 @@ async function controller() {
     new URLSearchParams(location.search).get("room") ||
     worlds.worlds[0]?.id ||
     room;
+  await api(`/v1/worlds/${room}/join`, "POST", {});
+  await refreshMe();
+  const history = await api("/v1/me/actions");
+  if (controllerGeneration !== generation) return;
   shell(
     `${intro("YOUR POCKET ADVENTURER", `Hello, <em>${esc(me.user.name)}.</em>`, "A wave, a dance, a tiny dragon. Pick a world and make a little mischief.")}<div class="columns"><div class="stack">${stageMarkup()}<div class="panel"><h3>Tell your hero what happens next.</h3><form id="command-form"><div class="field-row"><input id="prompt" aria-label="Avatar instruction" maxlength="500" placeholder="Sprint towards the dog and sit on it…" required><button class="primary" type="submit">Make it happen ↗</button></div></form><div class="form-grid"><label>World<select id="world-select">${worlds.worlds.map((w: any) => `<option value="${esc(w.id)}" ${w.id === room ? "selected" : ""}>${esc(w.title)} · ${esc(w.mode)}</option>`).join("")}</select></label><label>Visible target<select id="target"><option value="">Automatic target</option></select></label></div><div class="small muted">Camera actions require the creator’s active, calibrated capture source. Missing or ambiguous targets stop with an explanation.</div></div></div><aside class="stack"><div class="panel"><div class="eyebrow">PLAYER CONTROLLER</div><div class="world-status">${face(me.user)}<div><strong>${esc(me.user.name)}</strong><div class="small shards">◆ <span id="wallet">${Number(me.wallet).toLocaleString()}</span> spendable Shards</div></div></div><div class="dpad"><span></span><button data-command="up" aria-label="Move up">↑</button><span></span><button data-command="left" aria-label="Move left">←</button><button data-command="jump">⤒</button><button data-command="right" aria-label="Move right">→</button><span></span><button data-command="down" aria-label="Move down">↓</button><span></span></div><div class="command-buttons">${["wave", "dance", "sit", "jump", "backflip", "stop"].map((c) => `<button data-command="${c}">${c}</button>`).join("")}</div><div class="notice small">Keyboard: arrow keys move, Space jumps. Chat also accepts !rift and !ourapp.</div><details style="margin-top:18px"><summary>More emotes (${emoteNames.length})</summary><div class="command-buttons">${emoteNames.map((name) => `<button data-command="${name}">${name.replaceAll("_", " ")}</button>`).join("")}</div></details><button id="dragon" class="full">✧ Summon a tiny dragon</button></div><div class="panel"><h3>A moment together</h3><label style="margin-top:15px">Invite a hero<select id="party-target"><option value="">Choose a traveler</option></select></label><label>Activity<select id="party-kind"><option value="dance">Shared dance</option><option value="wave">Shared wave</option><option value="duel">Friendly wizard duel</option></select></label><button id="invite-dance" class="full">Send invitation</button><button id="refresh-invites" class="full">Check invitations</button><div id="invitations" class="feed"></div><div id="duel-panel" aria-live="polite"></div></div><div class="panel"><h3>Your story, as it happens</h3><div id="action-feed" class="feed"><div class="muted small">Your approved actions appear here.</div></div></div><div class="panel"><h3>A little rift celebration</h3><p class="muted small" id="quest-title">Dance for two seconds to complete the starter quest.</p><div class="bar"><span id="quest-progress" style="width:0%"></span></div><div class="shards small" id="quest-reward">◆ +40 Shards</div></div></aside></div>`,
   );
   startWorld(room);
-  await api(`/v1/worlds/${room}/join`, "POST", {});
-  await refreshMe();
+  for (const action of history.actions.slice(0, 8).reverse())
+    addFeed(`${action.plan?.message || "Previous action"} · ${action.status}`);
   document
     .querySelectorAll<HTMLElement>("[data-command]")
     .forEach(
@@ -497,6 +547,13 @@ async function controller() {
     removeEventListener("keydown", keyboard);
   };
 }
+function receiveDuel(duel: DuelState) {
+  if (!state || !duel.players.includes(me.user?.id)) return;
+  const existing = state.duels?.find((d) => d.id === duel.id);
+  if (existing && existing.revision > duel.revision) return;
+  state.duels = [...(state.duels || []).filter((d) => d.id !== duel.id), duel];
+  updateDuelUI();
+}
 function updateDuelUI() {
   const el = document.querySelector<HTMLElement>("#duel-panel");
   if (!el || !state || !me.user) return;
@@ -552,7 +609,8 @@ async function refreshInvitations() {
     (el) =>
       (el.onclick = () =>
         void api(`/v1/parties/${el.dataset.invite}/accept`, "POST", {})
-          .then(() => {
+          .then((result) => {
+            if (result.duel) receiveDuel(result.duel);
             toast("Invitation accepted.");
             return refreshInvitations();
           })
@@ -715,8 +773,32 @@ async function shop() {
   if (me.user)
     owned = (await api("/v1/me/inventory")).items.map((i: any) => i.item_id);
   shell(
-    `${intro("THE OUTFITTER", "A little more<br><em>you, in every pixel.</em>", "Made for adventures. Earn Rift Shards through verified play, then find a look that feels like home.")}<div class="toolbar"><span class="muted">Original voxel cosmetics · No cash value</span><span class="badge mint">◆ ${Number(me.wallet || 0).toLocaleString()} SPENDABLE SHARDS</span></div><div class="shop-grid">${catalog.map((item: any) => `<article class="panel shop-item"><div class="shop-art">${face(item)}</div><div class="eyebrow">${esc(item.slot)} / ORIGINAL COLLECTION</div><h3>${esc(item.name)}</h3><div class="price">◆ ${item.price} Rift Shards</div><p class="small muted">Cosmetic only. Your competitive earnings stay yours.</p><button data-item="${esc(item.id)}" data-owned="${owned.includes(item.id)}" class="${owned.includes(item.id) ? "primary" : ""}">${owned.includes(item.id) ? (me.user?.cosmetic === item.id ? "Equipped" : "Equip cosmetic") : "Unlock with Shards"}</button></article>`).join("")}</div>`,
+    `${intro("THE OUTFITTER", "A little more<br><em>you, in every pixel.</em>", "Made for adventures. Earn Rift Shards through verified play, then find a look that feels like home.")}<div class="toolbar"><span class="muted">Original voxel cosmetics · No cash value</span><span class="badge mint">◆ ${Number(me.wallet || 0).toLocaleString()} SPENDABLE SHARDS</span></div>${
+      me.user
+        ? `<section class="panel" id="equipment" style="margin-bottom:24px"><h2>Your equipped treasures</h2><p class="muted small">Wear a skin, hat, and pet together. Removing an item keeps it in your collection.</p>${[
+            "skin",
+            "hat",
+            "pet",
+          ]
+            .map((slot) => {
+              const id = me.user.equipment?.[slot];
+              return `<div class="key-value"><span>${esc(slot)} · ${esc(catalog.find((item: any) => item.id === id)?.name || "None")}</span>${id ? `<button data-unequip="${slot}">Remove ${slot}</button>` : ""}</div>`;
+            })
+            .join("")}</section>`
+        : ""
+    }<div class="shop-grid">${catalog.map((item: any) => `<article class="panel shop-item"><div class="shop-art">${face(item)}</div><div class="eyebrow">${esc(item.slot)} / ORIGINAL COLLECTION</div><h3>${esc(item.name)}</h3><div class="price">◆ ${item.price} Rift Shards</div><p class="small muted">Cosmetic only. Your competitive earnings stay yours.</p><button data-item="${esc(item.id)}" data-owned="${owned.includes(item.id)}" class="${owned.includes(item.id) ? "primary" : ""}">${owned.includes(item.id) ? (me.user?.equipment?.[item.slot] === item.id ? "Equipped" : "Equip cosmetic") : "Unlock with Shards"}</button></article>`).join("")}</div>`,
   );
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-unequip]")
+    .forEach((button) => {
+      button.onclick = () =>
+        void (async () => {
+          await api(`/v1/me/equipment/${button.dataset.unequip}`, "DELETE");
+          await refreshMe();
+          await render();
+          toast("Item removed. It is still in your collection.");
+        })().catch((e) => toast(e.message, true));
+    });
   document.querySelectorAll<HTMLElement>("[data-item]").forEach(
     (el) =>
       (el.onclick = () =>
@@ -823,6 +905,7 @@ async function profile(id: string) {
         name: data.player.name,
         color: data.player.color,
         cosmetic: data.player.cosmetic,
+        equipment: data.player.equipment,
         x: 0.5,
         y: 0.56,
         animation: "wave",
@@ -881,6 +964,7 @@ async function privacy() {
   }
 }
 async function capture() {
+  const captureGeneration = generation;
   if (
     requireAccount(
       "The companion processes an explicitly selected local camera or display source.",
@@ -889,16 +973,34 @@ async function capture() {
   )
     return;
   const data = await api("/v1/creator/config");
+  if (captureGeneration !== generation) return;
   shell(
     `${intro("REALITYQUEST / DESKTOP COMPANION", "The scene becomes<br><em>a playground.</em>", "Select a camera or an OBS source projector. Detection stays on this device; ephemeral object anchors go to your world.")}<div class="columns"><div class="panel"><div class="capture-wrap"><video id="capture-video" autoplay playsinline muted></video><canvas id="capture-boxes"></canvas><div id="capture-world" class="capture-world" hidden></div></div><div class="command-buttons"><button id="camera-start" class="primary">Select camera</button><button id="display-start">Select OBS source projector</button><button id="capture-stop" class="danger">Stop capture</button></div><div class="notice" id="capture-status">${data.config.vision ? "Camera processing consent is enabled. Select a source to begin." : "Enable camera processing in Creator Studio before starting."}</div><label class="check" style="margin:16px 0"><input id="silhouette-enabled" type="checkbox">Experimental local silhouette anchoring (animals and furniture)</label><label>Use a permitted test video (local only)<input id="video-file" type="file" accept="video/*"></label><form id="capture-command-form"><label style="margin-top:20px">Direct your own virtual hero<div class="field-row"><input id="capture-command" maxlength="500" placeholder="sprint towards the dog and sit on it" required><button class="primary">Send action</button></div></label></form><p class="small muted" style="margin-top:15px">Screen-space composite preview. Test video is not live quest evidence.</p><a class="button" href="/dashboard" data-nav style="margin-top:20px">Source geometry & consent settings ↗</a></div><aside class="stack"><div class="panel"><h3>Screen-space mode</h3><p class="muted small" style="margin-top:15px">Choose OBS’s source projector rather than the finished composite to avoid detecting overlay graphics. Match crop, rotation and mirror in Creator Studio.</p><p class="muted small" style="margin-top:15px">This detector recognizes COCO object classes. Red-hat referring expressions and native 3D locks remain validation gaps. Optional animal/furniture silhouette anchors are experimental. Local patch tracking bridges detector observations and stops on low image agreement.</p></div><div class="panel"><h3>Capture diagnostics</h3><div id="capture-metrics" class="feed"></div></div></aside></div>`,
   );
+  const targetLabel = document.createElement("label");
+  targetLabel.style.marginTop = "15px";
+  targetLabel.innerHTML =
+    '<span>Visible target</span><select id="target"><option value="">Automatic target</option></select>';
+  $("#capture-command-form").after(targetLabel);
   let captureSnapshot: WorldSnapshot | null = null;
+  const sourceControls = Array.from(
+    root.querySelectorAll<HTMLInputElement | HTMLButtonElement>(
+      "#video-file,#camera-start,#display-start,#silhouette-enabled,#capture-command-form button",
+    ),
+  );
+  sourceControls.forEach((control) => (control.disabled = true));
+  let cancelCapture = () => {};
   const previewSocket = new WebSocket(
     `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/v1/socket?room=${encodeURIComponent(data.channelId)}`,
   );
   previewSocket.onmessage = (event) => {
     const value = JSON.parse(event.data);
-    if (value.type === "world.snapshot") captureSnapshot = value.payload;
+    if (value.type === "world.snapshot") {
+      captureSnapshot = value.payload;
+      if (captureSnapshot) updateTargetSelect(captureSnapshot.tracks);
+      if (captureSnapshot?.config.paused || !captureSnapshot?.config.vision)
+        cancelCapture();
+    }
   };
   previewSocket.onerror = () => {};
   let preview: RiftRenderer | null = null;
@@ -920,22 +1022,101 @@ async function capture() {
     "submit",
   );
   const { CaptureCompanion } = await import("./vision.js");
+  const { LocalClipRecorder } = await import("./clips.js");
+  if (captureGeneration !== generation) {
+    previewSocket.close();
+    preview?.destroy();
+    return;
+  }
+  const clipPanel = document.createElement("div");
+  clipPanel.className = "panel";
+  clipPanel.innerHTML =
+    '<h3>Keep a little moment</h3><p class="small muted" style="margin:15px 0">Record up to 20 seconds of this source plus virtual heroes locally. Video only, up to 1280 × 720. Player name labels and diagnostic boxes are omitted. Nothing is uploaded or posted.</p><label class="check"><input type="checkbox" id="clip-consent">I have permission to record this source and its participants.</label><div class="command-buttons"><button id="clip-start">Record local clip</button><button id="clip-stop">Finish clip</button><button id="clip-clear">Discard local clip</button></div><p id="clip-status" class="small muted" role="status">Recording is off. No rolling buffer.</p><div id="clip-result"></div>';
+  $("#capture-metrics").closest(".panel")?.parentElement?.append(clipPanel);
+  const clip = new LocalClipRecorder(
+    $<HTMLVideoElement>("#capture-video"),
+    () => captureSnapshot?.config.geometry || data.config.geometry,
+    (ctx, w, h) => {
+      if (!preview) throw Error("Overlay unavailable");
+      preview.drawTo(ctx, w, h);
+    },
+    () =>
+      c.sourceKind === "TEST VIDEO"
+        ? "TEST VIDEO · SIMULATOR SOURCE"
+        : captureSnapshot?.mode === "SIMULATOR"
+          ? "SIMULATOR · CAPTURE SOURCE"
+          : "CAPTURE SOURCE",
+    (text) => {
+      $("#clip-status").textContent = text;
+    },
+    (result) => {
+      const extension = result.mime.includes("mp4") ? "mp4" : "webm";
+      $("#clip-result").innerHTML =
+        `<video id="clip-preview" controls playsinline style="width:100%;margin-top:15px" src="${esc(result.url)}"></video><a id="clip-download" class="button" href="${esc(result.url)}" download="raidrift-clip.${extension}">Download ${extension.toUpperCase()} clip</a><p class="small muted">${(result.bytes / 1048576).toFixed(2)} MiB · ${Math.round(result.elapsed / 1000)} seconds. Review permission and source attribution before sharing.</p>`;
+    },
+  );
+  bind("#clip-start", async () => {
+    if (
+      !captureSnapshot ||
+      captureSnapshot.config.paused ||
+      !captureSnapshot.config.vision
+    )
+      throw Error("Enable camera processing and resume the world first.");
+    try {
+      await clip.start($<HTMLInputElement>("#clip-consent").checked);
+    } catch (error) {
+      $("#clip-status").textContent =
+        error instanceof Error ? error.message : "Recording could not start.";
+      throw error;
+    }
+    $("#clip-result").innerHTML = "";
+  });
+  bind("#clip-stop", () => clip.stop());
+  const clearClip = () => {
+    clip.abort();
+    clip.clearSaved();
+    $("#clip-result").innerHTML = "";
+    $("#clip-status").textContent = "Recording off. Local clip discarded.";
+  };
+  bind("#clip-clear", clearClip);
+  bind(
+    "#clip-consent",
+    () => {
+      if (!$<HTMLInputElement>("#clip-consent").checked) clearClip();
+    },
+    "change",
+  );
+  const onVisibility = () => {
+    if (document.hidden) clip.abort("Browser left the foreground");
+  };
+  document.addEventListener("visibilitychange", onVisibility);
   const c = new CaptureCompanion(
     $<HTMLVideoElement>("#capture-video"),
     $<HTMLCanvasElement>("#capture-boxes"),
-    async (tracks) => {
+    async (tracks, signal) => {
       const cover = $("#capture-world");
       cover.hidden = false;
       cover.style.cssText = $("#capture-boxes").style.cssText;
-      await api("/v1/creator/vision/tracks", "POST", {
-        epoch: c.epoch,
-        tracks,
-      });
+      await api(
+        "/v1/creator/vision/tracks",
+        "POST",
+        {
+          epoch: c.epoch,
+          tracks,
+        },
+        signal,
+      );
     },
     (message) => {
       $("#capture-status").textContent = message;
+      if (message.startsWith("Capture stopped"))
+        clip.abort("Capture source stopped");
     },
   );
+  cancelCapture = () => {
+    clip.abort();
+    c.stop();
+  };
   bind(
     "#silhouette-enabled",
     () => c.setSilhouette($<HTMLInputElement>("#silhouette-enabled").checked),
@@ -969,7 +1150,11 @@ async function capture() {
     },
     "change",
   );
+  sourceControls.forEach((control) => (control.disabled = false));
+  $("#capture-metrics").dataset.ready = "true";
   routeCleanup = () => {
+    clip.dispose();
+    document.removeEventListener("visibilitychange", onVisibility);
     c.dispose();
     previewSocket.close();
     preview?.destroy();

@@ -71,6 +71,22 @@ test("automated WCAG A/AA checks on public pages, viewer controller and creator 
       })),
     })),
   });
+  await page.getByRole("link", { name: "Open camera companion" }).click();
+  await expect(page.locator("#clip-consent")).toBeVisible();
+  const capture = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+  reports.push({
+    path: "/capture",
+    violations: capture.violations.map((v) => ({
+      id: v.id,
+      impact: v.impact,
+      nodes: v.nodes.map((n) => ({
+        target: n.target,
+        failure: n.failureSummary,
+      })),
+    })),
+  });
   await writeFile(
     "artifacts/accessibility.json",
     JSON.stringify(

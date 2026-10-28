@@ -1,5 +1,6 @@
 node_modules
 .data
+.tools
 .env
 dist
 test-results
@@ -8,3 +9,4 @@ prototype
 .git
 apps/mobile
 apps/web/public/vision
+tests/fixtures/*.webm

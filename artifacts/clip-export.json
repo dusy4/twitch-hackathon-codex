@@ -1,0 +1,14 @@
+{
+  "runAt": "2026-10-28T17:41:58.109Z",
+  "fixture": "tests/fixtures/dog-tail.webm",
+  "output": "dog-composite-qa.webm",
+  "sha256": "e81bd094b28cb9b3e82982a683aaa4107ff95d623afcd3574f5514cf67f3d91b",
+  "bytes": 140284,
+  "width": 1280,
+  "height": 720,
+  "sourceLicense": "CC-BY-SA-4.0",
+  "sourceAuthor": "Liannadavis",
+  "syntheticIdentity": true,
+  "containsAudio": false,
+  "uploaded": false
+}

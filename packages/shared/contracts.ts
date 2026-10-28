@@ -59,6 +59,7 @@ export const Track = z
       .tuple([z.number().min(0).max(1), z.number().min(0).max(1)])
       .optional(),
     seenAt: z.number().finite(),
+    classifiedAt: z.number().finite().optional(),
   })
   .strict();
 export type SceneTrack = z.infer<typeof Track>;
@@ -136,6 +137,7 @@ export type Avatar = {
   name: string;
   color: string;
   cosmetic: string;
+  equipment?: import("./equipment.js").Equipment;
   x: number;
   y: number;
   animation: string;
@@ -183,43 +185,7 @@ export type QuestState = {
   progress: number;
   completed: boolean;
 };
-export const catalog = [
-  {
-    id: "violet-mage",
-    name: "Violet mage",
-    price: 150,
-    color: "#ae80ff",
-    slot: "skin",
-  },
-  {
-    id: "mint-scout",
-    name: "Mint scout",
-    price: 150,
-    color: "#7be8bf",
-    slot: "skin",
-  },
-  {
-    id: "sunset-knight",
-    name: "Sunset knight",
-    price: 200,
-    color: "#ffb78c",
-    slot: "skin",
-  },
-  {
-    id: "star-crown",
-    name: "Star crown",
-    price: 300,
-    color: "#ffe29b",
-    slot: "hat",
-  },
-  {
-    id: "pocket-dragon",
-    name: "Pocket dragon",
-    price: 500,
-    color: "#b6ed91",
-    slot: "pet",
-  },
-];
+export { catalog } from "./catalog.js";
 export function periodStart(period: string, now = new Date()) {
   const d = new Date(now);
   if (period === "all") return new Date(0);

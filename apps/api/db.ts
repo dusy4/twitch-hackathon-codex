@@ -31,12 +31,14 @@ export class Database implements SQL {
     return result;
   }
   async migrate() {
-    const sql = await readFile(
-      new URL("../../migrations/001_core.sql", import.meta.url),
-      "utf8",
-    );
-    if (this.engine instanceof PGlite) await this.engine.exec(sql);
-    else await this.engine.query(sql);
+    for (const migration of ["001_core.sql", "002_equipment.sql"]) {
+      const sql = await readFile(
+        new URL(`../../migrations/${migration}`, import.meta.url),
+        "utf8",
+      );
+      if (this.engine instanceof PGlite) await this.engine.exec(sql);
+      else await this.engine.query(sql);
+    }
   }
   async transaction<T>(fn: (tx: SQL) => Promise<T>): Promise<T> {
     return this.exclusive(async () => {

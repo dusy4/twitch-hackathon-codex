@@ -19,6 +19,7 @@ import {
 import { credit } from "./economy.js";
 import type { Database } from "./db.js";
 import { DuelArena } from "./duels.js";
+import { TRACK_TTL_MS } from "../../packages/shared/tracker.js";
 type Running = {
   id: string;
   actorId: string;
@@ -43,6 +44,7 @@ export class World extends EventEmitter {
   busyQuest = false;
   sequence = 0;
   completedActions = 0;
+  private planningFence = 0;
   constructor(
     public db: Database,
     public channel: Record<string, any>,
@@ -113,6 +115,7 @@ export class World extends EventEmitter {
       avatar.name = who.privacy === "anonymous" ? "Rift traveler" : who.name;
       avatar.color = who.color;
       avatar.cosmetic = who.cosmetic;
+      avatar.equipment = who.equipment;
     }
     if (!avatar) {
       if (this.state.avatars.length >= this.state.config.maxPlayers)
@@ -122,6 +125,7 @@ export class World extends EventEmitter {
         name: who.privacy === "anonymous" ? "Rift traveler" : who.name,
         color: who.color,
         cosmetic: who.cosmetic,
+        equipment: who.equipment,
         x: 0.17 + (this.state.avatars.length % 12) * 0.06,
         y: 0.78 + (Math.floor(this.state.avatars.length / 12) % 4) * 0.035,
         animation: "wave",
@@ -182,10 +186,24 @@ export class World extends EventEmitter {
       throw new GameError("COOLDOWN", "Give your avatar a moment.", 429);
     this.cooldowns.set(who.id, now);
     const a = await this.join(who);
+    const planningFence = this.planningFence,
+      planningEpoch = this.state.epoch;
+    const stillCurrent = () =>
+      !this.state.config.paused &&
+      this.state.avatars.includes(a) &&
+      this.planningFence === planningFence &&
+      this.state.epoch === planningEpoch &&
+      this.cooldowns.get(who.id) === now;
     const tracks = targetHint
       ? this.state.tracks.filter((t) => t.id === targetHint)
       : this.state.tracks;
-    let plan = localCompile(prompt, tracks, a.x, a.y);
+    let plan = localCompile(
+      prompt,
+      tracks,
+      a.x,
+      a.y,
+      this.state.config.geometry,
+    );
     if (!plan) {
       if (!this.state.config.ai)
         throw new GameError(
@@ -207,23 +225,44 @@ export class World extends EventEmitter {
         this.aiInFlight--;
       }
     }
-    plan = validatePlan(plan, tracks);
+    const currentTracks = targetHint
+      ? this.state.tracks.filter((t) => t.id === targetHint)
+      : this.state.tracks;
+    plan = validatePlan(plan, currentTracks);
+    if (!stillCurrent())
+      throw new GameError(
+        "WORLD_CHANGED",
+        "The world or your latest instruction changed while planning. Try again.",
+        409,
+      );
     const id = randomUUID();
     await this.db.query(
       `INSERT INTO action_log(id,account_id,channel_id,request_key,status,plan) VALUES($1,$2,$3,$4,'running',$5)`,
       [id, who.id, this.channel.id, key, JSON.stringify(plan)],
     );
+    if (!stillCurrent()) {
+      await this.db.query(
+        "UPDATE action_log SET status='cancelled' WHERE id=$1",
+        [id],
+      );
+      throw new GameError(
+        "WORLD_CHANGED",
+        "The world or your latest instruction changed while planning. Try again.",
+        409,
+      );
+    }
     const old = this.running.get(a.id);
     if (old) this.finish(old, "interrupted");
     a.target = null;
-    a.lastActive = now;
+    const acceptedAt = Date.now();
+    a.lastActive = acceptedAt;
     a.message = plan.message;
     const running = {
       id,
       actorId: a.id,
       plan,
       index: 0,
-      started: now,
+      started: acceptedAt,
       origin: [a.x, a.y] as [number, number],
     };
     this.running.set(a.id, running);
@@ -234,11 +273,15 @@ export class World extends EventEmitter {
   startStep(r: Running, a: Avatar, s: ActionStep) {
     a.animationAt = r.started;
     a.animation =
-      s.op === "play_animation"
-        ? s.name || "idle"
-        : s.op === "attach_to_track"
-          ? s.name || "sit"
-          : s.op;
+      s.op === "navigate"
+        ? s.name || "walk"
+        : s.op === "jump_to_surface"
+          ? "jump"
+          : s.op === "play_animation"
+            ? s.name || "idle"
+            : s.op === "attach_to_track"
+              ? s.name || "sit"
+              : s.op;
     a.target = s.target;
     r.origin = [a.x, a.y];
     if (["spawn_catalog_asset", "build_voxel", "spawn_effect"].includes(s.op)) {
@@ -259,6 +302,8 @@ export class World extends EventEmitter {
       actorId: a.id,
       step: r.index,
       op: s.op,
+      name: s.name,
+      total: r.plan.steps.length,
     });
   }
   finish(r: Running, status: string) {
@@ -269,6 +314,7 @@ export class World extends EventEmitter {
       .catch((e) => this.emit("fault", e));
     this.event(`action.${status === "completed" ? "completed" : "failed"}`, {
       id: r.id,
+      actorId: r.actorId,
       status,
     });
   }
@@ -278,19 +324,33 @@ export class World extends EventEmitter {
     if (epoch !== this.state.epoch)
       throw new GameError("STALE_SCENE", "Resynchronize the scene epoch.", 409);
     const now = Date.now();
-    const current = tracks.filter(
+    const observed = tracks.filter(
       (t) =>
-        now - t.seenAt < 1200 && now - t.seenAt >= -200 && t.confidence >= 0.5,
+        now - t.seenAt < TRACK_TTL_MS &&
+        now - t.seenAt >= -200 &&
+        (t.classifiedAt === undefined ||
+          (now - t.classifiedAt < 2000 && now - t.classifiedAt >= -200)) &&
+        t.confidence >= 0.5,
     );
-    const incoming = new Set(current.map((t) => t.id));
+    const [left, top, right, bottom] = this.state.config.geometry.crop;
+    const current = observed.filter((t) => {
+      const x = t.anchor?.[0] ?? t.box[0] + t.box[2] / 2,
+        y = t.anchor?.[1] ?? t.box[1];
+      return x >= left && x <= 1 - right && y >= top && y <= 1 - bottom;
+    });
+    const incoming = new Set(observed.map((t) => t.id));
     this.state.tracks = [
       ...current,
       ...this.state.tracks.filter(
-        (t) => !incoming.has(t.id) && now - t.seenAt < 600,
+        (t) =>
+          !incoming.has(t.id) &&
+          now - t.seenAt < TRACK_TTL_MS &&
+          (t.classifiedAt === undefined || now - t.classifiedAt < 2000),
       ),
     ];
   }
   sceneReset() {
+    this.planningFence++;
     this.state.epoch = Math.max(this.state.epoch + 1, Date.now());
     this.state.tracks = [];
     this.evidence.clear();
@@ -304,6 +364,7 @@ export class World extends EventEmitter {
     this.event("world.snapshot", this.state);
   }
   stop() {
+    this.planningFence++;
     this.state.config.paused = true;
     this.duels.tick(new Set(), true);
     this.running.forEach((r) => this.finish(r, "stopped"));
@@ -341,7 +402,11 @@ export class World extends EventEmitter {
     );
     this.state.duels = this.duels.games;
     if (this.state.config.paused) return;
-    this.state.tracks = this.state.tracks.filter((t) => now - t.seenAt < 1200);
+    this.state.tracks = this.state.tracks.filter(
+      (t) =>
+        now - t.seenAt < TRACK_TTL_MS &&
+        (t.classifiedAt === undefined || now - t.classifiedAt < 2000),
+    );
     this.state.props = this.state.props.filter((p) => p.expires > now);
     if (this.state.raid && now - this.state.raid.started > 18000)
       this.state.raid = null;
@@ -504,7 +569,7 @@ export class World extends EventEmitter {
         .map((a) => ({ ...a, target: null, message: "", animation: "idle" })),
     };
     await this.db.query(
-      `INSERT INTO world_saves(channel_id,state) SELECT $1,jsonb_build_object('avatars',COALESCE(jsonb_agg(items.value||jsonb_build_object('name',CASE WHEN a.privacy='anonymous' THEN 'Rift traveler' ELSE a.name END,'color',a.color,'cosmetic',a.cosmetic)),'[]'::jsonb)) FROM jsonb_array_elements(($2::jsonb)->'avatars') AS items(value) JOIN accounts a ON a.id=items.value->>'id' LEFT JOIN avatar_presence p ON p.account_id=a.id WHERE a.deleted=false AND (p.channel_id IS NULL OR p.channel_id=$1) ON CONFLICT(channel_id) DO UPDATE SET state=EXCLUDED.state,updated_at=now()`,
+      `INSERT INTO world_saves(channel_id,state) SELECT $1,jsonb_build_object('avatars',COALESCE(jsonb_agg(items.value||jsonb_build_object('name',CASE WHEN a.privacy='anonymous' THEN 'Rift traveler' ELSE a.name END,'color',a.color,'cosmetic',a.cosmetic,'equipment',a.equipment)),'[]'::jsonb)) FROM jsonb_array_elements(($2::jsonb)->'avatars') AS items(value) JOIN accounts a ON a.id=items.value->>'id' LEFT JOIN avatar_presence p ON p.account_id=a.id WHERE a.deleted=false AND (p.channel_id IS NULL OR p.channel_id=$1) ON CONFLICT(channel_id) DO UPDATE SET state=EXCLUDED.state,updated_at=now()`,
       [this.channel.id, JSON.stringify(state)],
     );
   }
@@ -513,7 +578,7 @@ export class World extends EventEmitter {
     const ids = this.state.avatars.map((a) => a.id);
     const canonical = (
       await this.db.query(
-        "SELECT a.id,a.name,a.color,a.cosmetic,a.privacy FROM accounts a LEFT JOIN avatar_presence p ON p.account_id=a.id WHERE a.id=ANY($1::text[]) AND a.deleted=false AND (p.channel_id IS NULL OR p.channel_id=$2)",
+        "SELECT a.id,a.name,a.color,a.cosmetic,a.equipment,a.privacy FROM accounts a LEFT JOIN avatar_presence p ON p.account_id=a.id WHERE a.id=ANY($1::text[]) AND a.deleted=false AND (p.channel_id IS NULL OR p.channel_id=$2)",
         [ids, this.channel.id],
       )
     ).rows;
@@ -528,6 +593,7 @@ export class World extends EventEmitter {
             current.privacy === "anonymous" ? "Rift traveler" : current.name,
           color: current.color,
           cosmetic: current.cosmetic,
+          equipment: current.equipment,
         };
       });
   }

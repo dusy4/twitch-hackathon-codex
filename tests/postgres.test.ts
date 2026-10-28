@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { Database } from "../apps/api/db.js";
-import { account, credit, buy } from "../apps/api/economy.js";
+import { account, credit, buy, equip } from "../apps/api/economy.js";
 const url = process.env.TEST_DATABASE_URL;
 test(
   "native PostgreSQL: independent connections enforce idempotent awards and concurrent spend",
@@ -101,6 +101,51 @@ test(
           ).rows[0].balance,
         ),
         cappedBalance,
+      );
+      const traveler = await account(
+        first,
+        `pg-equipment-${randomUUID()}`,
+        "Concurrent equipment",
+      );
+      await first.transaction((tx) =>
+        credit(
+          tx,
+          traveler.id,
+          null,
+          1000,
+          `equipment-${randomUUID()}`,
+          "Equipment fixture",
+        ),
+      );
+      for (const id of ["mint-scout", "star-crown", "pocket-dragon"])
+        await buy(first, traveler.id, id, randomUUID());
+      await Promise.all([
+        equip(first, traveler.id, "skin", "mint-scout"),
+        equip(second, traveler.id, "hat", "star-crown"),
+        equip(first, traveler.id, "pet", "pocket-dragon"),
+      ]);
+      assert.deepEqual(
+        (
+          await second.query("SELECT equipment FROM accounts WHERE id=$1", [
+            traveler.id,
+          ])
+        ).rows[0].equipment,
+        {
+          skin: "mint-scout",
+          hat: "star-crown",
+          pet: "pocket-dragon",
+        },
+      );
+      assert.equal(
+        Number(
+          (
+            await second.query(
+              "SELECT balance FROM wallets WHERE account_id=$1",
+              [traveler.id],
+            )
+          ).rows[0].balance,
+        ),
+        50,
       );
     } finally {
       await first.close();

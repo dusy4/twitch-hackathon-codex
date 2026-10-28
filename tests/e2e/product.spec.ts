@@ -24,6 +24,10 @@ test("public website, working simulation, authoritative quest reward and leaderb
     path: `artifacts/${info.project.name}-controller.png`,
     fullPage: true,
   });
+  await page.locator("#prompt").fill("wave then jump then bow");
+  await page.getByRole("button", { name: "Make it happen" }).click();
+  await expect(page.locator("#action-feed")).toContainText("Step 2/3: jump");
+  await expect(page.locator("#action-feed")).toContainText("Step 3/3: bow");
   await page.getByRole("link", { name: "Leaderboard", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: /Small heroes/ }),

@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { avatarColor, equipmentOf } from "../../packages/shared/equipment.js";
 import { samplePose } from "./pose.js";
 import type { Avatar, WorldSnapshot } from "../../packages/shared/contracts.js";
 type Puppet = {
@@ -204,12 +205,8 @@ export class RiftRenderer {
   }
   private makeAvatar(a: Avatar) {
     const group = new THREE.Group();
-    const shirt =
-      a.cosmetic === "mint-scout"
-        ? 0x7be8bf
-        : a.cosmetic === "sunset-knight"
-          ? 0xffb78c
-          : a.color;
+    const equipment = equipmentOf(a);
+    const shirt = avatarColor(a);
     const body = this.block(0.25, 0.29, 0.18, shirt);
     body.position.y = 0.31;
     group.add(body);
@@ -247,13 +244,13 @@ export class RiftRenderer {
     tool.visible = false;
     limbs[3].add(tool);
     const hat = new THREE.Group();
-    if (a.cosmetic === "pocket-dragon") {
+    if (equipment.pet === "pocket-dragon") {
       const pet = this.makeProp("dragon_small");
       pet.scale.setScalar(0.35);
       pet.position.set(0.45, 0.4, 0);
       group.add(pet);
     }
-    if (a.cosmetic === "star-crown") {
+    if (equipment.hat === "star-crown") {
       for (let i = 0; i < 5; i++) {
         const point = this.block(0.045, 0.12 + (i % 2) * 0.06, 0.045, 0xffdb80);
         point.position.set((i - 2) * 0.055, 0.24, 0);
@@ -398,7 +395,11 @@ export class RiftRenderer {
     }
     for (const a of s?.avatars || []) {
       let p = this.puppets.get(a.id);
-      if (p && p.group.userData.cosmetic !== a.cosmetic) {
+      if (
+        p &&
+        p.group.userData.appearance !==
+          JSON.stringify([a.color, equipmentOf(a)])
+      ) {
         this.removeObject(p.group);
         this.removeObject(p.shadow);
         p.label.remove();
@@ -406,7 +407,7 @@ export class RiftRenderer {
         p = undefined;
       }
       p ||= this.makeAvatar(a);
-      p.group.userData.cosmetic = a.cosmetic;
+      p.group.userData.appearance = JSON.stringify([a.color, equipmentOf(a)]);
       p.position.set(
         (a.x - 0.5) * (this.camera.right - this.camera.left),
         (0.5 - a.y) * 9,
@@ -546,6 +547,12 @@ export class RiftRenderer {
       gain.disconnect();
       limiter.disconnect();
     }, 2500);
+  }
+  drawTo(context: CanvasRenderingContext2D, width: number, height: number) {
+    if (this.destroyed || this.contextLost)
+      throw Error("Overlay graphics unavailable");
+    this.renderer.render(this.scene, this.camera);
+    context.drawImage(this.renderer.domElement, 0, 0, width, height);
   }
   destroy() {
     this.destroyed = true;

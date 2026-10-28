@@ -57,3 +57,9 @@ Server MUST derive `viewerId` from authenticated session or Twitch EventSub chat
 
 ## Exact count semantics
 A raid with count `247` yields `raid.reportedViewers = 247`, `raid.authenticatedArrivals` initially `0`, and a *visual crowd population budget*. Don't store `247` fake user rows or allocate 247 Shard rewards. When users join, update linked arrival count under a specific raid window and only then award eligibility after policy checks.
+
+## Implemented equipment slots
+
+`GET /v1/me` and public player profiles include `equipment: { skin?: string, hat?: string, pet?: string }`. `POST /v1/me/cosmetics/:id/equip` requires inventory ownership and changes only the catalog item's slot. `DELETE /v1/me/equipment/:slot` removes a skin, hat or pet without destroying ownership or altering wallet/earned totals. Both mutations require session, same-origin and CSRF checks. Per-account row locking serializes simultaneous equipment updates. Unknown catalog IDs/slots fail validation.
+
+The old `cosmetic` field is retained for compatibility and reflects the selected skin after equipment changes; new clients use `equipment`. An explicitly empty map takes precedence over that legacy field. Base profile color remains independent of skin color. Accounts, world saves, transferred avatars, 3D profile previews and consented share-card art use the canonical loadout. Owned inventory survives removal.

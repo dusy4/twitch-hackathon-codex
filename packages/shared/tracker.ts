@@ -1,4 +1,5 @@
 import type { SceneTrack } from "./contracts.js";
+export const TRACK_TTL_MS = 1200;
 export type Detection = {
   class: string;
   box: SceneTrack["box"];
@@ -26,7 +27,7 @@ export class Tracker {
   update(detections: Detection[], time: number) {
     for (const track of this.tracks) this.history.set(track.id, track);
     for (const [id, track] of this.history)
-      if (time - track.seenAt >= 800) this.history.delete(id);
+      if (time - track.seenAt >= TRACK_TTL_MS) this.history.delete(id);
     const recent = [...this.history.values()];
     const available = new Set(recent.map((t) => t.id));
     const tracks: SceneTrack[] = [];

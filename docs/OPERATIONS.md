@@ -29,3 +29,13 @@
 - Mobile AR build/sign/debug and device compatibility matrix, Twitch RTMP/media transport, permissions.
 - Migrations/rollback, backup restore drills, season rollovers, ledger audit/admin corrections.
 - Budget meter (per creator call limits), billing and quotas, staged release and incident runbook.
+
+## Implemented local restore drill (2026-10-28)
+
+Run `node scripts/test-postgres.mjs` after installing the official EDB archive as described in `SETUP.md`. It starts the dedicated loopback cluster on port 55432, runs independent-connection accounting/equipment checks, then invokes `scripts/restore-drill.ts`. That drill accepts only the test cluster's `postgres` admin database on 127.0.0.1:55432. It creates two unique `rr_restore_*` databases, seeds synthetic application records, uses a custom-format `pg_dump`, and restores through `pg_restore --exit-on-error --single-transaction` into the second database. Passwords pass through the child environment, not command arguments. Cleanup validates the generated names before dropping only those two databases; the wrapper then shuts down its test server.
+
+The drill verifies exact snapshot equality for eight application tables, startup migration preservation, wallet/ledger reconciliation, append-only ledger protection, combined equipment and world recovery, and decryption of synthetic provider tokens using the original ephemeral encryption key. It also verifies that a different key fails and that source changes made after backup are absent. Evidence includes archive SHA-256, byte size, local backup/restore duration and row counts in `artifacts/restore-drill.json`. Archives remain under ignored `.data/restore-drills/`; they contain synthetic records only. No real provider is contacted and the temporary test key is discarded.
+
+This is a small local fixture, not a managed-service disaster drill or a production RTO/RPO guarantee. See the official [pg_dump](https://www.postgresql.org/docs/17/app-pgdump.html) and [pg_restore](https://www.postgresql.org/docs/17/app-pgrestore.html) references for the chosen archive/restore options.
+
+For a real deployment, keep encrypted database backups and encryption/reward-identity keys under separate, access-controlled recovery policies. Restore an owned backup into a separate restricted environment; reconcile all wallets, verify schema/inventory/world state and token decryption, and revalidate actual provider tokens before reconnecting consumers. Keep awards and EventSub processing paused until checks pass, then switch traffic deliberately and record the measured recovery window. Current source still has a single world owner; multi-replica ownership and provider recovery remain open gates.
