@@ -1,0 +1,15 @@
+{
+  "id": "quest-014",
+  "title": "The Doggo Throne",
+  "type": "hybrid",
+  "objective": "Three unique avatars must perch on the visible dog for two seconds",
+  "vision_predicates": [
+    {"name":"dog_visible","question":"Is a live physical dog visibly present in the camera scene, not a graphic or a depiction on a monitor?"}
+  ],
+  "state_predicates": [
+    {"name":"three_players_perching","minDistinctAccounts":3,"action":"sit","anchorClass":"dog","sustainMs":2000}
+  ],
+  "evidence_policy": {"minPositiveFrames":2,"minGapMs":700,"maximumAgeMs":3000,"confidenceThreshold":"calibrate_on_validation_set"},
+  "reward": {"eligiblePlayerShards":40,"creatorPrestige":20,"maxAwardsPerPlayer":1},
+  "cooldownSec": 1800
+}

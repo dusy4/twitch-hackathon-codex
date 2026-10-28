@@ -1,0 +1,21 @@
+# Documentation only. Do not commit real secrets.
+NODE_ENV=development
+WEB_PUBLIC_URL=http://localhost:3000
+API_PUBLIC_URL=http://localhost:3001
+OVERLAY_PUBLIC_URL=http://localhost:3002
+DATABASE_URL=postgresql://raidrift:raidrift@localhost:5432/raidrift
+REDIS_URL=redis://localhost:6379/0
+TWITCH_CLIENT_ID=
+TWITCH_CLIENT_SECRET=
+TWITCH_OAUTH_CALLBACK=http://localhost:3001/auth/twitch/callback
+TWITCH_EVENTSUB_WEBHOOK_SECRET=
+TWITCH_BOT_USER_ID=
+# Twitch authorization credentials are stored encrypted per creator, not global env tokens in production.
+OPENAI_API_KEY=
+OPENAI_ACTION_MODEL=  # Choose verified Responses structured-output capable model
+OPENAI_DECISIONS_MODEL=gpt-6-luna
+VISION_ENABLED=false
+CAMERA_FRAME_RETENTION_SECONDS=120
+OVERLAY_TOKEN_SIGNING_KEY=
+OBJECT_STORAGE_BUCKET=
+LOG_LEVEL=info

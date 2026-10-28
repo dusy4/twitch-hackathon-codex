@@ -1,0 +1,32 @@
+[
+  {
+    "name": "dog-tail.webm",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/3/38/Dog_wagging_tail.webm",
+    "author": "Liannadavis",
+    "source": "https://commons.wikimedia.org/wiki/File:Dog_wagging_tail.webm",
+    "license": "CC-BY-SA-4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Unmodified original, local QA only",
+    "sha256": "01764646ee531a447536407c5ab33337c53320b9ee1c741de251c7a94d95cc93"
+  },
+  {
+    "name": "moving-chairs.webm",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/1/11/Moving_chairs_in_the_museum_cellar.webm",
+    "author": "Erik Pålsson / Sounds of Changes",
+    "source": "https://commons.wikimedia.org/wiki/File:Moving_chairs_in_the_museum_cellar.webm",
+    "license": "CC-BY-3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+    "changes": "Unmodified original, local QA only; source also states CC-BY-4.0",
+    "sha256": "e0e357a102867140ad8e558303037ccd7812e2cc6c048a1dd24efba43ec76e34"
+  },
+  {
+    "name": "dog-rain.webm",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/9/9f/PerroCallejeroJugandoLLuvia20240828_ohs01.webm",
+    "author": "PetrohsW",
+    "source": "https://commons.wikimedia.org/wiki/File:PerroCallejeroJugandoLLuvia20240828_ohs01.webm",
+    "license": "CC-BY-SA-4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "changes": "Unmodified original, local QA only",
+    "sha256": "d9e9bb381ec8b80937d85922a05b1b227face9e79b16da77fb3f0ec937608a92"
+  }
+]

@@ -1,0 +1,36 @@
+CREATE TABLE IF NOT EXISTS accounts(id text PRIMARY KEY, twitch_id text UNIQUE NOT NULL, name text NOT NULL, color text NOT NULL DEFAULT '#ae80ff', cosmetic text NOT NULL DEFAULT '', privacy text NOT NULL DEFAULT 'public' CHECK(privacy IN ('public','hidden','anonymous')), demo boolean NOT NULL DEFAULT false, deleted boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now());
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS reward_identity text NOT NULL DEFAULT '';
+ALTER TABLE accounts ADD COLUMN IF NOT EXISTS share_version integer NOT NULL DEFAULT 0;
+CREATE TABLE IF NOT EXISTS wallets(account_id text PRIMARY KEY REFERENCES accounts(id), balance bigint NOT NULL DEFAULT 0 CHECK(balance>=0), version bigint NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS channels(id text PRIMARY KEY, owner_id text NOT NULL REFERENCES accounts(id), config jsonb NOT NULL, token_version integer NOT NULL DEFAULT 1, tokens text, connected boolean NOT NULL DEFAULT false);
+CREATE TABLE IF NOT EXISTS sessions(hash text PRIMARY KEY, account_id text NOT NULL REFERENCES accounts(id), csrf text NOT NULL, expires_at timestamptz NOT NULL);
+CREATE TABLE IF NOT EXISTS twitch_connections(account_id text PRIMARY KEY REFERENCES accounts(id), tokens text NOT NULL, validated_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS oauth_states(hash text PRIMARY KEY, browser_hash text NOT NULL, creator boolean NOT NULL, expires_at timestamptz NOT NULL);
+CREATE TABLE IF NOT EXISTS ledger(id text PRIMARY KEY, account_id text NOT NULL REFERENCES accounts(id), channel_id text REFERENCES channels(id), delta bigint NOT NULL CHECK(delta<>0), score_delta bigint NOT NULL DEFAULT 0, category text NOT NULL CHECK(category IN ('earn','spend','refund','adjustment')), reason text NOT NULL, logical_key text UNIQUE NOT NULL, reversal_of text UNIQUE REFERENCES ledger(id), created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX IF NOT EXISTS ledger_rank ON ledger(created_at, account_id);
+CREATE OR REPLACE FUNCTION ledger_immutable() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Ledger is append-only'; END $$;
+DROP TRIGGER IF EXISTS ledger_no_mutation ON ledger;
+ALTER TABLE ledger ADD COLUMN IF NOT EXISTS score_at timestamptz;
+UPDATE ledger SET score_at=created_at WHERE score_at IS NULL;
+ALTER TABLE ledger ALTER COLUMN score_at SET DEFAULT now();
+ALTER TABLE ledger ALTER COLUMN score_at SET NOT NULL;
+CREATE TRIGGER ledger_no_mutation BEFORE UPDATE OR DELETE ON ledger FOR EACH ROW EXECUTE FUNCTION ledger_immutable();
+CREATE TABLE IF NOT EXISTS inventory(account_id text REFERENCES accounts(id), item_id text NOT NULL, obtained_at timestamptz NOT NULL DEFAULT now(), PRIMARY KEY(account_id,item_id));
+CREATE TABLE IF NOT EXISTS inbox(id text PRIMARY KEY, type text NOT NULL, payload jsonb NOT NULL, status text NOT NULL DEFAULT 'pending', attempts integer NOT NULL DEFAULT 0, error text, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS raids(id text PRIMARY KEY, source_id text NOT NULL, destination_id text REFERENCES channels(id), source_name text NOT NULL, viewers integer NOT NULL CHECK(viewers>=0), test boolean NOT NULL DEFAULT false, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS raid_participants(raid_id text REFERENCES raids(id), account_id text REFERENCES accounts(id), PRIMARY KEY(raid_id,account_id));
+CREATE TABLE IF NOT EXISTS world_saves(channel_id text PRIMARY KEY REFERENCES channels(id), state jsonb NOT NULL, updated_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS avatar_presence(account_id text PRIMARY KEY REFERENCES accounts(id),channel_id text NOT NULL REFERENCES channels(id),updated_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS quests(id text PRIMARY KEY, channel_id text NOT NULL REFERENCES channels(id), definition jsonb NOT NULL, active boolean NOT NULL DEFAULT true, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS quest_awards(quest_id text REFERENCES quests(id), account_id text REFERENCES accounts(id), PRIMARY KEY(quest_id,account_id));
+CREATE TABLE IF NOT EXISTS bans(channel_id text REFERENCES channels(id), account_id text REFERENCES accounts(id), reason text NOT NULL, PRIMARY KEY(channel_id,account_id));
+CREATE TABLE IF NOT EXISTS audit(id text PRIMARY KEY, actor_id text, operation text NOT NULL, detail jsonb NOT NULL, created_at timestamptz NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS action_log(id text PRIMARY KEY, account_id text NOT NULL REFERENCES accounts(id), channel_id text NOT NULL REFERENCES channels(id), request_key text NOT NULL, status text NOT NULL, plan jsonb, created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(account_id,channel_id,request_key));
+CREATE TABLE IF NOT EXISTS factions(id text PRIMARY KEY, name text NOT NULL, color text NOT NULL);
+CREATE TABLE IF NOT EXISTS faction_members(account_id text PRIMARY KEY REFERENCES accounts(id), faction_id text NOT NULL REFERENCES factions(id));
+CREATE TABLE IF NOT EXISTS invitations(id text PRIMARY KEY, channel_id text REFERENCES channels(id), inviter_id text REFERENCES accounts(id), invitee_id text REFERENCES accounts(id), kind text NOT NULL, accepted boolean NOT NULL DEFAULT false, expires_at timestamptz NOT NULL);
+INSERT INTO factions VALUES('violet','Violet Cartographers','#ae80ff'),('moss','Moss Guardians','#7be8bf'),('ember','Ember Wanderers','#ffb78c') ON CONFLICT DO NOTHING;
+
+CREATE INDEX IF NOT EXISTS ledger_score_period ON ledger(score_at,account_id);
+
+ALTER TABLE ledger ADD COLUMN IF NOT EXISTS faction_id text REFERENCES factions(id);

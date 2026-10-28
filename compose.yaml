@@ -1,0 +1,45 @@
+services:
+  postgres:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_DB: raidrift
+      POSTGRES_USER: raidrift
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U raidrift]
+      interval: 5s
+      retries: 12
+    restart: unless-stopped
+  app:
+    build: .
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3400
+      DEMO_ENABLED: "false"
+      DATABASE_URL: postgresql://raidrift:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/raidrift
+      PUBLIC_URL: ${PUBLIC_URL:?Set the HTTPS origin}
+      APP_SECRET: ${APP_SECRET:?Set a random 32-byte base64url secret}
+      TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID:-}
+      TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET:-}
+      TWITCH_EVENTSUB_WEBHOOK_SECRET: ${TWITCH_EVENTSUB_WEBHOOK_SECRET:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ALLOW_PAID_AI: "false"
+      EXPERIMENTAL_CAMERA_REWARDS: "false"
+      ADMIN_TWITCH_IDS: ${ADMIN_TWITCH_IDS:-}
+    ports:
+      - 127.0.0.1:3400:3400
+    depends_on:
+      postgres:
+        condition: service_healthy
+    init: true
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3400/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      retries: 3
+    # One durable room owner. Do not increase replicas before sharding is implemented.
+volumes:
+  postgres:

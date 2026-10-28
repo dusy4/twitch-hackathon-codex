@@ -1,0 +1,12 @@
+{
+  "runAt": "2026-10-28T08:19:32.276Z",
+  "result": "passed",
+  "port": 55432,
+  "scope": "Native local PostgreSQL; independent pg connections; 100 duplicate credits, concurrent spending, rollback",
+  "distribution": {
+    "sourcePage": "https://www.enterprisedb.com/download-postgresql-binaries",
+    "url": "https://sbp.enterprisedb.com/getfile.jsp?fileid=1260616",
+    "bytes": 381531864,
+    "downloadedAt": "2026-10-27T22:16:32.414Z"
+  }
+}

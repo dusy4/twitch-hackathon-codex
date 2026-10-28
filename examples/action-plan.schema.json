@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RaidRift Action Plan Example",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "actor",
+    "intent",
+    "target",
+    "steps",
+    "fallback",
+    "estimated_cost_units"
+  ],
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "self",
+            "approved_group"
+          ]
+        }
+      }
+    },
+    "intent": {
+      "enum": [
+        "perform_choreography"
+      ]
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "class",
+        "qualifiers",
+        "resolution"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "observed_object",
+            "virtual_actor",
+            "virtual_object",
+            "world_anchor",
+            "none"
+          ]
+        },
+        "class": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "qualifiers": {
+          "type": "array",
+          "maxItems": 6,
+          "items": {
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "resolution": {
+          "enum": [
+            "best_visible_match",
+            "specific_track",
+            "nearest_to_actor",
+            "fallback_only"
+          ]
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 8,
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    },
+    "fallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "op",
+        "name",
+        "message"
+      ],
+      "properties": {
+        "op": {
+          "const": "emote"
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 200
+        }
+      }
+    },
+    "estimated_cost_units": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 10
+    }
+  },
+  "$defs": {
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "op"
+      ],
+      "properties": {
+        "op": {
+          "enum": [
+            "navigate",
+            "jump",
+            "climb",
+            "jump_to_surface",
+            "follow_track",
+            "attach_to_track",
+            "detach",
+            "face_target",
+            "play_animation",
+            "emote",
+            "spawn_effect",
+            "spawn_catalog_asset",
+            "ride",
+            "build_voxel",
+            "interact_virtual_object",
+            "group_invite",
+            "say_bubble",
+            "wait",
+            "stop"
+          ]
+        },
+        "speed": {
+          "enum": [
+            "walk",
+            "run",
+            "sprint"
+          ]
+        },
+        "destination": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 15000
+        },
+        "surface": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "height": {
+          "enum": [
+            "stylized",
+            "normal",
+            "low",
+            "high"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 15000
+        },
+        "anchor": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "max_duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 15000
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "asset_id": {
+          "type": "string",
+          "maxLength": 80
+        }
+      }
+    }
+  }
+}

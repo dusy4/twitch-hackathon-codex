@@ -1,0 +1,15 @@
+# Shared emotes and friendly wizard duels
+
+Both players must already be present in the selected world. The controller sends an invitation that expires in 60 seconds; only the invited account can accept. Five unexpired invitations per sender are allowed. Self-invitations, stale room membership and paused rooms are rejected. The original inviter consents by sending; the recipient consents by accepting. Chat instructions cannot bypass this consent with an `@name` reference.
+
+The activity picker offers a shared dance, shared wave or friendly wizard duel. A duel has three hearts per player, alternating turns and a 60-second turn timeout. The challenger opens. Cast deals one damage plus stored charge (maximum three); shield absorbs one from the next incoming cast; charge increases spell power and replaces the player's shield. Casting consumes charge. Either player may leave at any time. Four concurrent duels per world and 80 accepted turns per duel bound resource use. Wins, exits, timeout, moderation, account deletion, world transfer and emergency stop end play. The server checks participant ownership, turn and revision; a repeated request ID cannot apply damage twice.
+
+Duels award no Shards and have no wagers. Active games are ephemeral: restarting the world owner cancels them, while the immutable currency ledger is unaffected. The UI shows turn, hearts, charge, shield and rules. State snapshots and bounded events drive the same cast animations visible in the overlay. This is a turn-based activity designed for stream latency; it does not implement reaction-based combat, chess, formations or persistent tournament results.
+
+Validation: `tests/duels.test.ts` covers participant authority, consent, turn/revision conflicts, idempotency conflicts, shield/charge/win arithmetic, expiry and no ledger writes. `tests/e2e/duels.spec.ts` uses two independent browser sessions to invite, accept, charge, shield, cast and leave. Cancellation on world transfer also passes through the same `cancelFor` method used by moderation/deletion; end-to-end transfer remains covered separately.
+
+## Profile share cards
+
+The owner of a public profile can explicitly create a signed SVG card from their profile page. The link expires after 24 hours and contains no wallet balance, OAuth token, camera data or location. It shows the current public display name, lifetime earned score, completed quest count and simulator/Twitch-linked status. Nothing is posted to another service. The original vector artwork can be downloaded locally.
+
+The owner can revoke all existing links. Privacy changes invalidate existing card versions; nonpublic/deleted accounts fail the public card lookup immediately. Previously downloaded copies cannot be recalled. Card requests are uncached and are checked against the current account on every request. Treat the card URL as permission to view that card until revocation/expiry. Tests cover consent, signature tampering, role scope, expiry, privacy, deletion, revocation, XML escaping and actual browser image rendering.

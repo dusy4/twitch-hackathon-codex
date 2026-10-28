@@ -1,0 +1,2 @@
+import {Database} from '../apps/api/db.js';
+const db=await Database.open(process.env.DATABASE_URL);try{const mismatches=(await db.query(`SELECT w.account_id,w.balance,COALESCE(sum(l.delta),0) AS ledger_balance FROM wallets w LEFT JOIN ledger l ON l.account_id=w.account_id GROUP BY w.account_id,w.balance HAVING w.balance<>COALESCE(sum(l.delta),0) OR w.balance<0`)).rows;console.log(JSON.stringify({checkedAt:new Date().toISOString(),mismatches},null,2));if(mismatches.length)process.exitCode=1;}finally{await db.close();}

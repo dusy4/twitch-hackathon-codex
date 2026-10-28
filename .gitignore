@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.data/
+test-results/
+playwright-report/
+*.log
+apps/mobile/Library/
+apps/mobile/Temp/
+
+apps/web/public/vision/
+tests/fixtures/*.webm
+
+.tools/

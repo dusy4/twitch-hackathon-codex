@@ -1,0 +1,14 @@
+{
+  "runAt": "2026-10-27T22:07:30.563Z",
+  "kind": "Local synthetic WebSocket spectators, no real Twitch viewers",
+  "connections": 1000,
+  "connected": 1000,
+  "errors": 0,
+  "snapshots": 49116,
+  "durationMs": 5462.459,
+  "eventLoopP95Ms": 26.886143,
+  "eventLoopP99Ms": 29.507583,
+  "rssMiB": 426.28125,
+  "activeAvatars": 0,
+  "limitation": "Does not establish 1000 active avatar simulation, multi-instance throughput or internet performance"
+}

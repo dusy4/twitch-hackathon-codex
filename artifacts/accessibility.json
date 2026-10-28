@@ -1,0 +1,42 @@
+{
+  "runAt": "2026-10-28T08:28:30.908Z",
+  "scope": "Automated WCAG A/AA subset; does not establish full accessibility conformance",
+  "reports": [
+    {
+      "path": "/",
+      "violations": []
+    },
+    {
+      "path": "/leaderboard",
+      "violations": []
+    },
+    {
+      "path": "/quests",
+      "violations": []
+    },
+    {
+      "path": "/shop",
+      "violations": []
+    },
+    {
+      "path": "/live",
+      "violations": []
+    },
+    {
+      "path": "/privacy",
+      "violations": []
+    },
+    {
+      "path": "/factions",
+      "violations": []
+    },
+    {
+      "path": "/controller",
+      "violations": []
+    },
+    {
+      "path": "/dashboard",
+      "violations": []
+    }
+  ]
+}

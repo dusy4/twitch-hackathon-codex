@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "actor": { "kind": "self" },
+  "intent": "perform_choreography",
+  "target": {
+    "kind": "observed_object",
+    "class": "dog",
+    "qualifiers": [],
+    "resolution": "best_visible_match"
+  },
+  "steps": [
+    { "op": "navigate", "speed": "sprint", "destination": "target_front", "timeout_ms": 5000 },
+    { "op": "jump_to_surface", "surface": "target_upper_silhouette", "height": "stylized", "timeout_ms": 1500 },
+    { "op": "play_animation", "name": "sit", "duration_ms": 3000 },
+    { "op": "attach_to_track", "anchor": "top_center", "max_duration_ms": 7000 },
+    { "op": "emote", "name": "satisfied", "duration_ms": 1000 }
+  ],
+  "fallback": { "op": "emote", "name": "searching", "message": "Can't see a dog right now!" },
+  "estimated_cost_units": 3
+}

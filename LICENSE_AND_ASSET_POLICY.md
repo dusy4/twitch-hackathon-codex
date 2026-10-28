@@ -1,0 +1,5 @@
+# License & asset policy
+
+The intended visual direction evokes Minecraft voxel aesthetic, portal layout and purple energy; independently create original textures, SFX, animations, voice lines and character meshes. A game-aesthetic reference is not a grant to redistribute assets or brand as official Minecraft product. Do not ship the original Minecraft audio/texture pack unless valid rights documented. Verify third-party asset attribution requirements.
+
+The previous browser prototype used procedural/original sounds and textures, not official Minecraft audio. Maintain this unless owner supplies rights. Twitch names/logos and trademark usage must conform to Twitch brand rules. Third-party detection model code/checkpoint licensing must be checked independently; Ultralytics YOLO may trigger AGPL-3.0 or require paid Enterprise depending on distribution; SAM 2 released code/weights listed Apache 2.0 by authors, but validate exact version. Ensure original source videos, streamer streams, thumbnails, generated model assets and fonts carry rights/consent. Document third-party dependencies/licensing before public deployment.
