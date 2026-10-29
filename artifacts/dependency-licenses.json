@@ -7,6 +7,48 @@
     "path": "node_modules/@axe-core/playwright"
   },
   {
+    "name": "@babel/generator",
+    "version": "8.0.6",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/@babel/generator"
+  },
+  {
+    "name": "@babel/helper-string-parser",
+    "version": "8.0.8",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/@babel/helper-string-parser"
+  },
+  {
+    "name": "@babel/helper-validator-identifier",
+    "version": "8.0.6",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/@babel/helper-validator-identifier"
+  },
+  {
+    "name": "@babel/parser",
+    "version": "8.0.8",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/@babel/parser"
+  },
+  {
+    "name": "@babel/types",
+    "version": "8.0.8",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/@babel/types"
+  },
+  {
+    "name": "@bufbuild/protobuf",
+    "version": "2.16.0",
+    "license": "(Apache-2.0 AND BSD-3-Clause)",
+    "development": true,
+    "path": "node_modules/@bufbuild/protobuf"
+  },
+  {
     "name": "@dimforge/rapier3d-compat",
     "version": "0.12.0",
     "license": "Apache-2.0",
@@ -112,6 +154,55 @@
     "path": "node_modules/@fastify/static/node_modules/fastify-plugin"
   },
   {
+    "name": "@iwer/sem",
+    "version": "2.7.0",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/@iwer/sem"
+  },
+  {
+    "name": "@drawcall/glts",
+    "version": "0.15.0",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/@iwer/sem/node_modules/@drawcall/glts"
+  },
+  {
+    "name": "three",
+    "version": "0.184.0",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/@iwer/sem/node_modules/three"
+  },
+  {
+    "name": "@jridgewell/gen-mapping",
+    "version": "0.4.0-beta.0",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/@jridgewell/gen-mapping"
+  },
+  {
+    "name": "@jridgewell/resolve-uri",
+    "version": "3.1.2",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/@jridgewell/resolve-uri"
+  },
+  {
+    "name": "@jridgewell/sourcemap-codec",
+    "version": "1.6.0",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/@jridgewell/sourcemap-codec"
+  },
+  {
+    "name": "@jridgewell/trace-mapping",
+    "version": "0.3.31",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/@jridgewell/trace-mapping"
+  },
+  {
     "name": "@lukeed/ms",
     "version": "2.0.2",
     "license": "MIT",
@@ -166,6 +257,13 @@
     "license": "MIT",
     "development": true,
     "path": "node_modules/@types/estree"
+  },
+  {
+    "name": "@types/jsesc",
+    "version": "2.5.1",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/@types/jsesc"
   },
   {
     "name": "@types/node",
@@ -245,6 +343,13 @@
     "path": "node_modules/ajv/node_modules/fast-uri"
   },
   {
+    "name": "any-promise",
+    "version": "1.3.0",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/any-promise"
+  },
+  {
     "name": "atomic-sleep",
     "version": "1.0.0",
     "license": "MIT",
@@ -280,6 +385,20 @@
     "path": "node_modules/brace-expansion"
   },
   {
+    "name": "case-anything",
+    "version": "2.1.13",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/case-anything"
+  },
+  {
+    "name": "commander",
+    "version": "4.1.1",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/commander"
+  },
+  {
     "name": "content-disposition",
     "version": "3.0.0",
     "license": "MIT",
@@ -306,6 +425,27 @@
     "license": "MIT",
     "development": false,
     "path": "node_modules/dequal"
+  },
+  {
+    "name": "detect-libc",
+    "version": "1.0.3",
+    "license": "Apache-2.0",
+    "development": true,
+    "path": "node_modules/detect-libc"
+  },
+  {
+    "name": "dprint-node",
+    "version": "1.0.8",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/dprint-node"
+  },
+  {
+    "name": "es-module-lexer",
+    "version": "2.3.2",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/es-module-lexer"
   },
   {
     "name": "esbuild",
@@ -406,6 +546,13 @@
     "path": "node_modules/get-tsconfig"
   },
   {
+    "name": "gl-matrix",
+    "version": "3.4.4",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/gl-matrix"
+  },
+  {
     "name": "glob",
     "version": "13.0.6",
     "license": "BlueOak-1.0.0",
@@ -432,6 +579,20 @@
     "license": "MIT",
     "development": false,
     "path": "node_modules/ipaddr.js"
+  },
+  {
+    "name": "iwer",
+    "version": "2.7.0",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/iwer"
+  },
+  {
+    "name": "jsesc",
+    "version": "3.1.0",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/jsesc"
   },
   {
     "name": "json-schema-ref-resolver",
@@ -462,11 +623,25 @@
     "path": "node_modules/light-my-request/node_modules/cookie"
   },
   {
+    "name": "lines-and-columns",
+    "version": "1.2.4",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/lines-and-columns"
+  },
+  {
     "name": "lru-cache",
     "version": "11.5.3",
     "license": "BlueOak-1.0.0",
     "development": false,
     "path": "node_modules/lru-cache"
+  },
+  {
+    "name": "magic-string",
+    "version": "0.30.21",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/magic-string"
   },
   {
     "name": "meshoptimizer",
@@ -497,11 +672,25 @@
     "path": "node_modules/minipass"
   },
   {
+    "name": "mz",
+    "version": "2.7.0",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/mz"
+  },
+  {
     "name": "nanoid",
     "version": "3.3.20",
     "license": "MIT",
     "development": true,
     "path": "node_modules/nanoid"
+  },
+  {
+    "name": "object-assign",
+    "version": "4.1.1",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/object-assign"
   },
   {
     "name": "on-exit-leak-free",
@@ -607,6 +796,13 @@
     "license": "MIT",
     "development": false,
     "path": "node_modules/pino-std-serializers"
+  },
+  {
+    "name": "pirates",
+    "version": "4.0.7",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/pirates"
   },
   {
     "name": "playwright",
@@ -798,6 +994,34 @@
     "path": "node_modules/statuses"
   },
   {
+    "name": "sucrase",
+    "version": "3.35.1",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/sucrase"
+  },
+  {
+    "name": "@jridgewell/gen-mapping",
+    "version": "0.3.13",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/sucrase/node_modules/@jridgewell/gen-mapping"
+  },
+  {
+    "name": "thenify",
+    "version": "3.3.1",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/thenify"
+  },
+  {
+    "name": "thenify-all",
+    "version": "1.6.0",
+    "license": "MIT",
+    "development": true,
+    "path": "node_modules/thenify-all"
+  },
+  {
     "name": "thread-stream",
     "version": "3.2.0",
     "license": "MIT",
@@ -831,6 +1055,34 @@
     "license": "MIT",
     "development": false,
     "path": "node_modules/toidentifier"
+  },
+  {
+    "name": "ts-interface-checker",
+    "version": "0.1.13",
+    "license": "Apache-2.0",
+    "development": true,
+    "path": "node_modules/ts-interface-checker"
+  },
+  {
+    "name": "ts-poet",
+    "version": "6.12.0",
+    "license": "Apache-2.0",
+    "development": true,
+    "path": "node_modules/ts-poet"
+  },
+  {
+    "name": "ts-proto",
+    "version": "2.18.3",
+    "license": "ISC",
+    "development": true,
+    "path": "node_modules/ts-proto"
+  },
+  {
+    "name": "ts-proto-descriptors",
+    "version": "2.1.0",
+    "license": "ISC",
+    "development": true,
+    "path": "node_modules/ts-proto-descriptors"
   },
   {
     "name": "tsx",
@@ -873,6 +1125,13 @@
     "license": "MIT",
     "development": true,
     "path": "node_modules/vite/node_modules/esbuild"
+  },
+  {
+    "name": "webxr-layers-polyfill",
+    "version": "1.1.0",
+    "license": "Apache-2.0",
+    "development": true,
+    "path": "node_modules/webxr-layers-polyfill"
   },
   {
     "name": "ws",

@@ -1,5 +1,15 @@
 # Characters entering the world
 
+## Perspective and room AR update — 2026-10-29
+
+Owner rejected the flat appearance and authorized any true 3D model. Named avatars now load pinned CC0 KayKit GLBs with independently cloned 41-joint skeletons and AnimationMixers. Actual files contain 76 clips each. Authored locomotion/sit/combat clips, crossfades, a procedural wave gesture and existing bounded root choreography are used; unsupported special actions are not falsely described as having dedicated authored clips. The shared clip cache keeps immutable animation data separate from each player's mixer/bones. Body tint, earned crown and pet rendering remain independent.
+
+The desktop stage uses a PerspectiveCamera, a ground plane, directional shadows, movement heading and orbit/zoom/reset controls. Ray-plane projection preserves normalized video foot anchors across landscape/portrait outputs, but this is a declared coarse scene model with no measured room pose/depth. OBS output remains transparent. Named models load only when needed; failures are visible and do not silently present the previous primitive rig as the imported asset. Source palette textures required allowing local `blob:` fetches in CSP; actual screenshots caught and verified this correction.
+
+`/ar` provides a separate capability-gated real WebXR camera-pose/hit-test/anchor path. The renderer places roughly 25 cm characters relative to the selected surface; independent server commands still select only the authenticated actor. This is not full reconstructed-room navigation or depth occlusion. The official emulator exercises placement and camera motion; physical-device validation remains open. Research and reference-video findings are in `RESEARCH_3D_2026-10-29.md` and `LUCAS_MR_REFERENCE.md`.
+
+The earlier arrival/event evidence below remains relevant to identity/server authority. Updated character arrival captures use the imported perspective models; older CLI composites are identified in `ASSETS.md`.
+
 Current priority, per owner steering on 2026-10-29: character arrival, visibility and control in the stream. Secondary feature expansion is deferred.
 
 ## See it locally

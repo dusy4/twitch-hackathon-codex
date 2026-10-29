@@ -1,26 +1,30 @@
 import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { CharacterActor, characterFor, loadCharacter } from "./character.js";
+import { SceneSpace } from "./scene-space.js";
 import { buildingColors } from "../../packages/shared/construction.js";
 import { PORTAL_FOOT } from "../../packages/shared/arrivals.js";
 import { avatarColor, equipmentOf } from "../../packages/shared/equipment.js";
 import { samplePose } from "./pose.js";
 import type { Avatar, WorldSnapshot } from "../../packages/shared/contracts.js";
 type Puppet = {
+  actor?: CharacterActor;
+  yaw: number;
   group: THREE.Group;
-  limbs: THREE.Mesh[];
   hat: THREE.Group;
   label: HTMLDivElement;
   position: THREE.Vector3;
   smoothed: THREE.Vector3;
-  body: THREE.Mesh;
-  head: THREE.Mesh;
-  eyes: THREE.Mesh[];
-  tool: THREE.Mesh;
   shadow: THREE.Mesh;
 };
 export class RiftRenderer {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
-  private camera = new THREE.OrthographicCamera(-8, 8, 4.5, -4.5, 0.1, 100);
+  private space = new SceneSpace();
+  private camera = this.space.reference.clone();
+  private controls: OrbitControls | null = null;
+  private viewHint: HTMLDivElement | null = null;
+  private lastTime = 0;
   private root = new THREE.Group();
   private portal = new THREE.Group();
   private clock = new THREE.Clock();
@@ -71,10 +75,49 @@ export class RiftRenderer {
       "webglcontextrestored",
       this.onRestored,
     );
-    this.camera.position.set(0, 0, 20);
-    this.scene.add(new THREE.AmbientLight(0xc5b7ff, 2.5));
+    this.host.dataset.projection = "perspective";
+    this.host.dataset.tracking = "coarse-ground-plane";
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.15;
+    this.scene.add(new THREE.HemisphereLight(0xe2ddff, 0x363545, 2.2));
+    if (!overlay) {
+      this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+      this.controls.target.set(0, focus ? 0.65 : 0, focus ? 0 : -1);
+      this.controls.enablePan = false;
+      this.controls.minDistance = focus ? 2 : 7;
+      this.controls.maxDistance = focus ? 7 : 30;
+      this.controls.minPolarAngle = 0.3;
+      this.controls.maxPolarAngle = Math.PI * 0.46;
+      this.controls.enableDamping = true;
+      this.viewHint = document.createElement("div");
+      this.viewHint.className = "scene-camera-controls";
+      this.viewHint.style.bottom = focus ? "12px" : "74px";
+      const hint = document.createElement("span");
+      hint.textContent = "Drag to orbit · scroll to zoom";
+      const reset = document.createElement("button");
+      reset.textContent = "Reset view";
+      reset.addEventListener("click", () => this.resetCamera());
+      this.viewHint.append(hint, reset);
+      if (!focus) {
+        const spatial = document.createElement("a");
+        spatial.className = "button";
+        spatial.textContent = "Room AR ↗";
+        spatial.href = `/ar?room=${encodeURIComponent(this.snapshot()?.roomId || new URLSearchParams(location.search).get("room") || "demo-world")}`;
+        spatial.dataset.nav = "";
+        this.viewHint.append(spatial);
+      }
+      this.host.append(this.viewHint);
+    }
     const light = new THREE.DirectionalLight(0xffdfbd, 3);
-    light.position.set(-3, 8, 10);
+    light.position.set(-6, 12, 8);
+    light.castShadow = true;
+    light.shadow.mapSize.set(1024, 1024);
+    light.shadow.camera.left = light.shadow.camera.bottom = -16;
+    light.shadow.camera.right = light.shadow.camera.top = 16;
+    light.shadow.camera.far = 55;
+    light.shadow.normalBias = 0.035;
     this.scene.add(light, this.root);
     this.root.add(this.portal);
     this.glow = new THREE.ShaderMaterial({
@@ -185,92 +228,37 @@ export class RiftRenderer {
     );
   }
   private landscape() {
-    const base = new THREE.Group();
-    const palette = [0x292638, 0x343248, 0x3a354c, 0x242333];
-    for (let x = -9; x < 10; x++)
-      for (let z = 0; z < 4; z++) {
-        const b = this.block(
-          0.97,
-          0.5 + ((x * x + z) % 3) * 0.18,
-          0.8,
-          palette[(x + z + 40) % 4],
-        );
-        b.position.set(x, -2.65 - z * 0.26, -z * 0.7);
-        b.rotation.x = 0.16;
-        base.add(b);
-        const top = this.block(0.97, 0.07, 0.8, 0x596359);
-        top.position.copy(b.position);
-        top.position.y += 0.27;
-        top.rotation.x = 0.16;
-        base.add(top);
-      }
-    for (let i = 0; i < 7; i++) {
-      const x = Math.sin(i * 43) * 7;
-      const rock = this.block(0.6, 0.6, 0.6, 0x656072);
-      rock.position.set(x, -3.5 - Math.abs(Math.sin(i * 5)) * 0.9, -1);
-      rock.rotation.set(0.2, 0.5, i);
-      base.add(rock);
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(100, 100),
+      new THREE.MeshStandardMaterial({ color: 0x222c38, roughness: 0.95 }),
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -0.025;
+    floor.receiveShadow = true;
+    this.scene.add(floor);
+    const grid = new THREE.GridHelper(50, 50, 0x5e5474, 0x303c49);
+    grid.position.y = -0.02;
+    this.scene.add(grid);
+    this.scene.fog = new THREE.Fog(0x11131c, 25, 65);
+    const rim = new THREE.PointLight(0x9c58ff, 20, 12);
+    rim.position.set(-2, 2, 1);
+    this.scene.add(rim);
+  }
+  private resetCamera() {
+    this.camera.copy(this.space.reference);
+    if (this.focus) {
+      this.camera.position.set(2.5, 1.8, 4);
+      this.camera.lookAt(0, 0.65, 0);
     }
-    for (const x of [-6.3, 5.8]) {
-      const trunk = this.block(0.17, 1.2, 0.18, 0x69575b);
-      trunk.position.set(x, -1.95, -1);
-      base.add(trunk);
-      for (let i = 0; i < 3; i++) {
-        const leaf = this.block(
-          1.1 - i * 0.25,
-          0.65,
-          0.7,
-          i % 2 ? 0x778171 : 0x596e63,
-        );
-        leaf.position.set(x + (i % 2) * 0.12, -1.05 + i * 0.38, -1);
-        base.add(leaf);
-      }
-    }
-    const light = new THREE.PointLight(0xa86dff, 14, 10);
-    light.position.set(-2, 0, 3);
-    base.add(light);
-    this.scene.add(base);
+    this.controls?.target.set(0, this.focus ? 0.65 : 0, this.focus ? 0 : -1);
+    this.controls?.update();
+  }
+  private point(x: number, y: number) {
+    return this.focus ? new THREE.Vector3() : this.space.groundPoint(x, y);
   }
   private makeAvatar(a: Avatar) {
     const group = new THREE.Group();
     const equipment = equipmentOf(a);
-    const shirt = avatarColor(a);
-    const body = this.block(0.25, 0.29, 0.18, shirt);
-    body.position.y = 0.31;
-    group.add(body);
-    const head = this.block(0.25, 0.25, 0.23, 0xf1c6a8);
-    head.position.y = 0.59;
-    group.add(head);
-    const hair = this.block(0.27, 0.075, 0.24, 0x3a2c42);
-    hair.position.y = 0.16;
-    head.add(hair);
-    const eyes: THREE.Mesh[] = [];
-    for (const x of [-0.057, 0.057]) {
-      const eye = this.block(0.035, 0.04, 0.02, 0x292133);
-      eye.position.set(x, 0.02, 0.13);
-      head.add(eye);
-      eyes.push(eye);
-    }
-    const limbs: THREE.Mesh[] = [];
-    for (let i = 0; i < 4; i++) {
-      const limb = this.block(
-        i < 2 ? 0.09 : 0.08,
-        i < 2 ? 0.24 : 0.22,
-        0.1,
-        i < 2 ? 0x393450 : shirt,
-      );
-      limb.position.set(
-        (i % 2 ? 1 : -1) * (i < 2 ? 0.07 : 0.19),
-        i < 2 ? 0.12 : 0.33,
-        0,
-      );
-      group.add(limb);
-      limbs.push(limb);
-    }
-    const tool = this.block(0.1, 0.1, 0.1, 0xc6b36f);
-    tool.position.set(0, -0.14, 0.06);
-    tool.visible = false;
-    limbs[3].add(tool);
     const hat = new THREE.Group();
     if (equipment.pet === "pocket-dragon") {
       const pet = this.makeProp("dragon_small");
@@ -284,7 +272,7 @@ export class RiftRenderer {
         point.position.set((i - 2) * 0.055, 0.24, 0);
         hat.add(point);
       }
-      head.add(hat);
+      group.add(hat);
     }
     const shadow = new THREE.Mesh(
       new THREE.CircleGeometry(0.23, 16),
@@ -295,7 +283,7 @@ export class RiftRenderer {
         depthWrite: false,
       }),
     );
-    shadow.scale.y = 0.25;
+    shadow.rotation.x = -Math.PI / 2;
     shadow.position.set(0, -0.04, -0.1);
     this.scene.add(shadow);
     const label = document.createElement("div");
@@ -308,25 +296,44 @@ export class RiftRenderer {
     group.userData.firstSeenAt = performance.now();
     const puppet = {
       group,
-      body,
-      head,
-      eyes,
-      tool,
+      yaw: 0.35,
       shadow,
       smoothed: new THREE.Vector3(),
-      limbs,
       hat,
       label,
-      position: new THREE.Vector3(
-        (a.x - 0.5) * (this.camera.right - this.camera.left),
-        (0.5 - a.y) * 9,
-        2,
-      ),
+      position: this.point(a.x, a.y),
     };
     group.position.copy(puppet.position);
     puppet.smoothed.copy(puppet.position);
-    if (this.focus) group.scale.setScalar(2);
+
     this.puppets.set(a.id, puppet);
+    // Keep the loading state honest; the old primitive rig is not the imported character.
+    label.dataset.model = "loading";
+    const modelName = characterFor(a.id);
+    void loadCharacter(modelName)
+      .then((template) => {
+        if (this.destroyed || this.puppets.get(a.id) !== puppet) return;
+        const actor = new CharacterActor(template, avatarColor(a));
+        (puppet as Puppet).actor = actor;
+        group.add(actor.root);
+        // Attach an earned crown to the actual animated head; pets remain independent volumetric props.
+        if (equipment.hat === "star-crown") {
+          const bone = actor.bones.get("head");
+          if (bone) {
+            hat.position.y = 0.18;
+            hat.scale.setScalar(1.3);
+            bone.add(hat);
+          }
+        }
+        label.dataset.model = modelName;
+      })
+      .catch(() => {
+        if (this.destroyed || this.puppets.get(a.id) !== puppet) return;
+        label.dataset.model = "error";
+        label.title = "3D character asset could not load. Reload to retry.";
+        this.host.dataset.status =
+          "3D character failed to load — reload to retry";
+      });
     return puppet;
   }
   private resize() {
@@ -335,15 +342,17 @@ export class RiftRenderer {
     if (width < 1 || height < 1) return;
     this.renderer.setSize(width, height);
     const aspect = width / height;
-    this.camera.left = -(this.focus ? 1.1 : 4.5) * aspect;
-    this.camera.right = (this.focus ? 1.1 : 4.5) * aspect;
-    this.camera.top = this.focus ? 1.3 : 4.5;
-    this.camera.bottom = this.focus ? -0.9 : -4.5;
+    this.space.resize(aspect);
+    this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
+    if (!this.host.dataset.cameraInitialized) {
+      this.resetCamera();
+      this.host.dataset.cameraInitialized = "true";
+    }
   }
   private removeObject(object: THREE.Object3D) {
     object.traverse((o) => {
-      if (o instanceof THREE.Mesh) {
+      if (o instanceof THREE.Mesh && !o.userData.sharedCharacterAsset) {
         o.geometry.dispose();
         const materials = Array.isArray(o.material) ? o.material : [o.material];
         materials.forEach((m) => m.dispose());
@@ -398,6 +407,9 @@ export class RiftRenderer {
       s?.config.reducedMotion ||
       matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced && this.frame++ % 2) return;
+    const delta = this.lastTime ? Math.min(0.1, t - this.lastTime) : 1 / 60;
+    this.lastTime = t;
+    this.controls?.update();
     const now = Date.now() + this.serverOffset;
     const raid = s?.raid;
     const elapsed = raid ? (now - raid.started) / 1000 : 100;
@@ -411,11 +423,9 @@ export class RiftRenderer {
     if (portalActive && !this.portalWasActive) this.portalOpenedAt = now;
     this.portalWasActive = portalActive;
     this.portal.visible = (!this.overlay || portalActive) && !this.focus;
-    this.portal.position.set(
-      (PORTAL_FOOT[0] - 0.5) * (this.camera.right - this.camera.left),
-      (0.5 - PORTAL_FOOT[1]) * 9 + 1.9,
-      1,
-    );
+    this.portal.position.copy(this.point(PORTAL_FOOT[0], PORTAL_FOOT[1]));
+    this.portal.position.y += 2.15;
+    this.portal.rotation.y = 0.18;
     const opening = raid
       ? Math.min(1, elapsed / 1.4) *
         Math.min(1, Math.max(0, (18 - elapsed) / 2))
@@ -436,6 +446,7 @@ export class RiftRenderer {
     const wanted = new Set(s?.avatars.map((a) => a.id) || []);
     for (const [id, p] of this.puppets) {
       if (!wanted.has(id)) {
+        p.actor?.dispose();
         this.removeObject(p.group);
         this.removeObject(p.shadow);
         p.label.remove();
@@ -449,6 +460,7 @@ export class RiftRenderer {
         p.group.userData.appearance !==
           JSON.stringify([a.color, equipmentOf(a)])
       ) {
+        p.actor?.dispose();
         this.removeObject(p.group);
         this.removeObject(p.shadow);
         p.label.remove();
@@ -457,12 +469,11 @@ export class RiftRenderer {
       }
       p ||= this.makeAvatar(a);
       p.group.userData.appearance = JSON.stringify([a.color, equipmentOf(a)]);
-      p.position.set(
-        (a.x - 0.5) * (this.camera.right - this.camera.left),
-        (0.5 - a.y) * 9,
-        2,
-      );
-      p.smoothed.lerp(p.position, 0.22);
+      p.position.copy(this.point(a.x, a.y));
+      const movement = p.position.clone().sub(p.smoothed);
+      if (movement.lengthSq() > 0.0001 && !this.focus)
+        p.yaw = Math.atan2(movement.x, movement.z);
+      p.smoothed.lerp(p.position, 1 - Math.exp(-delta * 15));
       p.group.position.copy(p.smoothed);
       const active = !["idle", "sit", "stop"].includes(a.animation);
       const pose = samplePose(
@@ -472,34 +483,24 @@ export class RiftRenderer {
         reduced,
       );
       p.group.position.y += pose.offsetY;
-      p.group.rotation.set(pose.rootPitch, pose.rootYaw, pose.rootRoll);
+      p.group.rotation.set(pose.rootPitch, p.yaw + pose.rootYaw, pose.rootRoll);
+      p.actor?.update(
+        a.animation,
+        (now - (a.animationAt || a.lastActive)) / 1000,
+        delta,
+        !!reduced,
+      );
+      if (p.actor) p.label.dataset.clip = String(p.actor.root.userData.clip);
       const materialization = a.spawnedAt
         ? Math.min(
             1,
             0.2 + (performance.now() - p.group.userData.firstSeenAt) / 400,
           )
         : 1;
-      p.group.scale.setScalar(
-        (this.focus ? 2 : 1) * pose.rootScale * materialization,
-      );
-      p.body.position.y = pose.bodyY;
-      p.body.scale.y = pose.bodyScaleY;
-      p.head.position.y = pose.headY;
-      p.head.scale.setScalar(pose.headScale);
-      p.limbs.forEach((limb, i) => {
-        limb.rotation.set(pose.limbX[i], 0, pose.limbZ[i]);
-        if (i >= 2) limb.position.y = pose.bodyY + 0.02;
-      });
-      p.eyes.forEach((eye) => (eye.scale.y = pose.eyesClosed ? 0.12 : 1));
-      p.tool.visible = pose.toolVisible;
+      p.group.scale.setScalar(pose.rootScale * materialization);
       p.shadow.position.copy(p.smoothed);
-      p.shadow.position.y -= 0.035;
-      p.shadow.position.z -= 0.15;
-      p.shadow.scale.set(
-        (this.focus ? 2 : 1) * pose.rootScale,
-        (this.focus ? 0.5 : 0.25) * pose.rootScale,
-        1,
-      );
+      p.shadow.position.y = 0.006;
+      p.shadow.scale.set(pose.rootScale, pose.rootScale, 1);
       (p.shadow.material as THREE.MeshBasicMaterial).opacity = Math.max(
         0.05,
         0.28 * (1 - pose.offsetY),
@@ -511,13 +512,16 @@ export class RiftRenderer {
       p.label.textContent = `${own ? "YOU · " : ""}${a.name}${a.message ? ` · ${a.message}` : ""}`;
       const projected = p.group.position
         .clone()
-        .add(new THREE.Vector3(0, 0.95, 0))
+        .add(new THREE.Vector3(0, 1.5, 0))
         .project(this.camera);
       p.label.style.left = `${(projected.x * 0.5 + 0.5) * 100}%`;
       p.label.style.top = `${(-projected.y * 0.5 + 0.5) * 100}%`;
       p.label.hidden =
         this.focus || (s!.avatars.length > 30 && !active && !own);
     }
+    this.host.dataset.riggedAvatarCount = String(
+      [...this.puppets.values()].filter((p) => p.actor).length,
+    );
     this.host.dataset.avatarCount = String(s?.avatars.length || 0);
     this.host.dataset.portalVisible = String(
       this.portal.visible && opening > 0.1,
@@ -531,14 +535,16 @@ export class RiftRenderer {
     for (let i = 0; i < this.crowd.count; i++) {
       const delay = i * 0.075;
       const age = Math.max(0, elapsed - 1.6 - delay);
+      const footPoint = this.space.groundPoint(PORTAL_FOOT[0], PORTAL_FOOT[1]);
       const x =
-        (PORTAL_FOOT[0] - 0.5) * (this.camera.right - this.camera.left) +
+        footPoint.x +
         Math.min(age, 4) * (i % 2 ? 1 : -1) * (0.3 + (i % 5) * 0.12);
-      const foot = (0.5 - PORTAL_FOOT[1]) * 9 - (i % 7) * 0.05;
+      const foot = 0;
+      const depth = footPoint.z + Math.min(age, 4) * ((i % 7) - 3) * 0.17;
       const bob = reduced ? 0 : Math.abs(Math.sin(t * 14 + i)) * 0.08;
       const y = foot + 0.25;
       matrix.rotation.set(0, 0, 0);
-      matrix.position.set(x, y + bob, 0.4);
+      matrix.position.set(x, y + bob, depth);
       matrix.scale.setScalar(age > 0 ? 1 : 0);
       matrix.updateMatrix();
       this.crowd.setMatrixAt(i, matrix.matrix);
@@ -550,7 +556,7 @@ export class RiftRenderer {
         matrix.position.set(
           x + side * (index < 2 ? 0.045 : 0.11),
           foot + (index < 2 ? 0.07 : 0.25) + bob,
-          0.4,
+          depth,
         );
         matrix.rotation.z = reduced
           ? 0
@@ -580,13 +586,13 @@ export class RiftRenderer {
         this.props.set(prop.id, g);
       }
       const owner = s?.avatars.find((a) => a.id === prop.owner);
-      g.position.set(
-        (((prop.kind === "dragon_small" ? owner?.x : prop.x) ?? prop.x) - 0.5) *
-          (this.camera.right - this.camera.left),
-        (0.5 - ((prop.kind === "dragon_small" ? owner?.y : prop.y) ?? prop.y)) *
-          9,
-        2.1,
+      g.position.copy(
+        this.point(
+          (prop.kind === "dragon_small" ? owner?.x : prop.x) ?? prop.x,
+          (prop.kind === "dragon_small" ? owner?.y : prop.y) ?? prop.y,
+        ),
       );
+      g.position.y += prop.kind === "dragon_small" ? 0.8 : 0.15;
       if (!reduced) {
         if (prop.kind === "dragon_small") {
           for (const [i, side] of [
@@ -635,11 +641,7 @@ export class RiftRenderer {
         this.scene.add(group);
         this.structures.set(building.id, group);
       }
-      group.position.set(
-        (building.x - 0.5) * (this.camera.right - this.camera.left),
-        (0.5 - building.y) * 9,
-        1.5,
-      );
+      group.position.copy(this.point(building.x, building.y));
     }
     this.host.dataset.structureBlocks = String(
       structures.reduce((total, building) => total + building.blocks.length, 0),
@@ -701,9 +703,17 @@ export class RiftRenderer {
     this.destroyed = true;
     cancelAnimationFrame(this.raf);
     this.observer.disconnect();
-    this.puppets.forEach((p) => p.label.remove());
+    this.controls?.dispose();
+    this.viewHint?.remove();
+    this.puppets.forEach((p) => {
+      p.actor?.dispose();
+      p.label.remove();
+    });
     this.scene.traverse((o) => {
-      if (o instanceof THREE.Mesh || o instanceof THREE.Points) {
+      if (
+        (o instanceof THREE.Mesh || o instanceof THREE.Points) &&
+        !o.userData.sharedCharacterAsset
+      ) {
         o.geometry.dispose();
         const m = Array.isArray(o.material) ? o.material : [o.material];
         m.forEach((x) => x.dispose());

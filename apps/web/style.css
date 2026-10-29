@@ -302,6 +302,28 @@ h3 {
   font-size: 11px;
   margin-top: 4px;
 }
+.scene-camera-controls {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #eee9ff;
+  font-size: 11px;
+  text-shadow: 0 1px 4px #000;
+}
+.scene-camera-controls button,
+.scene-camera-controls a {
+  padding: 5px 9px;
+  font-size: 11px;
+  background: #202332dc;
+}
+.spatial-stage { min-height: 360px; }
+.spatial-controls { padding: 16px 0; }
+.spatial-controls p { margin-bottom: 14px; }
+.scene-camera-controls span { max-width: 120px; }
 .avatar-label {
   position: absolute;
   transform: translate(-50%, -100%);

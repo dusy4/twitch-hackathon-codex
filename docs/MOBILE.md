@@ -1,5 +1,17 @@
 # Native AR capture: source implementation and device gates
 
+## Browser AR path added 2026-10-29
+
+`/ar?room=<world>` now uses genuine WebXR `immersive-ar`, runtime camera pose, horizontal surface hit-testing and session anchors with the same licensed rigged characters and authoritative world snapshots. World/controller stages link to Room AR. This is separate from the Unity project below.
+
+The page requires trusted HTTPS and compatible hardware/browser; ordinary desktop browsers show an explicit unsupported state without opening a camera. The user starts the session, finds a desk/floor and selects to place the community. If anchors are unavailable, it explicitly reports placement in tracked local reference space. Tracking-origin reset requires placement again; lost pose hides content; ending or navigating away releases the session and assets. No room geometry, frames or anchor coordinates are persisted or sent to the server.
+
+Official IWER + SEM tests exercise the actual XR API lifecycle, surface hits, anchor creation, rendering, camera movement, authoritative wave command, recentering and session end. These tests are labelled emulator evidence and do not establish real device drift, surface accuracy, depth occlusion or physical collision behavior. Browser depth occlusion/room meshes and passthrough recording are not enabled. Do not use `canvas.captureStream()` alone as evidence that the runtime-owned camera background was captured. A physical device is still required for AR acceptance.
+
+See `RESEARCH_3D_2026-10-29.md`, `LUCAS_MR_REFERENCE.md` and `artifacts/webxr-emulator.json`.
+
+## Native implementation
+
 **Status: uncompiled, untested native source. No APK/IPA or working-device claim.** This workstation has no Unity Editor, Android SDK, AR handset, Apple signing identity or configured Unity license. Do not equate the browser overlay or browser WebRTC transport test with native AR completion.
 
 `apps/mobile` targets Unity 6 with AR Foundation/ARCore/ARKit 6.1.1 and Unity WebRTC 3.0.0. The project includes:

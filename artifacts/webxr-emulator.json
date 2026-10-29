@@ -1,0 +1,9 @@
+{
+  "runtime": "IWER 2.7.0 + SEM office_small",
+  "physicalDevice": false,
+  "anchor": "[0,-0.8428,-0.8428]",
+  "cameraMotion": "0.4m sideways, 0.3m lower, 0.2m forward",
+  "actionStatus": 200,
+  "activeSessionAfterEnd": false,
+  "pageErrors": []
+}

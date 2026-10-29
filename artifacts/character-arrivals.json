@@ -1,12 +1,11 @@
 {
-  "runAt": "2026-10-28T23:48:47.179Z",
+  "runAt": "2026-10-29T00:33:06.057Z",
   "input": "Labelled simulator raid, actual browser overlay and independent authenticated simulator viewer",
-  "reportedViewers": 247,
-  "anonymousVisualInstances": 65,
-  "newActorId": "d5b65ea6-5475-46a2-8609-92cfac42e3be",
+  "anonymousVisualInstances": 0,
+  "newActorId": "061955a7-7931-4440-a02d-55dee41839d7",
   "avatarIds": [
-    "74148f05-2f9f-4c43-a7c4-062d777828f1",
-    "d5b65ea6-5475-46a2-8609-92cfac42e3be"
+    "306dfa40-d693-4243-94ca-382f7d1cf51e",
+    "061955a7-7931-4440-a02d-55dee41839d7"
   ],
   "arrival": {
     "from": [
@@ -17,22 +16,22 @@
       0.6200000000000001,
       0.79
     ],
-    "startedAt": 1793231319196,
+    "startedAt": 1793233968152,
     "durationMs": 1500
   },
   "settled": {
-    "id": "d5b65ea6-5475-46a2-8609-92cfac42e3be",
+    "id": "061955a7-7931-4440-a02d-55dee41839d7",
     "name": "Luna",
     "color": "#ae80ff",
     "cosmetic": "",
     "equipment": {},
     "x": 0.6200000000000001,
     "y": 0.79,
-    "spawnedAt": 1793231323714,
+    "spawnedAt": 1793233979045,
     "animation": "wave",
     "message": "Stepping through the rift",
     "target": null,
-    "lastActive": 1793231323714,
-    "animationAt": 1793231325372
+    "lastActive": 1793233979045,
+    "animationAt": 1793233980738
   }
 }

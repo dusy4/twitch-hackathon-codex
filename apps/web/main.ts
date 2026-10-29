@@ -29,6 +29,7 @@ let me: any = { user: null },
   room = new URLSearchParams(location.search).get("room") || "demo-world",
   generation = 0;
 let feed: string[] = [];
+let spatialView: import("./spatial-world.js").SpatialWorld | null = null;
 let reconnect: ReturnType<typeof setTimeout> | null = null;
 const $ = <T extends HTMLElement = HTMLElement>(selector: string) =>
   document.querySelector<T>(selector)!;
@@ -129,7 +130,7 @@ function intro(eyebrow: string, title: string, description: string) {
 function stageMarkup(overlay = false) {
   return `<div class="${overlay ? "overlay-stage" : "stage"}" id="stage">${overlay ? '<div class="overlay-status" id="overlay-status"></div>' : `<div class="stage-top"><span class="badge orange" id="mode">SIMULATOR · ORIGINAL WORLD PREVIEW</span><span class="badge" id="connection">CONNECTING</span></div><div class="stage-bottom"><div><div class="stage-title" id="world-title">The Violet Frontier</div><div class="stage-caption">Your community’s next chapter starts with a portal.</div></div><button id="audio" class="button">♫ Enable sound</button></div>`}</div>`;
 }
-function startWorld(id: string, token?: string) {
+function startWorld(id: string, token?: string, drawScene = true) {
   room = id;
   let closed = false;
   function connect() {
@@ -145,6 +146,7 @@ function startWorld(id: string, token?: string) {
       if (closed || socket !== connection) return;
       const event = JSON.parse(e.data);
       renderer?.setServerTime(Date.parse(event.serverTime));
+      spatialView?.setServerTime(Date.parse(event.serverTime));
       if (typeof event.sequence === "number") {
         if (event.sequence < lastSequence) return;
         lastSequence = event.sequence;
@@ -219,13 +221,14 @@ function startWorld(id: string, token?: string) {
   }
   connect();
   try {
-    renderer = new RiftRenderer(
-      $("#stage"),
-      () => state,
-      location.pathname === "/overlay",
-      false,
-      me.user?.id || null,
-    );
+    if (drawScene)
+      renderer = new RiftRenderer(
+        $("#stage"),
+        () => state,
+        location.pathname === "/overlay",
+        false,
+        me.user?.id || null,
+      );
   } catch {
     const stage = $("#stage");
     stage.dataset.status =
@@ -241,6 +244,8 @@ function startWorld(id: string, token?: string) {
     socket?.close();
     if (reconnect) clearTimeout(reconnect);
     renderer?.destroy();
+    spatialView?.dispose();
+    spatialView = null;
     renderer = null;
     state = null;
   };
@@ -1356,6 +1361,52 @@ async function admin() {
     "submit",
   );
 }
+async function spatialRoom() {
+  shell(
+    `${intro("YOUR ROOM, THEIR WORLD", "Let them step<br><em>into your space.</em>", "Place your community’s 3D characters on a real desk or floor using your device’s AR tracking.")}<div class="panel"><div id="stage" class="stage spatial-stage" aria-label="World-anchored AR view"></div><div id="ar-controls" class="spatial-controls"><p id="ar-status" role="status">Checking immersive AR support…</p><div class="command-buttons"><button id="ar-start" class="primary" disabled>Start room AR</button><button id="ar-recenter" disabled>Place again</button><button id="ar-end" disabled>Stop AR</button></div><div class="command-buttons">${["wave", "sit", "dance", "jump"].map((command) => `<button data-ar-command="${command}" ${me.user ? "" : "disabled"}>${command}</button>`).join("")}</div><a class="button" href="/controller?room=${encodeURIComponent(room)}" data-nav>Open character controls ↗</a></div><p class="small muted">Requires a compatible immersive AR browser and trusted HTTPS. This view uses real runtime camera poses and horizontal surface hit tests. Depth occlusion, room-wide collisions and recording of camera passthrough are not enabled in this browser path. Session anchors are not saved between visits.</p></div>`,
+  );
+  const { SpatialWorld } = await import("./spatial-world.js");
+  const supported = await SpatialWorld.supported();
+  if (!supported) {
+    $("#ar-status").textContent =
+      "This browser does not provide immersive AR. Use a supported AR device/browser over trusted HTTPS. Camera-overlay mode cannot provide room anchoring.";
+    $("#stage").dataset.spatialState = "unsupported";
+    return;
+  }
+  if (me.user)
+    await api(`/v1/worlds/${encodeURIComponent(room)}/join`, "POST", {});
+  startWorld(room, undefined, false);
+  spatialView = new SpatialWorld(
+    $("#stage"),
+    () => state,
+    (text) => {
+      $("#ar-status").textContent = text;
+      const running = !["idle", "unsupported"].includes(
+        $("#stage").dataset.spatialState || "idle",
+      );
+      $<HTMLButtonElement>("#ar-start").disabled = running;
+      $<HTMLButtonElement>("#ar-end").disabled = !running;
+      $<HTMLButtonElement>("#ar-recenter").disabled = !running;
+    },
+    $("#ar-controls"),
+  );
+  $("#ar-status").textContent =
+    "AR is available. Start, aim at a surface, then tap to place your world.";
+  $<HTMLButtonElement>("#ar-start").disabled = false;
+  bind("#ar-start", () => spatialView?.start());
+  bind("#ar-end", () => spatialView?.end());
+  bind("#ar-recenter", () => spatialView?.recenter());
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-ar-command]")
+    .forEach((button) =>
+      button.addEventListener("click", () => {
+        void api(`/v1/worlds/${encodeURIComponent(room)}/actions`, "POST", {
+          prompt: button.dataset.arCommand,
+          clientRequestId: crypto.randomUUID(),
+        }).catch((error) => toast(error.message, true));
+      }),
+    );
+}
 async function render() {
   const gen = ++generation;
   routeCleanup?.();
@@ -1430,6 +1481,9 @@ async function render() {
         break;
       case "/capture":
         await capture();
+        break;
+      case "/ar":
+        await spatialRoom();
         break;
       case "/admin":
         await admin();

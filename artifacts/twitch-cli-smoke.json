@@ -1,5 +1,5 @@
 {
-  "runAt": "2026-10-28T23:55:35.221Z",
+  "runAt": "2026-10-29T00:38:05.549Z",
   "result": "passed",
   "scope": "Official CLI synthetic signed raid + our signed synthetic chat fixtures → real HTTP inbox/world/WebSocket/Chromium overlay; no live Twitch/OAuth calls",
   "cli": {
@@ -9,15 +9,15 @@
     "version": "v1.1.24",
     "verifiedAgainst": "Official release checksums.txt"
   },
-  "reportedViewers": 88062,
+  "reportedViewers": 665,
   "claimedCharacters": [
     {
-      "id": "4db22d30-88c3-4dfe-b2fb-7f1d7c9e3fe6",
+      "id": "2090e47f-dd2a-4837-914e-26e5b7c42a93",
       "name": "CLI_One",
       "animation": "dance"
     },
     {
-      "id": "f06c7191-6184-4021-b29f-cf3f1b57ee9a",
+      "id": "ce524bf1-fed1-47d3-b5b7-a0a9bc28adb4",
       "name": "CLI_Two",
       "animation": "wave"
     }

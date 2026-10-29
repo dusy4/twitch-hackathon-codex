@@ -85,6 +85,13 @@ test("actual overlay shows a bounded anonymous raid crowd and a distinct claimed
     await expect(
       overlay.locator(`.avatar-label[data-avatar-id="${me.user.id}"]`),
     ).toContainText("Luna");
+    await expect(overlay.locator("#stage")).toHaveAttribute(
+      "data-projection",
+      "perspective",
+    );
+    await expect(
+      overlay.locator(`.avatar-label[data-avatar-id="${me.user.id}"]`),
+    ).toHaveAttribute("data-model", /Knight|Mage|Rogue|Barbarian/);
     await expect
       .poll(async () => {
         const world = await (

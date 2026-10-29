@@ -134,7 +134,7 @@ export async function createApp(
       .header("Permissions-Policy", "camera=(self), microphone=(self)")
       .header(
         "Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' ws: wss:; media-src 'self' blob:; worker-src 'self' blob:; frame-ancestors 'self'",
+        "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob: ws: wss:; media-src 'self' blob:; worker-src 'self' blob:; frame-ancestors 'self'",
       );
     if (
       ["POST", "PATCH", "DELETE", "PUT"].includes(req.method) &&
