@@ -1,4 +1,7 @@
 <network-security-config>
-    <!-- Debug LAN testing only. ServerAddress limits HTTP to private IPv4/loopback. -->
+    <!-- Debug builds only (release keeps cleartext off in src/main). XML cannot scope cleartext
+         to an IP range, so it is global here; ServerAddress limits HTTP to private IPv4,
+         Tailscale CGNAT 100.64.0.0/10 and loopback. -->
+
     <base-config cleartextTrafficPermitted="true" />
 </network-security-config>

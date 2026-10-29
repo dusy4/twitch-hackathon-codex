@@ -52,11 +52,13 @@ export function installApiContract(app: FastifyInstance, origin: string) {
             ? []
             : route.url === "/v1/twitch/eventsub"
               ? [{ twitchSignature: [] }]
-              : route.url === "/v1/native/world"
+              : route.url.startsWith("/v1/native/")
                 ? [{ captureToken: [] }]
-                : method === "GET"
-                  ? [{ sessionCookie: [] }]
-                  : [{ sessionCookie: [], csrfHeader: [] }],
+                : route.url === "/v1/debug/pair"
+                  ? []
+                  : method === "GET"
+                    ? [{ sessionCookie: [] }]
+                    : [{ sessionCookie: [], csrfHeader: [] }],
         responses: {
           "200": {
             description:

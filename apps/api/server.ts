@@ -2,7 +2,7 @@ import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import staticFiles from "@fastify/static";
 import { installWorldTransport } from "./transport.js";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
@@ -16,7 +16,8 @@ import { Security, hash, secret, verifyWebhook } from "./security.js";
 import { account, buy, equip, reverse } from "./economy.js";
 import { World } from "./world.js";
 import { Twitch } from "./twitch.js";
-import { GameError } from "./compiler.js";
+import { GameError, aiProvider } from "./compiler.js";
+import { NATIVE_TRACK_HOLD_MS } from "./world.js";
 import { installApiContract } from "./openapi.js";
 import { installMediaRelay } from "./media.js";
 import { EvidenceInput, verifyEvidence } from "./vision.js";
@@ -47,8 +48,19 @@ export async function createApp(
     demo?: boolean;
     origin?: string;
     webRoot?: string;
+    /** Phone debug endpoints (simulated EventSub, pairing). Defaults to DEBUG_TOOLS=true. */
+    debugTools?: boolean;
+    /** Room that GET /v1/debug/pair pairs with. */
+    debugRoom?: string;
+    /** Delay between simulated raider !join messages. */
+    debugChatStaggerMs?: number;
+    /** Optional RTMP/SRT publish hint returned with pairing responses. */
+    relayUrl?: string;
   } = {},
 ) {
+  const debugTools = options.debugTools ?? process.env.DEBUG_TOOLS === "true";
+  if (debugTools && process.env.NODE_ENV === "production")
+    throw Error("DEBUG_TOOLS cannot be enabled in production");
   if (
     process.env.NODE_ENV === "production" &&
     (!process.env.DATABASE_URL ||
@@ -142,9 +154,13 @@ export async function createApp(
             : "'self' blob: ws: wss:") +
           "; media-src 'self' blob:; worker-src 'self' blob:; frame-ancestors 'self'",
       );
+    // Native phone routes authenticate with a bearer capture token (never a
+    // cookie), so browser origin/CSRF protections do not apply to them.
+    const bearerRoute = req.url.startsWith("/v1/native/");
     if (
       ["POST", "PATCH", "DELETE", "PUT"].includes(req.method) &&
-      !req.url.startsWith("/v1/twitch/eventsub")
+      !req.url.startsWith("/v1/twitch/eventsub") &&
+      !bearerRoute
     ) {
       if (req.headers.origin !== origin)
         throw new GameError("BAD_ORIGIN", "Request origin is not allowed", 403);
@@ -164,7 +180,8 @@ export async function createApp(
       ["POST", "PATCH", "DELETE", "PUT"].includes(req.method) &&
       req.user &&
       !["/v1/auth/logout", "/v1/demo/session"].includes(req.url) &&
-      !req.url.startsWith("/v1/twitch/eventsub")
+      !req.url.startsWith("/v1/twitch/eventsub") &&
+      !bearerRoute
     ) {
       if (req.headers["x-csrf-token"] !== req.session?.csrf)
         throw new GameError(
@@ -304,10 +321,7 @@ export async function createApp(
     twitch: twitch.ready
       ? "configured — live verification required"
       : "not configured",
-    ai:
-      process.env.OPENAI_API_KEY && process.env.ALLOW_PAID_AI === "true"
-        ? "configured"
-        : "offline",
+    ai: aiProvider() ? "configured" : "offline",
     vision: "local capture available; camera rewards experimental",
     mobile: "native AR requires device validation",
     database: process.env.DATABASE_URL
@@ -1101,29 +1115,33 @@ export async function createApp(
     ]);
     return { ok: true, framesRetained: 0 };
   });
+  const QuestInput = z
+    .object({
+      title: z.string().min(1).max(80),
+      type: z.enum(["virtual", "camera", "hybrid"]),
+      action: z.enum(["dance", "sit", "wave", "cheer", "build_voxel"]),
+      targetClass: z.enum(["dog", "bench", "bicycle", "red"]).nullable(),
+      minPlayers: z.number().int().min(1).max(20),
+      sustainMs: z.number().int().min(1000).max(7000),
+      reward: z.number().int().min(1).max(100),
+    })
+    .strict();
   app.post("/v1/creator/quests", async (req) => {
     const c = await creator(req);
-    const data = body(
-      z
-        .object({
-          title: z.string().min(1).max(80),
-          type: z.enum(["virtual", "camera", "hybrid"]),
-          action: z.enum(["dance", "sit", "wave", "cheer", "build_voxel"]),
-          targetClass: z.enum(["dog", "bench", "bicycle", "red"]).nullable(),
-          minPlayers: z.number().int().min(1).max(20),
-          sustainMs: z.number().int().min(1000).max(7000),
-          reward: z.number().int().min(1).max(100),
-        })
-        .strict(),
-      req.body,
-    );
+    return createQuest(c.id, body(QuestInput, req.body));
+  });
+  async function createQuest(
+    channelId: string,
+    data: z.infer<typeof QuestInput>,
+    dailyCap = true,
+  ) {
     const count = (
       await db.query(
         "SELECT count(*)::int AS n FROM quests WHERE channel_id=$1 AND created_at>now()-interval '1 day'",
-        [c.id],
+        [channelId],
       )
     ).rows[0].n;
-    if (count >= 5)
+    if (dailyCap && count >= 5)
       throw new GameError(
         "QUEST_CAP",
         "Five new quests per day are allowed",
@@ -1150,11 +1168,19 @@ export async function createApp(
     const id = randomUUID();
     await db.query(
       "INSERT INTO quests(id,channel_id,definition) VALUES($1,$2,$3)",
-      [id, c.id, JSON.stringify(data)],
+      [id, channelId, JSON.stringify(data)],
     );
-    await (await world(c.id)).loadQuests();
+    const w = await world(channelId);
+    // Reloading resets in-memory progress, so keep completed/live state.
+    const before = new Map(w.state.quests.map((q) => [q.id, q]));
+    await w.loadQuests();
+    w.state.quests = w.state.quests.map((q) => before.get(q.id) || q);
+    w.log(
+      "quest",
+      `new quest: ${data.title} (${data.minPlayers}+ players, ${data.reward} shards)`,
+    );
     return { id };
-  });
+  }
   app.post("/v1/creator/moderation/ban", async (req) => {
     const c = await creator(req),
       d = body(
@@ -1460,6 +1486,32 @@ export async function createApp(
     if (!inserted.rows.length) metrics.duplicates++;
     return reply.code(204).send();
   });
+  const CHAT_COMMAND =
+    /^!(join|left|right|up|down|jump|wave|dance|sit|rift|ourapp|stop)(\s|$)/i;
+  /** The one chat-command path shared by Twitch EventSub and the phone. */
+  async function chatCommand(
+    w: World,
+    who: Record<string, any>,
+    text: string,
+    messageId: string,
+  ): Promise<{ plan?: string; source: "keywords" | "ai" }> {
+    w.log("chat", `${who.name}: ${text.slice(0, 200)}`);
+    if (/^!join\s*$/i.test(text)) {
+      try {
+        await w.join(who, true);
+      } catch (error) {
+        if (error instanceof GameError)
+          w.log("error", `${who.name}: ${error.code} — ${error.message}`);
+        throw error;
+      }
+      return { plan: "join", source: "keywords" };
+    }
+    const result = await w.action(who, text.slice(0, 500), `chat:${messageId}`);
+    return {
+      plan: result.summary ?? result.message ?? result.status,
+      source: result.source ?? "keywords",
+    };
+  }
   let draining = false;
   async function drain() {
     if (draining) return;
@@ -1475,6 +1527,19 @@ export async function createApp(
         try {
           const e = row.payload.event || {};
           const revokedStatus = row.payload.subscription?.status;
+          if (row.type === "revocation") {
+            const condition = row.payload.subscription?.condition || {};
+            worlds
+              .get(
+                condition.broadcaster_user_id ||
+                  condition.to_broadcaster_user_id ||
+                  "",
+              )
+              ?.log(
+                "revoke",
+                `${row.payload.subscription?.type || "subscription"} revoked: ${revokedStatus}${["authorization_revoked", "user_removed"].includes(revokedStatus) ? " — channel disconnected, pairing revoked" : " — still connected; reconcile subscriptions"}`,
+              );
+          }
           if (
             row.type === "revocation" &&
             !["authorization_revoked", "user_removed"].includes(revokedStatus)
@@ -1557,11 +1622,7 @@ export async function createApp(
                 "CHANNEL_MISMATCH",
                 "Subscription channel mismatch",
               );
-            if (
-              /^!(join|left|right|up|down|jump|wave|dance|sit|rift|ourapp|stop)(\s|$)/i.test(
-                event.message.text,
-              )
-            ) {
+            if (CHAT_COMMAND.test(event.message.text)) {
               const c = (
                 await db.query("SELECT connected FROM channels WHERE id=$1", [
                   event.broadcaster_user_id,
@@ -1578,13 +1639,12 @@ export async function createApp(
                 // Run concurrently: an AI-planned action can take seconds and
                 // must not serialize the rest of the batch (raids, other
                 // channels). Actions are idempotent per chat message id.
-                const run = /^!join\s*$/i.test(event.message.text)
-                  ? w.join(who, true)
-                  : w.action(
-                      who,
-                      event.message.text.slice(0, 500),
-                      `chat:${event.message_id}`,
-                    );
+                const run = chatCommand(
+                  w,
+                  who,
+                  event.message.text,
+                  event.message_id,
+                );
                 chatRuns.push(
                   run.catch((error) => {
                     if (!(error instanceof GameError)) metrics.failures++;
@@ -1634,11 +1694,12 @@ export async function createApp(
       room: c.id,
       token,
       receiverUrl: `${origin}/receiver#token=${receiver}`,
+      ...(options.relayUrl ? { relayUrl: options.relayUrl } : {}),
       mode: "EXPERIMENTAL LAN VIDEO; AUDIO NOT IMPLEMENTED",
     };
   });
-  app.get("/v1/native/world", async (req, reply) => {
-    reply.header("Cache-Control", "private, no-store");
+  /** Room of a valid, unrevoked phone capture token (Bearer). */
+  async function captureRoom(req: any): Promise<string> {
     const token = req.headers.authorization?.replace(/^Bearer /, "") || "";
     const p = security.verify(token);
     if (p.role !== "capture")
@@ -1648,8 +1709,426 @@ export async function createApp(
     ).rows[0];
     if (!c || c.token_version !== p.version)
       throw new GameError("REVOKED", "Pairing revoked", 401);
-    return (await world(p.room)).state;
+    return p.room;
+  }
+  function captureToken(room: string, version: number) {
+    return security.sign({
+      room,
+      role: "capture",
+      version,
+      exp: Date.now() + CAPTURE_TOKEN_MS,
+    });
+  }
+  app.get("/v1/native/world", async (req, reply) => {
+    reply.header("Cache-Control", "private, no-store");
+    return (await world(await captureRoom(req))).state;
   });
+  /** Stable Twitch-style numeric id for a simulated chatter name. */
+  const simulatedId = (name: string) =>
+    "7" +
+    (
+      BigInt(
+        "0x" +
+          createHash("sha256")
+            .update(name.trim().toLowerCase())
+            .digest("hex")
+            .slice(0, 15),
+      ) % 1000000000n
+    )
+      .toString()
+      .padStart(9, "0");
+  app.post("/v1/native/chat", async (req) => {
+    const room = await captureRoom(req);
+    const data = body(
+      z
+        .object({
+          text: z.string().trim().min(1).max(500),
+          name: z.string().trim().min(1).max(25).optional(),
+        })
+        .strict(),
+      req.body,
+    );
+    const w = await world(room);
+    const name = data.name || "Streamer";
+    const text = data.text.startsWith("!") ? data.text : `!rift ${data.text}`;
+    try {
+      if (!CHAT_COMMAND.test(text))
+        throw new GameError(
+          "UNKNOWN_COMMAND",
+          "Try !join, !dance, !jump or !rift <anything>.",
+        );
+      const who = await account(
+        db,
+        simulatedId(name),
+        name,
+        w.state.mode === "SIMULATOR",
+      );
+      const result = await chatCommand(
+        w,
+        who,
+        text.slice(0, 500),
+        `native-${randomUUID()}`,
+      );
+      return { ok: true, ...result };
+    } catch (error) {
+      if (error instanceof GameError)
+        return { ok: false, code: error.code, message: error.message };
+      throw error;
+    }
+  });
+  app.post("/v1/native/tracks", async (req) => {
+    const room = await captureRoom(req);
+    const data = body(
+      z.object({ tracks: z.array(Track).max(50) }).strict(),
+      req.body,
+    );
+    const w = await world(room);
+    // Phone clocks are not synchronized with ours: stamp on receipt.
+    const now = Date.now();
+    const tracks = data.tracks.map(({ classifiedAt: _, ...t }) => ({
+      ...t,
+      seenAt: now,
+    }));
+    w.updateTracks(tracks, w.state.epoch, NATIVE_TRACK_HOLD_MS);
+    return { ok: true, epoch: w.state.epoch };
+  });
+  if (debugTools) {
+    const RAIDER_A = [
+      "Pixel",
+      "Mossy",
+      "Turbo",
+      "Cosmic",
+      "Sleepy",
+      "Neon",
+      "Crispy",
+      "Wobbly",
+      "Frosty",
+      "Glitchy",
+      "Spicy",
+      "Lunar",
+    ];
+    const RAIDER_B = [
+      "Otter",
+      "Goblin",
+      "Waffle",
+      "Raccoon",
+      "Noodle",
+      "Comet",
+      "Badger",
+      "Pickle",
+      "Wizard",
+      "Gecko",
+      "Toast",
+      "Moth",
+    ];
+    let lastRaid: { id: string; payload: unknown } | null = null;
+    const enqueue = async (id: string, type: string, payload: unknown) =>
+      (
+        await db.query(
+          "INSERT INTO inbox(id,type,payload) VALUES($1,$2,$3) ON CONFLICT DO NOTHING RETURNING id",
+          [id, type, JSON.stringify(payload)],
+        )
+      ).rows.length;
+    const subscription = (type: string, condition: Record<string, string>) => ({
+      id: randomUUID(),
+      type,
+      version: "1",
+      status: "enabled",
+      cost: 0,
+      condition,
+      transport: {
+        method: "webhook",
+        callback: `${origin}/v1/twitch/eventsub`,
+      },
+      created_at: new Date().toISOString(),
+    });
+    const chatPayload = (
+      room: string,
+      roomName: string,
+      chatterId: string,
+      chatter: string,
+      text: string,
+    ) => ({
+      subscription: subscription("channel.chat.message", {
+        broadcaster_user_id: room,
+        user_id: room,
+      }),
+      event: {
+        broadcaster_user_id: room,
+        broadcaster_user_login: roomName.toLowerCase(),
+        broadcaster_user_name: roomName,
+        chatter_user_id: chatterId,
+        chatter_user_login: chatter.toLowerCase(),
+        chatter_user_name: chatter,
+        message_id: randomUUID(),
+        message: {
+          text,
+          fragments: [{ type: "text", text, cheermote: null, emote: null }],
+        },
+        color: "#9147FF",
+        badges: [],
+        message_type: "text",
+        cheer: null,
+        reply: null,
+        channel_points_custom_reward_id: null,
+      },
+    });
+    const later = (ms: number, fn: () => Promise<unknown>) =>
+      ms <= 0
+        ? fn()
+        : void setTimeout(() => void fn().catch(() => metrics.failures++), ms);
+    const DebugEvent = z.discriminatedUnion("type", [
+      z
+        .object({
+          type: z.literal("raid"),
+          from: z.string().trim().min(1).max(25).optional(),
+          viewers: z.number().int().min(0).max(100000).optional(),
+          chatters: z.number().int().min(0).max(12).optional(),
+        })
+        .strict(),
+      z
+        .object({
+          type: z.literal("chat"),
+          name: z.string().trim().min(1).max(25).optional(),
+          text: z.string().min(1).max(500),
+        })
+        .strict(),
+      z.object({ type: z.literal("duplicate_raid") }).strict(),
+      z
+        .object({
+          type: z.literal("revoke"),
+          status: z
+            .enum([
+              "authorization_revoked",
+              "user_removed",
+              "notification_failures_exceeded",
+            ])
+            .optional(),
+        })
+        .strict(),
+      z
+        .object({
+          type: z.literal("quest"),
+          action: z
+            .enum(["dance", "sit", "wave", "cheer", "build_voxel"])
+            .optional(),
+          targetClass: z
+            .enum(["dog", "bench", "bicycle"])
+            .nullable()
+            .optional(),
+          minPlayers: z.number().int().min(1).max(20).optional(),
+          reward: z.number().int().min(1).max(100).optional(),
+        })
+        .strict(),
+      z.object({ type: z.literal("reset") }).strict(),
+    ]);
+    app.post("/v1/native/debug/event", async (req) => {
+      const room = await captureRoom(req);
+      const d = body(DebugEvent, req.body);
+      const w = await world(room);
+      const owner = (
+        await db.query(
+          "SELECT a.name FROM channels c JOIN accounts a ON a.id=c.owner_id WHERE c.id=$1",
+          [room],
+        )
+      ).rows[0];
+      const roomName = owner?.name || "RiftStreamer";
+      if (
+        ["raid", "chat", "duplicate_raid", "revoke"].includes(d.type) &&
+        !/^\d+$/.test(room)
+      )
+        throw new GameError(
+          "ROOM_NOT_NUMERIC",
+          "Simulated EventSub needs a numeric Twitch-style room id (use the tailnet test room).",
+          409,
+        );
+      if (d.type === "raid") {
+        const from = d.from || "CozyRaider";
+        const id = `debug-${randomUUID()}`;
+        const payload = {
+          subscription: subscription("channel.raid", {
+            from_broadcaster_user_id: "",
+            to_broadcaster_user_id: room,
+          }),
+          event: {
+            from_broadcaster_user_id: simulatedId(`raid:${from}`),
+            from_broadcaster_user_login: from.toLowerCase(),
+            from_broadcaster_user_name: from,
+            to_broadcaster_user_id: room,
+            to_broadcaster_user_login: roomName.toLowerCase(),
+            to_broadcaster_user_name: roomName,
+            viewers: d.viewers ?? Math.max(d.chatters ?? 0, 12),
+          },
+        };
+        lastRaid = { id, payload };
+        let queued = await enqueue(id, "channel.raid", payload);
+        // Twitch only sends a viewer count; these are simulated raiders who
+        // then type !join in chat themselves, like real raiders would.
+        const used = new Set<string>();
+        const stagger = options.debugChatStaggerMs ?? 400;
+        for (let i = 0; i < (d.chatters ?? 0); i++) {
+          let name = "";
+          do
+            name = `${RAIDER_A[Math.floor(Math.random() * RAIDER_A.length)]}${RAIDER_B[Math.floor(Math.random() * RAIDER_B.length)]}${Math.floor(Math.random() * 90 + 10)}`;
+          while (used.has(name));
+          used.add(name);
+          const payload = chatPayload(
+            room,
+            roomName,
+            simulatedId(name),
+            name,
+            "!join",
+          );
+          await later((i + 1) * stagger, () =>
+            enqueue(`debug-${randomUUID()}`, "channel.chat.message", payload),
+          );
+          queued++;
+        }
+        return { ok: true, queued };
+      }
+      if (d.type === "chat") {
+        const name = d.name || "Streamer";
+        return {
+          ok: true,
+          queued: await enqueue(
+            `debug-${randomUUID()}`,
+            "channel.chat.message",
+            chatPayload(room, roomName, simulatedId(name), name, d.text),
+          ),
+        };
+      }
+      if (d.type === "duplicate_raid") {
+        if (!lastRaid)
+          throw new GameError("NO_RAID", "Send a debug raid first.", 409);
+        const queued = await enqueue(
+          lastRaid.id,
+          "channel.raid",
+          lastRaid.payload,
+        );
+        if (!queued) metrics.duplicates++;
+        w.log(
+          "raid",
+          `duplicate delivery of ${lastRaid.id}: ${queued ? "queued" : "rejected by inbox (same message id)"}`,
+        );
+        return { ok: true, queued };
+      }
+      if (d.type === "revoke") {
+        const status = d.status || "authorization_revoked";
+        return {
+          ok: true,
+          queued: await enqueue(`debug-${randomUUID()}`, "revocation", {
+            subscription: {
+              ...subscription("channel.chat.message", {
+                broadcaster_user_id: room,
+                user_id: room,
+              }),
+              status,
+            },
+          }),
+        };
+      }
+      if (d.type === "quest") {
+        const action = d.action ?? "sit";
+        const targetClass = d.targetClass === undefined ? "dog" : d.targetClass;
+        const verb =
+          action === "build_voxel"
+            ? "Build"
+            : action[0].toUpperCase() + action.slice(1);
+        await createQuest(
+          room,
+          body(QuestInput, {
+            title: targetClass
+              ? `${verb} with the ${targetClass}`
+              : `Everyone ${action.replace("_", " ")}`,
+            type: "virtual",
+            action,
+            targetClass,
+            minPlayers: d.minPlayers ?? 2,
+            sustainMs: 2000,
+            reward: d.reward ?? 50,
+          }),
+          false,
+        );
+        return { ok: true, queued: 1 };
+      }
+      // reset: a clean stage for the next test run.
+      w.sceneReset();
+      w.state.avatars = [];
+      w.state.props = [];
+      w.state.raid = null;
+      await db.query(
+        "UPDATE channels SET connected=true,config=jsonb_set(jsonb_set(config,'{vision}','true'::jsonb),'{paused}','false'::jsonb) WHERE id=$1",
+        [room],
+      );
+      w.state.config.paused = false;
+      w.state.config.vision = true;
+      w.state.mode = w.channel.demo === true ? "SIMULATOR" : "LIVE TWITCH";
+      w.log("info", "scene reset: avatars, props, raid and tracks cleared");
+      w.event("world.snapshot", w.state);
+      return { ok: true, queued: 0 };
+    });
+    app.get("/v1/native/debug/state", async (req, reply) => {
+      reply.header("Cache-Control", "private, no-store");
+      const room = await captureRoom(req);
+      const w = await world(room);
+      const inbox = { pending: 0, done: 0, failed: 0 };
+      for (const r of (
+        await db.query(
+          "SELECT status,count(*)::int AS n FROM inbox GROUP BY status",
+        )
+      ).rows)
+        if (r.status === "pending") inbox.pending += r.n;
+        else if (r.status === "done") inbox.done += r.n;
+        else inbox.failed += r.n;
+      const provider = aiProvider();
+      return {
+        log: w.debugLog.slice(-60),
+        inbox,
+        ai: {
+          provider: w.state.config.ai ? provider?.provider || null : null,
+          model: w.state.config.ai ? provider?.model || null : null,
+          lastLatencyMs: w.ai.lastLatencyMs,
+          lastError: w.ai.lastError,
+        },
+        avatars: w.state.avatars.length,
+        tracks: w.state.tracks.map((t) => ({
+          id: t.id,
+          class: t.class,
+          confidence: t.confidence,
+        })),
+        quests: w.state.quests.map((q) => ({
+          title: q.title,
+          progress: q.progress,
+          completed: q.completed,
+        })),
+        leaderboard: (
+          await db.query(
+            "SELECT CASE WHEN a.privacy='anonymous' THEN 'Rift traveler' ELSE a.name END AS name,COALESCE(sum(l.score_delta),0)::int AS score FROM ledger l JOIN accounts a ON a.id=l.account_id WHERE l.channel_id=$1 AND a.deleted=false AND a.privacy<>'hidden' GROUP BY a.id ORDER BY sum(l.score_delta) DESC,a.name LIMIT 5",
+            [room],
+          )
+        ).rows.map((r) => ({ name: r.name, score: Number(r.score) })),
+      };
+    });
+    app.get("/v1/debug/pair", async (_req, reply) => {
+      reply.header("Cache-Control", "private, no-store");
+      const room = options.debugRoom;
+      const c = room
+        ? (
+            await db.query("SELECT token_version FROM channels WHERE id=$1", [
+              room,
+            ])
+          ).rows[0]
+        : null;
+      if (!room || !c)
+        throw new GameError("NO_TEST_ROOM", "No debug test room is set", 404);
+      return {
+        server: origin,
+        room,
+        token: captureToken(room, c.token_version),
+        ...(options.relayUrl ? { relayUrl: options.relayUrl } : {}),
+      };
+    });
+  }
   const closeWorldTransport = installWorldTransport(
     app.server,
     db,

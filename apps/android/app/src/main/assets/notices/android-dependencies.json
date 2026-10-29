@@ -1092,6 +1092,36 @@
       "declaredBy": "com.github.pedroSG94.RootEncoder:srt:2.8.1"
     },
     {
+      "coordinate": "com.google.android.datatransport:transport-api:3.0.0",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.google.android.datatransport:transport-api:3.0.0"
+    },
+    {
+      "coordinate": "com.google.android.datatransport:transport-backend-cct:3.1.0",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.google.android.datatransport:transport-backend-cct:3.1.0"
+    },
+    {
+      "coordinate": "com.google.android.datatransport:transport-runtime:3.1.0",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.google.android.datatransport:transport-runtime:3.1.0"
+    },
+    {
       "coordinate": "com.google.android.filament:filament-android:1.72.1",
       "licenses": [
         {
@@ -1132,7 +1162,77 @@
       "declaredBy": "com.google.ar:core:1.57.0"
     },
     {
-      "coordinate": "com.google.guava:listenablefuture:1.0",
+      "coordinate": "com.google.code.findbugs:jsr305:3.0.2",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.google.code.findbugs:jsr305:3.0.2"
+    },
+    {
+      "coordinate": "com.google.errorprone:error_prone_annotations:2.2.0",
+      "licenses": [
+        {
+          "name": "Apache 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.google.errorprone:error_prone_annotations:2.2.0"
+    },
+    {
+      "coordinate": "com.google.firebase:firebase-encoders-json:18.0.0",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.google.firebase:firebase-encoders-json:18.0.0"
+    },
+    {
+      "coordinate": "com.google.firebase:firebase-encoders-proto:16.0.0",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.google.firebase:firebase-encoders-proto:16.0.0"
+    },
+    {
+      "coordinate": "com.google.firebase:firebase-encoders:17.0.0",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.google.firebase:firebase-encoders:17.0.0"
+    },
+    {
+      "coordinate": "com.google.flogger:flogger-system-backend:0.6",
+      "licenses": [
+        {
+          "name": "Apache 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.google.flogger:flogger-system-backend:0.6"
+    },
+    {
+      "coordinate": "com.google.flogger:flogger:0.6",
+      "licenses": [
+        {
+          "name": "Apache 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.google.flogger:flogger:0.6"
+    },
+    {
+      "coordinate": "com.google.guava:failureaccess:1.0.1",
       "licenses": [
         {
           "name": "The Apache Software License, Version 2.0",
@@ -1140,6 +1240,66 @@
         }
       ],
       "declaredBy": "com.google.guava:guava-parent:26.0-android"
+    },
+    {
+      "coordinate": "com.google.guava:guava:27.0.1-android",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.google.guava:guava-parent:27.0.1-android"
+    },
+    {
+      "coordinate": "com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.google.guava:guava-parent:26.0-android"
+    },
+    {
+      "coordinate": "com.google.j2objc:j2objc-annotations:1.1",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.google.j2objc:j2objc-annotations:1.1"
+    },
+    {
+      "coordinate": "com.google.mediapipe:tasks-core:1.2.0",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.google.mediapipe:tasks-core:1.2.0"
+    },
+    {
+      "coordinate": "com.google.mediapipe:tasks-vision:1.2.0",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.google.mediapipe:tasks-vision:1.2.0"
+    },
+    {
+      "coordinate": "com.google.protobuf:protobuf-javalite:4.26.1",
+      "licenses": [
+        {
+          "name": "BSD-3-Clause",
+          "url": "https://opensource.org/licenses/BSD-3-Clause"
+        }
+      ],
+      "declaredBy": "com.google.protobuf:protobuf-parent:4.26.1"
     },
     {
       "coordinate": "com.squareup.okhttp3:okhttp-android:5.5.0",
@@ -1350,6 +1510,40 @@
         }
       ],
       "declaredBy": "io.ktor:ktor-utils:3.5.2"
+    },
+    {
+      "coordinate": "javax.inject:javax.inject:1",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "javax.inject:javax.inject:1"
+    },
+    {
+      "coordinate": "org.checkerframework:checker-compat-qual:2.5.3",
+      "licenses": [
+        {
+          "name": "GNU General Public License, version 2 (GPL2), with the classpath exception",
+          "url": "http://www.gnu.org/software/classpath/license.html"
+        },
+        {
+          "name": "The MIT License",
+          "url": "http://opensource.org/licenses/MIT"
+        }
+      ],
+      "declaredBy": "org.checkerframework:checker-compat-qual:2.5.3"
+    },
+    {
+      "coordinate": "org.codehaus.mojo:animal-sniffer-annotations:1.17",
+      "licenses": [
+        {
+          "name": "MIT license",
+          "url": "http://www.opensource.org/licenses/mit-license.php"
+        }
+      ],
+      "declaredBy": "org.codehaus.mojo:animal-sniffer-parent:1.17"
     },
     {
       "coordinate": "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.4.10",

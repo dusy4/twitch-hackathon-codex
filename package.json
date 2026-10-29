@@ -11,6 +11,7 @@
     "build": "vite build && tsc --noEmit",
     "start": "tsx apps/api/main.ts",
     "lan:test": "npm run build && tsx scripts/lan-test.ts",
+    "tailnet:test": "npm run build && tsx scripts/tailnet-test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "prettier --check apps/api apps/web/*.ts packages/shared tests/*.test.ts tests/e2e/*.ts",
     "test": "tsx --test tests/*.test.ts",

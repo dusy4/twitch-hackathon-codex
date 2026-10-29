@@ -10,14 +10,16 @@ android {
         applicationId = "world.raidrift.capture.android"
         minSdk = 24
         targetSdk = 36
-        versionCode = 5
-        versionName = "0.4.0-follow-me"
+        versionCode = 6
+        versionName = "0.5.0-northstar"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures { compose = true; buildConfig = true }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_21; targetCompatibility = JavaVersion.VERSION_21 }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
+    // MediaPipe memory-maps the detector model; keep it uncompressed in the APK.
+    androidResources { noCompress += "tflite" }
 }
 abstract class PrepareCharacterAssets : DefaultTask() {
     @get:org.gradle.api.tasks.InputDirectory abstract val sourceDirectory: DirectoryProperty
@@ -65,6 +67,8 @@ dependencies {
     implementation("com.github.pedroSG94.RootEncoder:srt:2.8.1")
     implementation("com.github.pedroSG94.RootEncoder:rtmp:2.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+    // On-device object detection (EfficientDet-Lite0 COCO model in assets/models). Apache-2.0.
+    implementation("com.google.mediapipe:tasks-vision:1.2.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20250517")
 }

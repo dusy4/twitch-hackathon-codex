@@ -50,10 +50,17 @@ class SurfaceMotor {
 
     /** A missing observation freezes the actor; it must never invent an infinite room floor. */
     fun update(id: String, target: FootPosition, elapsed: Float, floor: (FootPosition) -> Float?): FootPosition? =
-        updateWithWalls(id, target, elapsed, { _, _ -> false }, floor)
+        updateWithWalls(id, target, elapsed, { _, _ -> false }, floor = floor)
 
-    fun updateWithWalls(id: String, target: FootPosition, elapsed: Float, blocked: (FootPosition, FootPosition) -> Boolean, floor: (FootPosition) -> Float?): FootPosition? {
-        require(listOf(target.x, target.y, target.z, elapsed).all { it.isFinite() })
+    /** Places a not-yet-present actor (e.g. at a raid portal); existing actors keep their position. */
+    fun place(id: String, foot: FootPosition): Boolean {
+        require(listOf(foot.x, foot.y, foot.z).all { it.isFinite() })
+        if (id in bodies) return false
+        bodies[id] = Body(foot); return true
+    }
+
+    fun updateWithWalls(id: String, target: FootPosition, elapsed: Float, blocked: (FootPosition, FootPosition) -> Boolean, speed: Float = 0.45f, floor: (FootPosition) -> Float?): FootPosition? {
+        require(listOf(target.x, target.y, target.z, elapsed, speed).all { it.isFinite() } && speed in 0.05f..3f)
         val body = bodies[id] ?: run {
             val observed = floor(target) ?: return null
             if (!observed.isFinite() || observed > target.y + 0.035f) return null
@@ -63,7 +70,7 @@ class SurfaceMotor {
         val current = body.foot
         if (floor(current) == null) { body.velocityY = 0f; return current }
         val distance = hypot(target.x - current.x, target.z - current.z)
-        val fraction = if (distance > 0f) min(1f, 0.45f * dt / distance) else 0f
+        val fraction = if (distance > 0f) min(1f, speed * dt / distance) else 0f
         val next = FootPosition(current.x + (target.x - current.x) * fraction, current.y, current.z + (target.z - current.z) * fraction)
         if (blocked(current, next)) return current
         val support = floor(next) ?: run { body.velocityY = 0f; return current }

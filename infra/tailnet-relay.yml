@@ -1,0 +1,38 @@
+# MediaMTX 1.21.3: remote phone test over Tailscale. No provider keys.
+# Everything binds to loopback; `tailscale serve` forwards tailnet TCP to it,
+# so only devices on the owner's tailnet can reach the relay.
+#   phone  --RTMP-->  rtmp://<pc>.ts.net:1935/live/raidrift   (publish)
+#   OBS    <--RTSP--  rtsp://127.0.0.1:8554/live/raidrift      (read, this PC)
+#   remote <--HLS---  https://<pc>.ts.net:8443/live/raidrift/  (watch, any tailnet browser)
+logLevel: info
+api: false
+metrics: false
+pprof: false
+playback: false
+webrtc: false
+srt: false
+moq: false
+rtsp: true
+rtspAddress: 127.0.0.1:8554
+rtspTransports: [tcp]
+rtmp: true
+rtmpAddress: 127.0.0.1:1935
+hls: true
+hlsAddress: 127.0.0.1:8888
+hlsVariant: lowLatency
+hlsAlwaysRemux: true
+authMethod: internal
+authInternalUsers:
+  # Tailscale serve proxies from the local tailscaled, so publishers arrive
+  # from loopback. Tailnet membership is the access control.
+  - user: any
+    pass:
+    ips: [127.0.0.1, "::1"]
+    permissions:
+      - action: publish
+        path: live/raidrift
+      - action: read
+        path: live/raidrift
+paths:
+  live/raidrift:
+    source: publisher

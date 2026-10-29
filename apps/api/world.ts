@@ -15,6 +15,7 @@ import {
   localCompile,
   compileAI,
   validatePlan,
+  summarizePlan,
 } from "./compiler.js";
 import { credit } from "./economy.js";
 import type { Database } from "./db.js";
@@ -33,7 +34,24 @@ type Running = {
   started: number;
   origin: [number, number];
 };
+export type DebugEntry = { at: number; kind: string; text: string };
+const DEBUG_LOG_SIZE = 60;
+/** Phone (ARCore) tracks stay anchored in 3D between detections; hold them this long after the last report. */
+export const NATIVE_TRACK_HOLD_MS = 4000;
 export class World extends EventEmitter {
+  debugLog: DebugEntry[] = [];
+  ai: { lastLatencyMs: number | null; lastError: string | null } = {
+    lastLatencyMs: null,
+    lastError: null,
+  };
+  trackHolds = new Map<string, number>();
+  private lastTrackLog = 0;
+  private questCounts = new Map<string, number>();
+  log(kind: string, text: string) {
+    this.debugLog.push({ at: Date.now(), kind, text: text.slice(0, 300) });
+    if (this.debugLog.length > DEBUG_LOG_SIZE)
+      this.debugLog.splice(0, this.debugLog.length - DEBUG_LOG_SIZE);
+  }
   duels = new DuelArena((type, duel) => this.event(type, duel));
   state: WorldSnapshot;
   running = new Map<string, Running>();
@@ -147,6 +165,7 @@ export class World extends EventEmitter {
         avatar.lastActive = avatar.spawnedAt;
         avatar.message = "Stepping through the rift";
         this.event("avatar.arriving", avatar);
+        this.log("join", `${avatar.name} stepped through the rift again`);
       }
     }
     if (!avatar) {
@@ -175,6 +194,10 @@ export class World extends EventEmitter {
       }
       this.state.avatars.push(avatar);
       this.event("avatar.spawned", avatar);
+      this.log(
+        "join",
+        `${avatar.name} joined (${this.state.avatars.length} in world)`,
+      );
     }
     await this.db.query(
       "INSERT INTO avatar_presence(account_id,channel_id) VALUES($1,$2) ON CONFLICT(account_id) DO UPDATE SET channel_id=$2,updated_at=now()",
@@ -203,6 +226,29 @@ export class World extends EventEmitter {
     return avatar;
   }
   async action(
+    who: Record<string, any>,
+    prompt: string,
+    key: string,
+    targetHint?: string,
+  ): Promise<{
+    id: string;
+    status: string;
+    message?: string;
+    source?: "keywords" | "ai";
+    summary?: string;
+  }> {
+    try {
+      return (await this.runAction(who, prompt, key, targetHint)) as {
+        id: string;
+        status: string;
+      };
+    } catch (error) {
+      if (error instanceof GameError)
+        this.log("error", `${who.name}: ${error.code} — ${error.message}`);
+      throw error;
+    }
+  }
+  private async runAction(
     who: Record<string, any>,
     prompt: string,
     key: string,
@@ -244,6 +290,8 @@ export class World extends EventEmitter {
       a.y,
       this.state.config.geometry,
     );
+    const source: "keywords" | "ai" = plan ? "keywords" : "ai";
+    let latency: number | null = null;
     if (!plan) {
       if (!this.state.config.ai)
         throw new GameError(
@@ -259,10 +307,19 @@ export class World extends EventEmitter {
         );
       this.aiMinute.push(now);
       this.aiInFlight++;
+      const started = Date.now();
       try {
         plan = await compileAI(prompt, tracks);
+        this.ai.lastError = null;
+      } catch (error) {
+        this.ai.lastError =
+          error instanceof GameError
+            ? `${error.code}: ${error.message}`
+            : "AI_FAILED";
+        throw error;
       } finally {
         this.aiInFlight--;
+        latency = this.ai.lastLatencyMs = Date.now() - started;
       }
     }
     const currentTracks = targetHint
@@ -309,7 +366,12 @@ export class World extends EventEmitter {
     this.running.set(a.id, running);
     this.event("action.accepted", { id, actorId: a.id, plan });
     this.startStep(running, a, plan.steps[0]);
-    return { id, status: "running", message: plan.message };
+    const summary = summarizePlan(plan, currentTracks);
+    this.log(
+      "plan",
+      `${a.name}: ${source}${latency === null ? "" : ` ${latency} ms`} — ${summary}`,
+    );
+    return { id, status: "running", message: plan.message, source, summary };
   }
   startStep(r: Running, a: Avatar, s: ActionStep) {
     a.animationAt = r.started;
@@ -359,7 +421,7 @@ export class World extends EventEmitter {
       status,
     });
   }
-  updateTracks(tracks: SceneTrack[], epoch: number) {
+  updateTracks(tracks: SceneTrack[], epoch: number, holdMs = 0) {
     if (!this.state.config.vision)
       throw new GameError("NO_CONSENT", "Enable camera processing first.", 403);
     if (epoch !== this.state.epoch)
@@ -389,11 +451,35 @@ export class World extends EventEmitter {
           (t.classifiedAt === undefined || now - t.classifiedAt < 2000),
       ),
     ];
+    if (holdMs > 0)
+      for (const t of current) this.trackHolds.set(t.id, now + holdMs);
+    if (current.length && now - this.lastTrackLog >= 3000) {
+      this.lastTrackLog = now;
+      this.log(
+        "tracks",
+        `sees: ${current
+          .slice(0, 6)
+          .map((t) => `${t.class} ${t.confidence.toFixed(2)}`)
+          .join(", ")}`,
+      );
+    }
+  }
+  /** Keep held (phone-anchored) tracks fresh until their hold lapses. */
+  refreshHeldTracks(now = Date.now()) {
+    for (const [id, until] of this.trackHolds) {
+      const track = this.state.tracks.find((t) => t.id === id);
+      if (until <= now || !track) {
+        this.trackHolds.delete(id);
+        continue;
+      }
+      track.seenAt = Math.max(track.seenAt, now);
+    }
   }
   sceneReset() {
     this.planningFence++;
     this.state.epoch = Math.max(this.state.epoch + 1, Date.now());
     this.state.tracks = [];
+    this.trackHolds.clear();
     this.evidence.clear();
     for (const r of this.running.values()) this.finish(r, "scene_changed");
     for (const a of this.state.avatars) {
@@ -431,10 +517,20 @@ export class World extends EventEmitter {
       "INSERT INTO raids(id,source_id,destination_id,source_name,viewers,test) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING RETURNING id",
       [id, sourceId, this.channel.id, from, count, test],
     );
-    if (!row.rows.length) return false;
-    if (this.state.config.paused) return true;
+    if (!row.rows.length) {
+      this.log("raid", `duplicate raid ${id} ignored`);
+      return false;
+    }
+    if (this.state.config.paused) {
+      this.log("raid", `raid from ${from} recorded; world paused`);
+      return true;
+    }
     this.state.raid = { id, from, count, started: Date.now(), test };
     this.event("raid.started", this.state.raid);
+    this.log(
+      "raid",
+      `raid started: ${from} with ${count} viewers${test ? " (test)" : ""}`,
+    );
     return true;
   }
   tick(now = Date.now(), dt = 0.05) {
@@ -449,6 +545,7 @@ export class World extends EventEmitter {
     );
     this.state.duels = this.duels.games;
     if (this.state.config.paused) return;
+    this.refreshHeldTracks(now);
     this.state.tracks = this.state.tracks.filter(
       (t) =>
         now - t.seenAt < TRACK_TTL_MS &&
@@ -497,7 +594,10 @@ export class World extends EventEmitter {
         ) as [number, number];
       } else if (s.x !== null && s.y !== null) dest = [s.x, s.y];
       if (dest) {
-        const attach = ["attach_to_track", "follow_track"].includes(s.op);
+        // Once the walk is over, stay glued to a moving target (camera pans move it).
+        const attach =
+          ["attach_to_track", "follow_track"].includes(s.op) ||
+          (target !== null && s.op !== "navigate");
         const speed = attach ? 4 : s.name === "sprint" ? 1 : 0.65;
         const dx = dest[0] - a.x,
           dy = dest[1] - a.y;
@@ -568,6 +668,17 @@ export class World extends EventEmitter {
             (a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0]),
           )[0]?.[1] || [];
       }
+      if (
+        q.type !== "camera" &&
+        this.questCounts.get(q.id) !== qualifying.length
+      ) {
+        if (qualifying.length || this.questCounts.has(q.id))
+          this.log(
+            "quest",
+            `${q.title}: ${qualifying.length}/${q.minPlayers} players ${q.action}${q.targetClass ? ` on ${q.targetClass}` : ""}`,
+          );
+        this.questCounts.set(q.id, qualifying.length);
+      }
       if (qualifying.length >= q.minPlayers && visual) {
         const signature = qualifying
           .map((a) => `${a.id}:${q.targetClass ? a.target : ""}`)
@@ -614,6 +725,10 @@ export class World extends EventEmitter {
             ]);
           });
           q.completed = true;
+          this.log(
+            "quest",
+            `${q.title} completed — paid ${q.reward} Rift Shards each to ${qualifying.map((a) => a.name).join(", ")}`,
+          );
           this.event("quest.completed", {
             id: q.id,
             title: q.title,
