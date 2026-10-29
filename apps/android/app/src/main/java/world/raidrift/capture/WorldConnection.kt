@@ -46,10 +46,15 @@ data class NativeWorld(val roomId: String, val mode: String, val paused: Boolean
 }
 
 object ServerAddress {
-    fun parse(value: String, allowEmulatorHttp: Boolean): HttpUrl {
+    fun parse(value: String, allowDebugHttp: Boolean): HttpUrl {
         val url = value.trim().toHttpUrlOrNull() ?: throw IllegalArgumentException("Enter a valid HTTPS server URL")
         require(url.username.isEmpty() && url.password.isEmpty() && url.query == null && url.fragment == null) { "Server URL must not contain credentials, query or fragment" }
-        require(url.isHttps || allowEmulatorHttp && url.host in setOf("10.0.2.2", "127.0.0.1", "localhost")) { "HTTPS is required except for a debug emulator loopback connection" }
+        val octets = url.host.split('.').map { part ->
+            part.takeIf { it.matches(Regex("0|[1-9][0-9]{0,2}")) }?.toIntOrNull()
+        }
+        val privateIpv4 = octets.size == 4 && octets.all { it != null && it in 0..255 } &&
+            (octets[0] == 10 || octets[0] == 172 && octets[1]!! in 16..31 || octets[0] == 192 && octets[1] == 168)
+        require(url.isHttps || allowDebugHttp && (privateIpv4 || url.host in setOf("127.0.0.1", "localhost"))) { "Use HTTPS, or your laptop's private IPv4 address for a debug LAN test" }
         return url
     }
 }

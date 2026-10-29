@@ -1,5 +1,7 @@
 # Android phone capture
 
+For the downloadable test APK and laptop-over-Wi-Fi setup, start with **[Android LAN test](ANDROID_LAN_TEST.md)**. The debug APK now accepts RFC1918 IPv4 HTTP servers; release builds still require HTTPS. The LAN launcher creates an isolated two-character simulator without external credentials.
+
 The owner confirmed **Android phone** as the target on 2026-10-29. `apps/android` is a Kotlin/Compose client using pinned SceneView 4.62.0, ARCore 1.57.0 and Filament 1.72.1. It is separate from the preserved Unity source in `apps/mobile`.
 
 Current evidence: debug APK compilation, 19 JVM tests and Android lint (zero errors, six version/target warnings) pass. Four skeletal GLBs pass Khronos validation. Actual native camera-off 3D has been encoded over SRT, decoded and recorded in OBS through a private MediaMTX/custom WHEP bridge. Latest measured action-to-OBS upper bound is 1.948 seconds; authoritative pause-to-cleared content is 4.579 seconds. This does not pass tracked AR. A direct ARCore diagnostic detected up to six horizontal planes, while integrated tracking/performance is still being isolated. Physical-phone and field acceptance remain open. Exact build scopes: `artifacts/android-runtime-qa.json`. Ready-stack comparison: `AR_OPEN_SOURCE_RESEARCH.md`.
@@ -25,7 +27,7 @@ For an attached, developer-authorized phone:
 ./.tools/android-sdk/platform-tools/adb.exe reverse tcp:3400 tcp:3400
 ```
 
-No phone was attached during the recorded build checks. USB debugging authorization happens on the handset. The reverse tunnel lets this debug app use `http://127.0.0.1:3400` without publishing the local server. Without USB forwarding, use a trusted HTTPS deployment reachable by the phone. HTTP is allowed only for debug loopback/emulator hosts; production requires HTTPS. Redirects are refused.
+No phone was attached during the recorded build checks. USB debugging authorization happens on the handset. The reverse tunnel lets this debug app use `http://127.0.0.1:3400`. Without USB, use the private IPv4 HTTP LAN setup in `ANDROID_LAN_TEST.md`, or a trusted HTTPS deployment reachable by the phone. Only debug builds permit private IPv4/loopback HTTP; production requires HTTPS. Redirects are refused.
 
 ## Use the actual world
 

@@ -1,4 +1,5 @@
 import "./style.css";
+import { clientRequestId, copyText } from "./browser-compat.js";
 import { RiftRenderer } from "./renderer.js";
 import type {
   WorldSnapshot,
@@ -351,7 +352,7 @@ async function command(prompt: string) {
   const action = await api(
     `/v1/worlds/${encodeURIComponent(room)}/actions`,
     "POST",
-    { prompt, clientRequestId: crypto.randomUUID(), targetHint },
+    { prompt, clientRequestId: clientRequestId(), targetHint },
   );
   addFeed(action.message || `Action ${action.status}`);
   await refreshMe();
@@ -623,7 +624,7 @@ function updateDuelUI() {
           {
             move: button.dataset.duelMove,
             revision: duel.revision,
-            clientRequestId: crypto.randomUUID(),
+            clientRequestId: clientRequestId(),
           },
         ).catch((error) => {
           el.dataset.key = "";
@@ -698,7 +699,7 @@ async function dashboard() {
   });
   bind("#copy-overlay", async () => {
     if (!overlayUrl) throw Error("Generate the source URL first.");
-    await navigator.clipboard.writeText(overlayUrl);
+    await copyText(overlayUrl);
     toast("OBS source URL copied");
   });
   bind("#open-overlay", () => {
@@ -775,11 +776,11 @@ async function dashboard() {
         <button id="copy-lan-receiver">Copy LAN receiver URL</button>
       </details>`;
     bind("#copy-mobile-token", async () => {
-      await navigator.clipboard.writeText(d.token);
+      await copyText(d.token);
       toast("Pairing token copied. Keep it private.");
     });
     bind("#copy-lan-receiver", async () => {
-      await navigator.clipboard.writeText(d.receiverUrl);
+      await copyText(d.receiverUrl);
       toast("Experimental LAN receiver URL copied.");
     });
     bind("#copy-relay-receiver", async () => {
@@ -787,7 +788,7 @@ async function dashboard() {
       const endpoint = relayEndpoint(
         $<HTMLInputElement>("#mobile-relay-watch").value.trim(),
       );
-      await navigator.clipboard.writeText(
+      await copyText(
         `${location.origin}/relay-receiver#source=${encodeURIComponent(endpoint.href)}`,
       );
       toast(
@@ -892,7 +893,7 @@ async function shop() {
           else
             await api("/v1/shop/orders", "POST", {
               itemId: el.dataset.item,
-              idempotencyKey: crypto.randomUUID(),
+              idempotencyKey: clientRequestId(),
             });
           await refreshMe();
           toast(
@@ -967,7 +968,7 @@ async function workshop() {
       const result = await api(
         `/v1/worlds/${encodeURIComponent(id)}/construction`,
         "POST",
-        { requestId: crypto.randomUUID(), ...operation },
+        { requestId: clientRequestId(), ...operation },
       );
       if (generation !== currentGeneration) return;
       if (result.structure)
@@ -1437,7 +1438,7 @@ async function spatialRoom() {
       button.addEventListener("click", () => {
         void api(`/v1/worlds/${encodeURIComponent(room)}/actions`, "POST", {
           prompt: button.dataset.arCommand,
-          clientRequestId: crypto.randomUUID(),
+          clientRequestId: clientRequestId(),
         }).catch((error) => toast(error.message, true));
       }),
     );

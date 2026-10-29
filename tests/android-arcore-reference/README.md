@@ -1,5 +1,7 @@
 # Independent official ARCore reference
 
+`renderer-experiments.patch` preserves the paused, unproven application renderer experiments (camera draw order, descendant frame updates and debug mesh diagnostics). It is **not applied** to the default LAN test APK. It is retained for investigation, not a claimed rendering fix.
+
 This is benchmark metadata and a small diagnostic patch, not a replacement product renderer.
 
 Upstream: https://github.com/google-ar/arcore-android-sdk

@@ -1,0 +1,31 @@
+{
+  "version": "0.3.0-lan-test",
+  "versionCode": 4,
+  "artifact": "raidrift-android-lan-test.apk",
+  "sha256": "ee31006fb2b3c17d16aef177922578c74d5e1ca79842c871d3db4fd64832c7a6",
+  "bytes": 69057910,
+  "nativeJvm": {
+    "failures": 0,
+    "total": 20,
+    "skipped": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 7,
+    "details": "Pinned Gradle/dependency updates and targetSdk 36"
+  },
+  "backend": {
+    "total": 66,
+    "passed": 65,
+    "skipped": 1
+  },
+  "browser": {
+    "lan": 1,
+    "receiver": 2
+  },
+  "lanBrowserEvidence": "artifacts/lan-browser-qa.json",
+  "physicalAndroidTestPassed": false,
+  "rendererExperimentsApplied": false,
+  "releaseTag": "android-lan-test-2026-10-29",
+  "notes": "Baseline AR renderer; private IPv4 HTTP in debug only; camera-plus-character visibility remains open."
+}

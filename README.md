@@ -1,5 +1,7 @@
 # RaidRift — implementation workspace
 
+**Android phone + laptop test:** [LAN setup and phone checklist](docs/ANDROID_LAN_TEST.md). Run `npm ci`, then `npm run lan:test` on your laptop. The Android development APK is attached to the [Android LAN test prerelease](https://github.com/dusy4/twitch-hackathon-codex/releases/tag/android-lan-test-2026-10-29). Tracked AR character visibility remains an open test; this is not a production release.
+
 Run `npm ci`, `npm run build`, then `npm start` from this directory. Open **http://127.0.0.1:3400**.
 
 For the character demo, click **Try a portal event** or **Enter the world**. The controller's **Step through the portal** button visibly re-enters your own character. See [character implementation and actual recordings](docs/CHARACTERS.md). Camera perception is optional and requires `npm run setup:vision`.

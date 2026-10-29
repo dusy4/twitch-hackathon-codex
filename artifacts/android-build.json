@@ -1,28 +1,21 @@
 {
-  "lint": {
-    "details": "Pinned Gradle/dependency updates and targetSdk 36",
-    "warnings": 6,
-    "errors": 0
-  },
-  "commands": [
-    "testDebugUnitTest",
-    "assembleDebug",
-    "lintDebug"
-  ],
-  "microphonePermission": true,
-  "bytes": 77759638,
-  "runtimeEvidence": "artifacts/android-runtime-qa.json",
+  "sha256": "ee31006fb2b3c17d16aef177922578c74d5e1ca79842c871d3db4fd64832c7a6",
+  "scope": "Build-only attestation; runtime results are versioned separately and are not inferred from compilation",
   "khronosModelValidation": "4 models; 0 errors; 0 warnings",
-  "microphonePolicy": "Optional explicit relay consent and runtime permission; disabled by default; local clips and LAN WebRTC remain video-only",
-  "date": "2026-10-29",
-  "toolchain": {
-    "compileSdk": 37,
-    "gradle": "9.8.1",
-    "jdk": "21.0.13.0.2"
+  "jvmTests": {
+    "failures": 0,
+    "total": 20,
+    "skipped": 0
   },
-  "artifact": "raidrift-capture-debug.apk",
   "device": "Boat emulator runtime evidence is separate; owner will install on Android phone manually",
-  "applicationId": "world.raidrift.capture.android",
+  "physicalPhoneValidated": false,
+  "lint": {
+    "errors": 0,
+    "warnings": 7,
+    "details": "Pinned Gradle/dependency updates and targetSdk 36"
+  },
+  "bytes": 69057910,
+  "microphonePolicy": "Optional explicit relay consent and runtime permission; disabled by default; local clips and LAN WebRTC remain video-only",
   "models": [
     {
       "path": "assets/kaykit/Barbarian.glb",
@@ -41,60 +34,67 @@
       "bytes": 3611896
     }
   ],
+  "microphonePermission": true,
+  "applicationId": "world.raidrift.capture.android",
   "notices": [
     "assets/notices/Fuel-MIT.txt",
+    "assets/notices/NOTICE.txt",
     "assets/notices/Result-MIT.txt",
+    "assets/notices/RootEncoder-LICENSE.txt",
+    "assets/notices/RootEncoder-NOTICE.txt",
+    "assets/notices/SLF4J-MIT.txt",
     "assets/notices/SceneView-Apache-2.0.txt",
     "assets/notices/WebRTC-SDK-MIT.txt",
     "assets/notices/WebRTC-Third-Party.md",
-    "assets/notices/RootEncoder-LICENSE.txt",
-    "assets/notices/android-dependencies.json",
-    "assets/notices/RootEncoder-NOTICE.txt",
-    "assets/notices/NOTICE.txt",
-    "assets/notices/SLF4J-MIT.txt"
+    "assets/notices/android-dependencies.json"
   ],
+  "commands": [
+    "testDebugUnitTest",
+    "assembleDebug",
+    "lintDebug"
+  ],
+  "artifact": "raidrift-capture-debug.apk",
+  "toolchain": {
+    "compileSdk": 37,
+    "gradle": "9.8.1",
+    "jdk": "21.0.13.0.2"
+  },
+  "date": "2026-10-29",
   "nativeSourceHashes": [
     {
-      "sha256": "a843d9f7ed937e0e1196ce3552d13fe3d71b0f98adba57e7ca0f016b4d3c98fc",
-      "path": "apps/android/app/src/main/java/world/raidrift/capture/CompositeOutput.kt"
+      "path": "apps/android/app/src/main/java/world/raidrift/capture/CompositeOutput.kt",
+      "sha256": "a843d9f7ed937e0e1196ce3552d13fe3d71b0f98adba57e7ca0f016b4d3c98fc"
     },
     {
-      "sha256": "023a164b0493279f09a87c1ef53645e10dc3647dee4133dfbae6c233fd718a1c",
-      "path": "apps/android/app/src/main/java/world/raidrift/capture/LocalClip.kt"
+      "path": "apps/android/app/src/main/java/world/raidrift/capture/LocalClip.kt",
+      "sha256": "023a164b0493279f09a87c1ef53645e10dc3647dee4133dfbae6c233fd718a1c"
     },
     {
-      "sha256": "bc73dff74864294b31a8b48f7e40321689a8514f235682f17899f275a6262e38",
-      "path": "apps/android/app/src/main/java/world/raidrift/capture/MainActivity.kt"
+      "path": "apps/android/app/src/main/java/world/raidrift/capture/MainActivity.kt",
+      "sha256": "bc73dff74864294b31a8b48f7e40321689a8514f235682f17899f275a6262e38"
     },
     {
-      "sha256": "e5d073a248a937e7101019d3e3f3ca3127c42cdb116fc1e7e1376ecbaf5b2d95",
-      "path": "apps/android/app/src/main/java/world/raidrift/capture/PreviewOrbit.kt"
+      "path": "apps/android/app/src/main/java/world/raidrift/capture/PreviewOrbit.kt",
+      "sha256": "e5d073a248a937e7101019d3e3f3ca3127c42cdb116fc1e7e1376ecbaf5b2d95"
     },
     {
-      "sha256": "44a0311590398e147f6c2fd6ef4183125d7fe71a28c41aaf46b29146d638eb59",
-      "path": "apps/android/app/src/main/java/world/raidrift/capture/RelayOutput.kt"
+      "path": "apps/android/app/src/main/java/world/raidrift/capture/RelayOutput.kt",
+      "sha256": "44a0311590398e147f6c2fd6ef4183125d7fe71a28c41aaf46b29146d638eb59"
     },
     {
-      "sha256": "c87fa19c0f38b5486c054c4cab12d8f8d58506b3d5488febfc5d10d77a772ea0",
-      "path": "apps/android/app/src/main/java/world/raidrift/capture/SensedWall.kt"
+      "path": "apps/android/app/src/main/java/world/raidrift/capture/SensedWall.kt",
+      "sha256": "c87fa19c0f38b5486c054c4cab12d8f8d58506b3d5488febfc5d10d77a772ea0"
     },
     {
-      "sha256": "b16744a9145e5033e42b701bfa57426f7a39dd3617a82e1896f1fad2b8651730",
-      "path": "apps/android/app/src/main/java/world/raidrift/capture/SurfaceMotor.kt"
+      "path": "apps/android/app/src/main/java/world/raidrift/capture/SurfaceMotor.kt",
+      "sha256": "b16744a9145e5033e42b701bfa57426f7a39dd3617a82e1896f1fad2b8651730"
     },
     {
-      "sha256": "6f5e627ec5abccac83c23c5c3e276410fb799001c2f103b11bfbf33d61709634",
-      "path": "apps/android/app/src/main/java/world/raidrift/capture/WorldConnection.kt"
+      "path": "apps/android/app/src/main/java/world/raidrift/capture/WorldConnection.kt",
+      "sha256": "3d8c2f88dc92005582b250b8be178808106d912f92e060d7b4dcd7d0089bbcbd"
     }
   ],
-  "localDebugSignatureVerified": true,
-  "buildLog": ".data/android-ar-library-review-build.log",
-  "sha256": "d6a9cef4d07820950279cebfa5f6f7c41d84fc39c44f06c0028dd00c9498deb4",
-  "jvmTests": {
-    "total": 19,
-    "failures": 0,
-    "skipped": 0
-  },
-  "scope": "Build-only attestation; runtime results are versioned separately and are not inferred from compilation",
-  "physicalPhoneValidated": false
+  "buildLog": ".data/android-lan-test-build.log",
+  "runtimeEvidence": "artifacts/android-runtime-qa.json",
+  "localDebugSignatureVerified": true
 }

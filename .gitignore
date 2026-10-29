@@ -13,6 +13,7 @@ tests/fixtures/*.webm
 
 .tools/
 apps/android/.gradle/
+apps/android/.kotlin/
 apps/android/**/build/
 apps/android/local.properties
 artifacts/*.apk

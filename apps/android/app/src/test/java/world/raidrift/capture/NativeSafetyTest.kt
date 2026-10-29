@@ -44,6 +44,15 @@ class NativeSafetyTest {
         response(302, "redirect").use { assertThrows(java.io.IOException::class.java) { readNativeWorld(it) } }
         response(200, "x".repeat(2_000_001)).use { assertThrows(IllegalArgumentException::class.java) { readNativeWorld(it) } }
     }
+    @Test fun privateLanHttpIsDebugOnlyAndDoesNotAcceptPublicLookalikes() {
+        listOf("192.168.1.20", "10.1.2.3", "172.16.0.1", "172.31.255.254").forEach { host ->
+            assertEquals(host, ServerAddress.parse("http://$host:3400", true).host)
+            assertThrows(IllegalArgumentException::class.java) { ServerAddress.parse("http://$host:3400", false) }
+        }
+        listOf("172.15.255.255", "172.32.0.1", "192.169.1.20", "8.8.8.8", "192.168.1.20.example.com", "0.0.0.0").forEach { host ->
+            assertThrows(IllegalArgumentException::class.java) { ServerAddress.parse("http://$host:3400", true) }
+        }
+    }
     @Test fun nativeMediaUsesAuthorizationHeaderRatherThanUrlToken() {
         val request = nativeMediaRequest(ServerAddress.parse("https://example.com", false), "private-pairing-token")
         assertEquals("https://example.com/v1/media", request.url.toString())

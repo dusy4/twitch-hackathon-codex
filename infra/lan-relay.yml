@@ -1,0 +1,32 @@
+# MediaMTX 1.21.3: trusted private-LAN rehearsal only; no provider keys.
+logLevel: warn
+api: false
+metrics: false
+pprof: false
+playback: false
+hls: false
+webrtc: false
+srt: false
+moq: false
+rtsp: true
+rtspAddress: 127.0.0.1:8554
+rtspTransports: [tcp]
+rtmp: true
+rtmpAddress: :1935
+authMethod: internal
+authInternalUsers:
+  - user: any
+    pass:
+    ips: [127.0.0.1, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16]
+    permissions:
+      - action: publish
+        path: live/raidrift
+  - user: lan-preview
+    pass: lan-test-only
+    ips: [127.0.0.1, "::1"]
+    permissions:
+      - action: read
+        path: live/raidrift
+paths:
+  live/raidrift:
+    source: publisher

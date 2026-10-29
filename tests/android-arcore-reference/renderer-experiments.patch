@@ -1,0 +1,70 @@
+diff --git a/apps/android/app/src/main/java/world/raidrift/capture/MainActivity.kt b/apps/android/app/src/main/java/world/raidrift/capture/MainActivity.kt
+index 0cce061..ebc541e 100644
+--- a/apps/android/app/src/main/java/world/raidrift/capture/MainActivity.kt
++++ b/apps/android/app/src/main/java/world/raidrift/capture/MainActivity.kt
+@@ -145,9 +145,11 @@ private fun CaptureApp(connection: WorldConnection) {
+ 
+     Box(Modifier.fillMaxSize().background(Color(0xff10121c))) {
+         if (ar) {
++            val cameraStream = rememberARCameraStream(materialLoader)
+             ARSceneView(
+                 modifier = Modifier.fillMaxSize(), engine = engine, modelLoader = modelLoader,
+                 materialLoader = materialLoader, cameraNode = arCamera, surfaceMirrorer = mirror,
++                cameraStream = cameraStream,
+                 depthMode = Config.DepthMode.AUTOMATIC,
+                 planeFindingMode = Config.PlaneFindingMode.HORIZONTAL_AND_VERTICAL,
+                 sessionConfiguration = configureArSession,
+@@ -264,9 +266,19 @@ private fun CaptureApp(connection: WorldConnection) {
+                     SideEffect { depthCollider = collider }
+                     DisposableEffect(collider) { onDispose { depthCollider = null } }
+                 }
+-                anchor?.let { origin -> AnchorNode(anchor = origin) {
+-                    world?.let { CharacterWorld(it, feet) { arCamera.worldPosition } }
+-                } }
++                anchor?.let { origin ->
++                    AnchorNode(anchor = origin, apply = {
++                        onFrame = { frameTime -> childNodes.forEach { it.onFrame(frameTime) } }
++                    }) {
++                        world?.let { CharacterWorld(it, feet) { arCamera.worldPosition } }
++                    }
++                }
++            }
++            SideEffect {
++                // Compose passthrough before opaque characters. With no measured depth,
++                // the camera quad must not populate the virtual scene's depth buffer.
++                cameraStream.setPriority(0)
++                cameraStream.materialInstance.setDepthWrite(depthSupported)
+             }
+         } else {
+             SceneView(Modifier.fillMaxSize(), engine = engine, modelLoader = modelLoader,
+@@ -427,13 +439,29 @@ private fun SceneScope.CharacterWorld(world: NativeWorld, feet: Map<String, Posi
+         val models = listOf("Knight", "Mage", "Rogue", "Barbarian")
+         val index = hero.id.fold(0u) { hash, char -> hash * 31u + char.code.toUInt() }.rem(4u).toInt()
+         val instance = rememberModelInstance(modelLoader, assetFileLocation = "kaykit/${models[index]}.glb")
++        LaunchedEffect(instance) {
++            if (BuildConfig.DEBUG) android.util.Log.d("RaidRiftModel", "asset=${models[index]} ready=${instance != null}")
++        }
+         val position = feet?.get(hero.id) ?: Position((hero.x - 0.5f) * 1.4f, 0f, (hero.y - 0.5f) * 1.0f)
+         Node(position = position, isVisible = feet == null || hero.id in feet) {
+             instance?.let { ModelNode(modelInstance = it, autoAnimate = false,
+                 animationName = if (world.reducedMotion) "Idle" else characterClip(hero.animation),
+                 animationSpeed = if (world.reducedMotion) 0.25f else 1f,
+                 scaleToUnits = 0.25f, centerOrigin = Position(0f, -1f, 0f),
+-                rotation = Rotation(0f, 0f, 0f)) }
++                rotation = Rotation(0f, 0f, 0f), apply = {
++                    if (BuildConfig.DEBUG) {
++                        var lastReport = 0L
++                        var ticks = 0L
++                        onFrame = { frameTime ->
++                            ticks++
++                            val now = SystemClock.elapsedRealtime()
++                            if (now - lastReport > 2000) {
++                                lastReport = now
++                                android.util.Log.d("RaidRiftModel", "ticks=$ticks frameTime=$frameTime meshNodes=${renderableNodes.size} visible=$isVisible scale=$scale worldScale=$worldScale worldPosition=$worldPosition")
++                            }
++                        }
++                    }
++                }) }
+             TextNode(text = hero.name, position = Position(0f, 0.3f, 0f), widthMeters = 0.28f, heightMeters = 0.06f, cameraPositionProvider = cameraPosition)
+         }
+     } }
