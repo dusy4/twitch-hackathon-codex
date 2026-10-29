@@ -1,0 +1,15 @@
+{
+  "scope": "Conservative local gesture request to decoded OBS frame; emulated camera-off preview, not physical capture-to-OBS latency",
+  "eventRequested": 1793278342154,
+  "baselineMaximumDelta": 0.6448214285714285,
+  "threshold": 2.579285714285714,
+  "maximumAfterDelta": 0.876641865079365,
+  "firstSignificantFrame": null,
+  "requestToObsFrameUpperBoundMs": null,
+  "roi": [
+    500,
+    220,
+    780,
+    460
+  ]
+}

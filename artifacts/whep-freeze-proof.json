@@ -5,7 +5,7 @@
     "track": "live",
     "audioTrack": "live"
   },
-  "clearUpperBoundMs": 3990,
+  "clearUpperBoundMs": 4027,
   "deletedSessions": 1,
   "video": {
     "width": 0,

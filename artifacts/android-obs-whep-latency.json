@@ -1,0 +1,1209 @@
+{
+  "scope": "Synthetic actor HTTP action request to decoded OBS frame through native snapshot/render/encode, SRT relay and RTMP-to-WebRTC bridge (native H.264 copy, AAC-to-Opus); camera-off emulator, not live Twitch or physical capture-to-OBS latency",
+  "eventRequested": 1793281179017,
+  "action": {
+    "completed": 1793281179056,
+    "result": {
+      "id": "57c4b198-d271-42e9-899c-61ee7adc0add",
+      "status": "running",
+      "message": "Moving right"
+    }
+  },
+  "roi": [
+    500,
+    220,
+    900,
+    500
+  ],
+  "baselineMaximumChangedPixels": 1489,
+  "changeThresholdPixels": 5956,
+  "pixelRgbMeanThreshold": 25,
+  "maximumAfterChangedPixels": 19688,
+  "firstSignificantFrame": {
+    "index": 24,
+    "requested": 1793281181525,
+    "received": 1793281181570,
+    "path": ".data/native-action-latency/024.png",
+    "changedPixels": 19384,
+    "meanDelta": 13.742244047619048
+  },
+  "requestToDecodedObsFrameUpperBoundMs": 2553,
+  "samples": [
+    {
+      "index": 0,
+      "requested": 1793281177762,
+      "received": 1793281177809,
+      "changedPixels": 0,
+      "meanDelta": 0.0
+    },
+    {
+      "index": 1,
+      "requested": 1793281177925,
+      "received": 1793281177970,
+      "changedPixels": 0,
+      "meanDelta": 0.0
+    },
+    {
+      "index": 2,
+      "requested": 1793281178081,
+      "received": 1793281178126,
+      "changedPixels": 1489,
+      "meanDelta": 1.3235119047619046
+    },
+    {
+      "index": 3,
+      "requested": 1793281178238,
+      "received": 1793281178283,
+      "changedPixels": 1489,
+      "meanDelta": 1.3235119047619046
+    },
+    {
+      "index": 4,
+      "requested": 1793281178392,
+      "received": 1793281178438,
+      "changedPixels": 1489,
+      "meanDelta": 1.3235119047619046
+    },
+    {
+      "index": 5,
+      "requested": 1793281178550,
+      "received": 1793281178596,
+      "changedPixels": 205,
+      "meanDelta": 0.4897321428571428
+    },
+    {
+      "index": 6,
+      "requested": 1793281178707,
+      "received": 1793281178752,
+      "changedPixels": 205,
+      "meanDelta": 0.4897321428571428
+    },
+    {
+      "index": 7,
+      "requested": 1793281178863,
+      "received": 1793281178911,
+      "changedPixels": 735,
+      "meanDelta": 0.8416636904761906
+    },
+    {
+      "index": 8,
+      "requested": 1793281179039,
+      "received": 1793281179085,
+      "changedPixels": 735,
+      "meanDelta": 0.8416636904761906
+    },
+    {
+      "index": 9,
+      "requested": 1793281179188,
+      "received": 1793281179233,
+      "changedPixels": 735,
+      "meanDelta": 0.8416636904761906
+    },
+    {
+      "index": 10,
+      "requested": 1793281179344,
+      "received": 1793281179392,
+      "changedPixels": 1428,
+      "meanDelta": 1.315514880952381
+    },
+    {
+      "index": 11,
+      "requested": 1793281179500,
+      "received": 1793281179546,
+      "changedPixels": 1428,
+      "meanDelta": 1.315514880952381
+    },
+    {
+      "index": 12,
+      "requested": 1793281179656,
+      "received": 1793281179700,
+      "changedPixels": 444,
+      "meanDelta": 0.6772797619047619
+    },
+    {
+      "index": 13,
+      "requested": 1793281179815,
+      "received": 1793281179860,
+      "changedPixels": 444,
+      "meanDelta": 0.6772797619047619
+    },
+    {
+      "index": 14,
+      "requested": 1793281179969,
+      "received": 1793281180013,
+      "changedPixels": 516,
+      "meanDelta": 0.7212083333333333
+    },
+    {
+      "index": 15,
+      "requested": 1793281180123,
+      "received": 1793281180168,
+      "changedPixels": 516,
+      "meanDelta": 0.7212083333333333
+    },
+    {
+      "index": 16,
+      "requested": 1793281180280,
+      "received": 1793281180326,
+      "changedPixels": 516,
+      "meanDelta": 0.7212083333333333
+    },
+    {
+      "index": 17,
+      "requested": 1793281180435,
+      "received": 1793281180488,
+      "changedPixels": 1468,
+      "meanDelta": 1.347357142857143
+    },
+    {
+      "index": 18,
+      "requested": 1793281180591,
+      "received": 1793281180636,
+      "changedPixels": 1468,
+      "meanDelta": 1.347357142857143
+    },
+    {
+      "index": 19,
+      "requested": 1793281180746,
+      "received": 1793281180792,
+      "changedPixels": 1468,
+      "meanDelta": 1.347357142857143
+    },
+    {
+      "index": 20,
+      "requested": 1793281180903,
+      "received": 1793281180948,
+      "changedPixels": 28,
+      "meanDelta": 0.27701785714285715
+    },
+    {
+      "index": 21,
+      "requested": 1793281181059,
+      "received": 1793281181103,
+      "changedPixels": 28,
+      "meanDelta": 0.27701785714285715
+    },
+    {
+      "index": 22,
+      "requested": 1793281181214,
+      "received": 1793281181260,
+      "changedPixels": 28,
+      "meanDelta": 0.27701785714285715
+    },
+    {
+      "index": 23,
+      "requested": 1793281181371,
+      "received": 1793281181416,
+      "changedPixels": 1295,
+      "meanDelta": 1.2439791666666666
+    },
+    {
+      "index": 24,
+      "requested": 1793281181525,
+      "received": 1793281181570,
+      "changedPixels": 19384,
+      "meanDelta": 13.742244047619048
+    },
+    {
+      "index": 25,
+      "requested": 1793281181681,
+      "received": 1793281181728,
+      "changedPixels": 19384,
+      "meanDelta": 13.742244047619048
+    },
+    {
+      "index": 26,
+      "requested": 1793281181838,
+      "received": 1793281181886,
+      "changedPixels": 19384,
+      "meanDelta": 13.742244047619048
+    },
+    {
+      "index": 27,
+      "requested": 1793281181994,
+      "received": 1793281182038,
+      "changedPixels": 19384,
+      "meanDelta": 13.742244047619048
+    },
+    {
+      "index": 28,
+      "requested": 1793281182149,
+      "received": 1793281182195,
+      "changedPixels": 19384,
+      "meanDelta": 13.742244047619048
+    },
+    {
+      "index": 29,
+      "requested": 1793281182304,
+      "received": 1793281182349,
+      "changedPixels": 19300,
+      "meanDelta": 13.62586011904762
+    },
+    {
+      "index": 30,
+      "requested": 1793281182460,
+      "received": 1793281182504,
+      "changedPixels": 19300,
+      "meanDelta": 13.62586011904762
+    },
+    {
+      "index": 31,
+      "requested": 1793281182618,
+      "received": 1793281182665,
+      "changedPixels": 19607,
+      "meanDelta": 13.790267857142856
+    },
+    {
+      "index": 32,
+      "requested": 1793281182774,
+      "received": 1793281182818,
+      "changedPixels": 19607,
+      "meanDelta": 13.790267857142856
+    },
+    {
+      "index": 33,
+      "requested": 1793281182930,
+      "received": 1793281182975,
+      "changedPixels": 19607,
+      "meanDelta": 13.790267857142856
+    },
+    {
+      "index": 34,
+      "requested": 1793281183084,
+      "received": 1793281183131,
+      "changedPixels": 19607,
+      "meanDelta": 13.790267857142856
+    },
+    {
+      "index": 35,
+      "requested": 1793281183239,
+      "received": 1793281183285,
+      "changedPixels": 19291,
+      "meanDelta": 13.63459226190476
+    },
+    {
+      "index": 36,
+      "requested": 1793281183395,
+      "received": 1793281183439,
+      "changedPixels": 19291,
+      "meanDelta": 13.63459226190476
+    },
+    {
+      "index": 37,
+      "requested": 1793281183550,
+      "received": 1793281183597,
+      "changedPixels": 19291,
+      "meanDelta": 13.63459226190476
+    },
+    {
+      "index": 38,
+      "requested": 1793281183707,
+      "received": 1793281183751,
+      "changedPixels": 19639,
+      "meanDelta": 13.782479166666665
+    },
+    {
+      "index": 39,
+      "requested": 1793281183862,
+      "received": 1793281183906,
+      "changedPixels": 19639,
+      "meanDelta": 13.782479166666665
+    },
+    {
+      "index": 40,
+      "requested": 1793281184019,
+      "received": 1793281184063,
+      "changedPixels": 19639,
+      "meanDelta": 13.782479166666665
+    },
+    {
+      "index": 41,
+      "requested": 1793281184176,
+      "received": 1793281184221,
+      "changedPixels": 19183,
+      "meanDelta": 13.593970238095237
+    },
+    {
+      "index": 42,
+      "requested": 1793281184333,
+      "received": 1793281184377,
+      "changedPixels": 19183,
+      "meanDelta": 13.593970238095237
+    },
+    {
+      "index": 43,
+      "requested": 1793281184488,
+      "received": 1793281184532,
+      "changedPixels": 19630,
+      "meanDelta": 13.781366071428572
+    },
+    {
+      "index": 44,
+      "requested": 1793281184642,
+      "received": 1793281184690,
+      "changedPixels": 19630,
+      "meanDelta": 13.781366071428572
+    },
+    {
+      "index": 45,
+      "requested": 1793281184798,
+      "received": 1793281184842,
+      "changedPixels": 19630,
+      "meanDelta": 13.781366071428572
+    },
+    {
+      "index": 46,
+      "requested": 1793281184954,
+      "received": 1793281184997,
+      "changedPixels": 19339,
+      "meanDelta": 13.665613095238093
+    },
+    {
+      "index": 47,
+      "requested": 1793281185107,
+      "received": 1793281185152,
+      "changedPixels": 19339,
+      "meanDelta": 13.665613095238093
+    },
+    {
+      "index": 48,
+      "requested": 1793281185265,
+      "received": 1793281185310,
+      "changedPixels": 19162,
+      "meanDelta": 13.597967261904762
+    },
+    {
+      "index": 49,
+      "requested": 1793281185419,
+      "received": 1793281185465,
+      "changedPixels": 19162,
+      "meanDelta": 13.597967261904762
+    },
+    {
+      "index": 50,
+      "requested": 1793281185575,
+      "received": 1793281185620,
+      "changedPixels": 19162,
+      "meanDelta": 13.597967261904762
+    },
+    {
+      "index": 51,
+      "requested": 1793281185731,
+      "received": 1793281185775,
+      "changedPixels": 19162,
+      "meanDelta": 13.597967261904762
+    },
+    {
+      "index": 52,
+      "requested": 1793281185888,
+      "received": 1793281185932,
+      "changedPixels": 19617,
+      "meanDelta": 13.808681547619049
+    },
+    {
+      "index": 53,
+      "requested": 1793281186044,
+      "received": 1793281186089,
+      "changedPixels": 19617,
+      "meanDelta": 13.808681547619049
+    },
+    {
+      "index": 54,
+      "requested": 1793281186201,
+      "received": 1793281186245,
+      "changedPixels": 19393,
+      "meanDelta": 13.68297619047619
+    },
+    {
+      "index": 55,
+      "requested": 1793281186358,
+      "received": 1793281186402,
+      "changedPixels": 19393,
+      "meanDelta": 13.68297619047619
+    },
+    {
+      "index": 56,
+      "requested": 1793281186514,
+      "received": 1793281186559,
+      "changedPixels": 19393,
+      "meanDelta": 13.68297619047619
+    },
+    {
+      "index": 57,
+      "requested": 1793281186669,
+      "received": 1793281186713,
+      "changedPixels": 19393,
+      "meanDelta": 13.68297619047619
+    },
+    {
+      "index": 58,
+      "requested": 1793281186828,
+      "received": 1793281186872,
+      "changedPixels": 19471,
+      "meanDelta": 13.710964285714285
+    },
+    {
+      "index": 59,
+      "requested": 1793281186984,
+      "received": 1793281187027,
+      "changedPixels": 19471,
+      "meanDelta": 13.710964285714285
+    },
+    {
+      "index": 60,
+      "requested": 1793281187142,
+      "received": 1793281187186,
+      "changedPixels": 19328,
+      "meanDelta": 13.670946428571426
+    },
+    {
+      "index": 61,
+      "requested": 1793281187297,
+      "received": 1793281187344,
+      "changedPixels": 19328,
+      "meanDelta": 13.670946428571426
+    },
+    {
+      "index": 62,
+      "requested": 1793281187455,
+      "received": 1793281187499,
+      "changedPixels": 19328,
+      "meanDelta": 13.670946428571426
+    },
+    {
+      "index": 63,
+      "requested": 1793281187613,
+      "received": 1793281187659,
+      "changedPixels": 19420,
+      "meanDelta": 13.703886904761903
+    },
+    {
+      "index": 64,
+      "requested": 1793281187769,
+      "received": 1793281187813,
+      "changedPixels": 19420,
+      "meanDelta": 13.703886904761903
+    },
+    {
+      "index": 65,
+      "requested": 1793281187925,
+      "received": 1793281187970,
+      "changedPixels": 19420,
+      "meanDelta": 13.703886904761903
+    },
+    {
+      "index": 66,
+      "requested": 1793281188081,
+      "received": 1793281188126,
+      "changedPixels": 19551,
+      "meanDelta": 13.774479166666666
+    },
+    {
+      "index": 67,
+      "requested": 1793281188237,
+      "received": 1793281188288,
+      "changedPixels": 19551,
+      "meanDelta": 13.774479166666666
+    },
+    {
+      "index": 68,
+      "requested": 1793281188394,
+      "received": 1793281188440,
+      "changedPixels": 19551,
+      "meanDelta": 13.774479166666666
+    },
+    {
+      "index": 69,
+      "requested": 1793281188549,
+      "received": 1793281188597,
+      "changedPixels": 19175,
+      "meanDelta": 13.582404761904764
+    },
+    {
+      "index": 70,
+      "requested": 1793281188708,
+      "received": 1793281188756,
+      "changedPixels": 19175,
+      "meanDelta": 13.582404761904764
+    },
+    {
+      "index": 71,
+      "requested": 1793281188862,
+      "received": 1793281188909,
+      "changedPixels": 19175,
+      "meanDelta": 13.582404761904764
+    },
+    {
+      "index": 72,
+      "requested": 1793281189018,
+      "received": 1793281189063,
+      "changedPixels": 19669,
+      "meanDelta": 13.787651785714289
+    },
+    {
+      "index": 73,
+      "requested": 1793281189174,
+      "received": 1793281189219,
+      "changedPixels": 19669,
+      "meanDelta": 13.787651785714289
+    },
+    {
+      "index": 74,
+      "requested": 1793281189329,
+      "received": 1793281189375,
+      "changedPixels": 19669,
+      "meanDelta": 13.787651785714289
+    },
+    {
+      "index": 75,
+      "requested": 1793281189484,
+      "received": 1793281189528,
+      "changedPixels": 19669,
+      "meanDelta": 13.787651785714289
+    },
+    {
+      "index": 76,
+      "requested": 1793281189641,
+      "received": 1793281189686,
+      "changedPixels": 19414,
+      "meanDelta": 13.691479166666667
+    },
+    {
+      "index": 77,
+      "requested": 1793281189796,
+      "received": 1793281189843,
+      "changedPixels": 19414,
+      "meanDelta": 13.691479166666667
+    },
+    {
+      "index": 78,
+      "requested": 1793281189953,
+      "received": 1793281190001,
+      "changedPixels": 19535,
+      "meanDelta": 13.743139880952382
+    },
+    {
+      "index": 79,
+      "requested": 1793281190112,
+      "received": 1793281190156,
+      "changedPixels": 19535,
+      "meanDelta": 13.743139880952382
+    },
+    {
+      "index": 80,
+      "requested": 1793281190268,
+      "received": 1793281190314,
+      "changedPixels": 19535,
+      "meanDelta": 13.743139880952382
+    },
+    {
+      "index": 81,
+      "requested": 1793281190426,
+      "received": 1793281190470,
+      "changedPixels": 19535,
+      "meanDelta": 13.743139880952382
+    },
+    {
+      "index": 82,
+      "requested": 1793281190582,
+      "received": 1793281190629,
+      "changedPixels": 19345,
+      "meanDelta": 13.66208630952381
+    },
+    {
+      "index": 83,
+      "requested": 1793281190738,
+      "received": 1793281190782,
+      "changedPixels": 19345,
+      "meanDelta": 13.66208630952381
+    },
+    {
+      "index": 84,
+      "requested": 1793281190894,
+      "received": 1793281190940,
+      "changedPixels": 19345,
+      "meanDelta": 13.66208630952381
+    },
+    {
+      "index": 85,
+      "requested": 1793281191051,
+      "received": 1793281191099,
+      "changedPixels": 19321,
+      "meanDelta": 13.642693452380954
+    },
+    {
+      "index": 86,
+      "requested": 1793281191208,
+      "received": 1793281191253,
+      "changedPixels": 19321,
+      "meanDelta": 13.642693452380954
+    },
+    {
+      "index": 87,
+      "requested": 1793281191365,
+      "received": 1793281191409,
+      "changedPixels": 19321,
+      "meanDelta": 13.642693452380954
+    },
+    {
+      "index": 88,
+      "requested": 1793281191523,
+      "received": 1793281191569,
+      "changedPixels": 19342,
+      "meanDelta": 13.66898511904762
+    },
+    {
+      "index": 89,
+      "requested": 1793281191680,
+      "received": 1793281191724,
+      "changedPixels": 19342,
+      "meanDelta": 13.66898511904762
+    },
+    {
+      "index": 90,
+      "requested": 1793281191837,
+      "received": 1793281191882,
+      "changedPixels": 19342,
+      "meanDelta": 13.66898511904762
+    },
+    {
+      "index": 91,
+      "requested": 1793281191994,
+      "received": 1793281192040,
+      "changedPixels": 19261,
+      "meanDelta": 13.61164285714286
+    },
+    {
+      "index": 92,
+      "requested": 1793281192151,
+      "received": 1793281192197,
+      "changedPixels": 19261,
+      "meanDelta": 13.61164285714286
+    },
+    {
+      "index": 93,
+      "requested": 1793281192306,
+      "received": 1793281192351,
+      "changedPixels": 19261,
+      "meanDelta": 13.61164285714286
+    },
+    {
+      "index": 94,
+      "requested": 1793281192465,
+      "received": 1793281192510,
+      "changedPixels": 19554,
+      "meanDelta": 13.762958333333335
+    },
+    {
+      "index": 95,
+      "requested": 1793281192618,
+      "received": 1793281192665,
+      "changedPixels": 19554,
+      "meanDelta": 13.762958333333335
+    },
+    {
+      "index": 96,
+      "requested": 1793281192773,
+      "received": 1793281192818,
+      "changedPixels": 19554,
+      "meanDelta": 13.762958333333335
+    },
+    {
+      "index": 97,
+      "requested": 1793281192930,
+      "received": 1793281192975,
+      "changedPixels": 19189,
+      "meanDelta": 13.608788690476192
+    },
+    {
+      "index": 98,
+      "requested": 1793281193086,
+      "received": 1793281193132,
+      "changedPixels": 19189,
+      "meanDelta": 13.608788690476192
+    },
+    {
+      "index": 99,
+      "requested": 1793281193243,
+      "received": 1793281193288,
+      "changedPixels": 19189,
+      "meanDelta": 13.608788690476192
+    },
+    {
+      "index": 100,
+      "requested": 1793281193399,
+      "received": 1793281193442,
+      "changedPixels": 19608,
+      "meanDelta": 13.803854166666667
+    },
+    {
+      "index": 101,
+      "requested": 1793281193553,
+      "received": 1793281193597,
+      "changedPixels": 19608,
+      "meanDelta": 13.803854166666667
+    },
+    {
+      "index": 102,
+      "requested": 1793281193708,
+      "received": 1793281193755,
+      "changedPixels": 19265,
+      "meanDelta": 13.628681547619047
+    },
+    {
+      "index": 103,
+      "requested": 1793281193863,
+      "received": 1793281193907,
+      "changedPixels": 19265,
+      "meanDelta": 13.628681547619047
+    },
+    {
+      "index": 104,
+      "requested": 1793281194020,
+      "received": 1793281194064,
+      "changedPixels": 19265,
+      "meanDelta": 13.628681547619047
+    },
+    {
+      "index": 105,
+      "requested": 1793281194176,
+      "received": 1793281194223,
+      "changedPixels": 19265,
+      "meanDelta": 13.628681547619047
+    },
+    {
+      "index": 106,
+      "requested": 1793281194333,
+      "received": 1793281194378,
+      "changedPixels": 19510,
+      "meanDelta": 13.738214285714285
+    },
+    {
+      "index": 107,
+      "requested": 1793281194486,
+      "received": 1793281194530,
+      "changedPixels": 19510,
+      "meanDelta": 13.738214285714285
+    },
+    {
+      "index": 108,
+      "requested": 1793281194641,
+      "received": 1793281194686,
+      "changedPixels": 19310,
+      "meanDelta": 13.64357738095238
+    },
+    {
+      "index": 109,
+      "requested": 1793281194795,
+      "received": 1793281194839,
+      "changedPixels": 19310,
+      "meanDelta": 13.64357738095238
+    },
+    {
+      "index": 110,
+      "requested": 1793281194952,
+      "received": 1793281194995,
+      "changedPixels": 19310,
+      "meanDelta": 13.64357738095238
+    },
+    {
+      "index": 111,
+      "requested": 1793281195109,
+      "received": 1793281195153,
+      "changedPixels": 19310,
+      "meanDelta": 13.64357738095238
+    },
+    {
+      "index": 112,
+      "requested": 1793281195265,
+      "received": 1793281195308,
+      "changedPixels": 19500,
+      "meanDelta": 13.723029761904762
+    },
+    {
+      "index": 113,
+      "requested": 1793281195420,
+      "received": 1793281195464,
+      "changedPixels": 19500,
+      "meanDelta": 13.723029761904762
+    },
+    {
+      "index": 114,
+      "requested": 1793281195578,
+      "received": 1793281195624,
+      "changedPixels": 19688,
+      "meanDelta": 13.809794642857144
+    },
+    {
+      "index": 115,
+      "requested": 1793281195731,
+      "received": 1793281195775,
+      "changedPixels": 19688,
+      "meanDelta": 13.809794642857144
+    },
+    {
+      "index": 116,
+      "requested": 1793281195888,
+      "received": 1793281195936,
+      "changedPixels": 19688,
+      "meanDelta": 13.809794642857144
+    },
+    {
+      "index": 117,
+      "requested": 1793281196044,
+      "received": 1793281196091,
+      "changedPixels": 19180,
+      "meanDelta": 13.590794642857144
+    },
+    {
+      "index": 118,
+      "requested": 1793281196199,
+      "received": 1793281196242,
+      "changedPixels": 19180,
+      "meanDelta": 13.590794642857144
+    },
+    {
+      "index": 119,
+      "requested": 1793281196354,
+      "received": 1793281196401,
+      "changedPixels": 19601,
+      "meanDelta": 13.771541666666668
+    },
+    {
+      "index": 120,
+      "requested": 1793281196508,
+      "received": 1793281196554,
+      "changedPixels": 19601,
+      "meanDelta": 13.771541666666668
+    },
+    {
+      "index": 121,
+      "requested": 1793281196665,
+      "received": 1793281196711,
+      "changedPixels": 19601,
+      "meanDelta": 13.771541666666668
+    },
+    {
+      "index": 122,
+      "requested": 1793281196822,
+      "received": 1793281196867,
+      "changedPixels": 19391,
+      "meanDelta": 13.683002976190478
+    },
+    {
+      "index": 123,
+      "requested": 1793281196979,
+      "received": 1793281197025,
+      "changedPixels": 19391,
+      "meanDelta": 13.683002976190478
+    },
+    {
+      "index": 124,
+      "requested": 1793281197135,
+      "received": 1793281197180,
+      "changedPixels": 19324,
+      "meanDelta": 13.651535714285714
+    },
+    {
+      "index": 125,
+      "requested": 1793281197290,
+      "received": 1793281197334,
+      "changedPixels": 19324,
+      "meanDelta": 13.651535714285714
+    },
+    {
+      "index": 126,
+      "requested": 1793281197446,
+      "received": 1793281197493,
+      "changedPixels": 19324,
+      "meanDelta": 13.651535714285714
+    },
+    {
+      "index": 127,
+      "requested": 1793281197602,
+      "received": 1793281197646,
+      "changedPixels": 19324,
+      "meanDelta": 13.651535714285714
+    },
+    {
+      "index": 128,
+      "requested": 1793281197756,
+      "received": 1793281197801,
+      "changedPixels": 19643,
+      "meanDelta": 13.826282738095239
+    },
+    {
+      "index": 129,
+      "requested": 1793281197913,
+      "received": 1793281197960,
+      "changedPixels": 19643,
+      "meanDelta": 13.826282738095239
+    },
+    {
+      "index": 130,
+      "requested": 1793281198067,
+      "received": 1793281198111,
+      "changedPixels": 19257,
+      "meanDelta": 13.62509523809524
+    },
+    {
+      "index": 131,
+      "requested": 1793281198225,
+      "received": 1793281198269,
+      "changedPixels": 19164,
+      "meanDelta": 13.581982142857143
+    },
+    {
+      "index": 132,
+      "requested": 1793281198381,
+      "received": 1793281198425,
+      "changedPixels": 19164,
+      "meanDelta": 13.581982142857143
+    },
+    {
+      "index": 133,
+      "requested": 1793281198536,
+      "received": 1793281198580,
+      "changedPixels": 19164,
+      "meanDelta": 13.581982142857143
+    },
+    {
+      "index": 134,
+      "requested": 1793281198692,
+      "received": 1793281198736,
+      "changedPixels": 19164,
+      "meanDelta": 13.581982142857143
+    },
+    {
+      "index": 135,
+      "requested": 1793281198847,
+      "received": 1793281198894,
+      "changedPixels": 19541,
+      "meanDelta": 13.751821428571429
+    },
+    {
+      "index": 136,
+      "requested": 1793281199000,
+      "received": 1793281199046,
+      "changedPixels": 19541,
+      "meanDelta": 13.751821428571429
+    },
+    {
+      "index": 137,
+      "requested": 1793281199156,
+      "received": 1793281199199,
+      "changedPixels": 19195,
+      "meanDelta": 13.590869047619046
+    },
+    {
+      "index": 138,
+      "requested": 1793281199311,
+      "received": 1793281199355,
+      "changedPixels": 19195,
+      "meanDelta": 13.590869047619046
+    },
+    {
+      "index": 139,
+      "requested": 1793281199465,
+      "received": 1793281199511,
+      "changedPixels": 19195,
+      "meanDelta": 13.590869047619046
+    },
+    {
+      "index": 140,
+      "requested": 1793281199620,
+      "received": 1793281199666,
+      "changedPixels": 19624,
+      "meanDelta": 13.788261904761905
+    },
+    {
+      "index": 141,
+      "requested": 1793281199774,
+      "received": 1793281199819,
+      "changedPixels": 19413,
+      "meanDelta": 13.688925595238096
+    },
+    {
+      "index": 142,
+      "requested": 1793281199930,
+      "received": 1793281199974,
+      "changedPixels": 19413,
+      "meanDelta": 13.688925595238096
+    },
+    {
+      "index": 143,
+      "requested": 1793281200086,
+      "received": 1793281200130,
+      "changedPixels": 19413,
+      "meanDelta": 13.688925595238096
+    },
+    {
+      "index": 144,
+      "requested": 1793281200242,
+      "received": 1793281200287,
+      "changedPixels": 19413,
+      "meanDelta": 13.688925595238096
+    },
+    {
+      "index": 145,
+      "requested": 1793281200397,
+      "received": 1793281200441,
+      "changedPixels": 19151,
+      "meanDelta": 13.592574404761905
+    },
+    {
+      "index": 146,
+      "requested": 1793281200552,
+      "received": 1793281200598,
+      "changedPixels": 19513,
+      "meanDelta": 13.727681547619047
+    },
+    {
+      "index": 147,
+      "requested": 1793281200709,
+      "received": 1793281200754,
+      "changedPixels": 19513,
+      "meanDelta": 13.727681547619047
+    },
+    {
+      "index": 148,
+      "requested": 1793281200866,
+      "received": 1793281200912,
+      "changedPixels": 19513,
+      "meanDelta": 13.727681547619047
+    },
+    {
+      "index": 149,
+      "requested": 1793281201020,
+      "received": 1793281201064,
+      "changedPixels": 19345,
+      "meanDelta": 13.668556547619048
+    },
+    {
+      "index": 150,
+      "requested": 1793281201176,
+      "received": 1793281201220,
+      "changedPixels": 19345,
+      "meanDelta": 13.668556547619048
+    },
+    {
+      "index": 151,
+      "requested": 1793281201331,
+      "received": 1793281201375,
+      "changedPixels": 19170,
+      "meanDelta": 13.600261904761904
+    },
+    {
+      "index": 152,
+      "requested": 1793281201488,
+      "received": 1793281201533,
+      "changedPixels": 19170,
+      "meanDelta": 13.600261904761904
+    },
+    {
+      "index": 153,
+      "requested": 1793281201647,
+      "received": 1793281201692,
+      "changedPixels": 19170,
+      "meanDelta": 13.600261904761904
+    },
+    {
+      "index": 154,
+      "requested": 1793281201802,
+      "received": 1793281201846,
+      "changedPixels": 19667,
+      "meanDelta": 13.802068452380952
+    },
+    {
+      "index": 155,
+      "requested": 1793281201956,
+      "received": 1793281202001,
+      "changedPixels": 19667,
+      "meanDelta": 13.802068452380952
+    },
+    {
+      "index": 156,
+      "requested": 1793281202110,
+      "received": 1793281202156,
+      "changedPixels": 19455,
+      "meanDelta": 13.705877976190475
+    },
+    {
+      "index": 157,
+      "requested": 1793281202268,
+      "received": 1793281202314,
+      "changedPixels": 19455,
+      "meanDelta": 13.705877976190475
+    },
+    {
+      "index": 158,
+      "requested": 1793281202424,
+      "received": 1793281202469,
+      "changedPixels": 19455,
+      "meanDelta": 13.705877976190475
+    },
+    {
+      "index": 159,
+      "requested": 1793281202581,
+      "received": 1793281202625,
+      "changedPixels": 19313,
+      "meanDelta": 13.653607142857142
+    },
+    {
+      "index": 160,
+      "requested": 1793281202738,
+      "received": 1793281202782,
+      "changedPixels": 19313,
+      "meanDelta": 13.653607142857142
+    },
+    {
+      "index": 161,
+      "requested": 1793281202895,
+      "received": 1793281202940,
+      "changedPixels": 19661,
+      "meanDelta": 13.804645833333336
+    },
+    {
+      "index": 162,
+      "requested": 1793281203051,
+      "received": 1793281203096,
+      "changedPixels": 19661,
+      "meanDelta": 13.804645833333336
+    },
+    {
+      "index": 163,
+      "requested": 1793281203208,
+      "received": 1793281203254,
+      "changedPixels": 19661,
+      "meanDelta": 13.804645833333336
+    },
+    {
+      "index": 164,
+      "requested": 1793281203362,
+      "received": 1793281203406,
+      "changedPixels": 19317,
+      "meanDelta": 13.643223214285713
+    },
+    {
+      "index": 165,
+      "requested": 1793281203520,
+      "received": 1793281203565,
+      "changedPixels": 19255,
+      "meanDelta": 13.608747023809524
+    },
+    {
+      "index": 166,
+      "requested": 1793281203677,
+      "received": 1793281203722,
+      "changedPixels": 19255,
+      "meanDelta": 13.608747023809524
+    },
+    {
+      "index": 167,
+      "requested": 1793281203834,
+      "received": 1793281203878,
+      "changedPixels": 19255,
+      "meanDelta": 13.608747023809524
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+    "programs": [
+
+    ],
+    "streams": [
+        {
+            "codec_name": "h264",
+            "codec_type": "video",
+            "width": 1280,
+            "height": 720,
+            "nb_frames": "70"
+        }
+    ],
+    "format": {
+        "duration": "19.768467",
+        "size": "670395"
+    }
+}
+

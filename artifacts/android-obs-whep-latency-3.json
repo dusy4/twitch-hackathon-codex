@@ -1,0 +1,1209 @@
+{
+  "scope": "Synthetic actor HTTP action request to decoded OBS frame through native snapshot/render/encode, SRT relay and RTMP-to-WebRTC bridge (native H.264 copy, AAC-to-Opus); camera-off emulator, not live Twitch or physical capture-to-OBS latency",
+  "eventRequested": 1793281492051,
+  "action": {
+    "completed": 1793281492091,
+    "result": {
+      "id": "79a173e1-ebcb-4b81-82b9-6667ed4fae52",
+      "status": "running",
+      "message": "sit"
+    }
+  },
+  "roi": [
+    500,
+    220,
+    900,
+    500
+  ],
+  "baselineMaximumChangedPixels": 1279,
+  "changeThresholdPixels": 5116,
+  "pixelRgbMeanThreshold": 25,
+  "maximumAfterChangedPixels": 7638,
+  "firstSignificantFrame": {
+    "index": 23,
+    "requested": 1793281494411,
+    "received": 1793281494457,
+    "path": ".data/native-action-latency/023.png",
+    "changedPixels": 7638,
+    "meanDelta": 4.720035714285714
+  },
+  "requestToDecodedObsFrameUpperBoundMs": 2406,
+  "samples": [
+    {
+      "index": 0,
+      "requested": 1793281490801,
+      "received": 1793281490847,
+      "changedPixels": 0,
+      "meanDelta": 0.0
+    },
+    {
+      "index": 1,
+      "requested": 1793281490959,
+      "received": 1793281491007,
+      "changedPixels": 1279,
+      "meanDelta": 1.1999494047619046
+    },
+    {
+      "index": 2,
+      "requested": 1793281491116,
+      "received": 1793281491164,
+      "changedPixels": 1267,
+      "meanDelta": 1.1979404761904762
+    },
+    {
+      "index": 3,
+      "requested": 1793281491273,
+      "received": 1793281491318,
+      "changedPixels": 1267,
+      "meanDelta": 1.1979404761904762
+    },
+    {
+      "index": 4,
+      "requested": 1793281491428,
+      "received": 1793281491474,
+      "changedPixels": 1267,
+      "meanDelta": 1.1979404761904762
+    },
+    {
+      "index": 5,
+      "requested": 1793281491585,
+      "received": 1793281491631,
+      "changedPixels": 49,
+      "meanDelta": 0.2693601190476191
+    },
+    {
+      "index": 6,
+      "requested": 1793281491740,
+      "received": 1793281491786,
+      "changedPixels": 49,
+      "meanDelta": 0.2693601190476191
+    },
+    {
+      "index": 7,
+      "requested": 1793281491895,
+      "received": 1793281491941,
+      "changedPixels": 657,
+      "meanDelta": 0.7820297619047618
+    },
+    {
+      "index": 8,
+      "requested": 1793281492073,
+      "received": 1793281492122,
+      "changedPixels": 657,
+      "meanDelta": 0.7820297619047618
+    },
+    {
+      "index": 9,
+      "requested": 1793281492225,
+      "received": 1793281492270,
+      "changedPixels": 744,
+      "meanDelta": 0.850047619047619
+    },
+    {
+      "index": 10,
+      "requested": 1793281492381,
+      "received": 1793281492426,
+      "changedPixels": 744,
+      "meanDelta": 0.850047619047619
+    },
+    {
+      "index": 11,
+      "requested": 1793281492537,
+      "received": 1793281492581,
+      "changedPixels": 83,
+      "meanDelta": 0.3613928571428571
+    },
+    {
+      "index": 12,
+      "requested": 1793281492693,
+      "received": 1793281492738,
+      "changedPixels": 83,
+      "meanDelta": 0.3613928571428571
+    },
+    {
+      "index": 13,
+      "requested": 1793281492848,
+      "received": 1793281492893,
+      "changedPixels": 83,
+      "meanDelta": 0.3613928571428571
+    },
+    {
+      "index": 14,
+      "requested": 1793281493004,
+      "received": 1793281493050,
+      "changedPixels": 695,
+      "meanDelta": 0.8603988095238094
+    },
+    {
+      "index": 15,
+      "requested": 1793281493162,
+      "received": 1793281493207,
+      "changedPixels": 1400,
+      "meanDelta": 1.3221250000000002
+    },
+    {
+      "index": 16,
+      "requested": 1793281493317,
+      "received": 1793281493362,
+      "changedPixels": 1400,
+      "meanDelta": 1.3221250000000002
+    },
+    {
+      "index": 17,
+      "requested": 1793281493473,
+      "received": 1793281493519,
+      "changedPixels": 1400,
+      "meanDelta": 1.3221250000000002
+    },
+    {
+      "index": 18,
+      "requested": 1793281493631,
+      "received": 1793281493677,
+      "changedPixels": 72,
+      "meanDelta": 0.40268452380952385
+    },
+    {
+      "index": 19,
+      "requested": 1793281493788,
+      "received": 1793281493836,
+      "changedPixels": 72,
+      "meanDelta": 0.40268452380952385
+    },
+    {
+      "index": 20,
+      "requested": 1793281493944,
+      "received": 1793281493988,
+      "changedPixels": 517,
+      "meanDelta": 0.7073630952380953
+    },
+    {
+      "index": 21,
+      "requested": 1793281494101,
+      "received": 1793281494147,
+      "changedPixels": 517,
+      "meanDelta": 0.7073630952380953
+    },
+    {
+      "index": 22,
+      "requested": 1793281494257,
+      "received": 1793281494303,
+      "changedPixels": 517,
+      "meanDelta": 0.7073630952380953
+    },
+    {
+      "index": 23,
+      "requested": 1793281494411,
+      "received": 1793281494457,
+      "changedPixels": 7638,
+      "meanDelta": 4.720035714285714
+    },
+    {
+      "index": 24,
+      "requested": 1793281494565,
+      "received": 1793281494611,
+      "changedPixels": 7290,
+      "meanDelta": 4.490252976190476
+    },
+    {
+      "index": 25,
+      "requested": 1793281494722,
+      "received": 1793281494767,
+      "changedPixels": 7290,
+      "meanDelta": 4.490252976190476
+    },
+    {
+      "index": 26,
+      "requested": 1793281494878,
+      "received": 1793281494922,
+      "changedPixels": 7208,
+      "meanDelta": 4.414604166666666
+    },
+    {
+      "index": 27,
+      "requested": 1793281495034,
+      "received": 1793281495079,
+      "changedPixels": 7208,
+      "meanDelta": 4.414604166666666
+    },
+    {
+      "index": 28,
+      "requested": 1793281495191,
+      "received": 1793281495236,
+      "changedPixels": 7497,
+      "meanDelta": 4.663782738095239
+    },
+    {
+      "index": 29,
+      "requested": 1793281495348,
+      "received": 1793281495393,
+      "changedPixels": 7497,
+      "meanDelta": 4.663782738095239
+    },
+    {
+      "index": 30,
+      "requested": 1793281495503,
+      "received": 1793281495548,
+      "changedPixels": 7485,
+      "meanDelta": 4.63127380952381
+    },
+    {
+      "index": 31,
+      "requested": 1793281495660,
+      "received": 1793281495705,
+      "changedPixels": 7485,
+      "meanDelta": 4.63127380952381
+    },
+    {
+      "index": 32,
+      "requested": 1793281495814,
+      "received": 1793281495860,
+      "changedPixels": 7174,
+      "meanDelta": 4.366092261904762
+    },
+    {
+      "index": 33,
+      "requested": 1793281495969,
+      "received": 1793281496014,
+      "changedPixels": 7174,
+      "meanDelta": 4.366092261904762
+    },
+    {
+      "index": 34,
+      "requested": 1793281496127,
+      "received": 1793281496172,
+      "changedPixels": 7174,
+      "meanDelta": 4.366092261904762
+    },
+    {
+      "index": 35,
+      "requested": 1793281496283,
+      "received": 1793281496330,
+      "changedPixels": 873,
+      "meanDelta": 0.9845
+    },
+    {
+      "index": 36,
+      "requested": 1793281496439,
+      "received": 1793281496487,
+      "changedPixels": 873,
+      "meanDelta": 0.9845
+    },
+    {
+      "index": 37,
+      "requested": 1793281496596,
+      "received": 1793281496641,
+      "changedPixels": 839,
+      "meanDelta": 0.9460892857142857
+    },
+    {
+      "index": 38,
+      "requested": 1793281496752,
+      "received": 1793281496798,
+      "changedPixels": 839,
+      "meanDelta": 0.9460892857142857
+    },
+    {
+      "index": 39,
+      "requested": 1793281496907,
+      "received": 1793281496953,
+      "changedPixels": 839,
+      "meanDelta": 0.9460892857142857
+    },
+    {
+      "index": 40,
+      "requested": 1793281497063,
+      "received": 1793281497107,
+      "changedPixels": 192,
+      "meanDelta": 0.42125595238095237
+    },
+    {
+      "index": 41,
+      "requested": 1793281497218,
+      "received": 1793281497265,
+      "changedPixels": 192,
+      "meanDelta": 0.42125595238095237
+    },
+    {
+      "index": 42,
+      "requested": 1793281497374,
+      "received": 1793281497426,
+      "changedPixels": 562,
+      "meanDelta": 0.7160089285714287
+    },
+    {
+      "index": 43,
+      "requested": 1793281497531,
+      "received": 1793281497580,
+      "changedPixels": 1057,
+      "meanDelta": 1.0770059523809523
+    },
+    {
+      "index": 44,
+      "requested": 1793281497688,
+      "received": 1793281497733,
+      "changedPixels": 1057,
+      "meanDelta": 1.0770059523809523
+    },
+    {
+      "index": 45,
+      "requested": 1793281497845,
+      "received": 1793281497889,
+      "changedPixels": 1057,
+      "meanDelta": 1.0770059523809523
+    },
+    {
+      "index": 46,
+      "requested": 1793281498002,
+      "received": 1793281498047,
+      "changedPixels": 1057,
+      "meanDelta": 1.0770059523809523
+    },
+    {
+      "index": 47,
+      "requested": 1793281498159,
+      "received": 1793281498207,
+      "changedPixels": 89,
+      "meanDelta": 0.3572470238095238
+    },
+    {
+      "index": 48,
+      "requested": 1793281498313,
+      "received": 1793281498358,
+      "changedPixels": 358,
+      "meanDelta": 0.5765416666666666
+    },
+    {
+      "index": 49,
+      "requested": 1793281498471,
+      "received": 1793281498528,
+      "changedPixels": 358,
+      "meanDelta": 0.5765416666666666
+    },
+    {
+      "index": 50,
+      "requested": 1793281498642,
+      "received": 1793281498687,
+      "changedPixels": 358,
+      "meanDelta": 0.5765416666666666
+    },
+    {
+      "index": 51,
+      "requested": 1793281498797,
+      "received": 1793281498842,
+      "changedPixels": 858,
+      "meanDelta": 0.9314791666666667
+    },
+    {
+      "index": 52,
+      "requested": 1793281498951,
+      "received": 1793281498998,
+      "changedPixels": 858,
+      "meanDelta": 0.9314791666666667
+    },
+    {
+      "index": 53,
+      "requested": 1793281499106,
+      "received": 1793281499152,
+      "changedPixels": 858,
+      "meanDelta": 0.9314791666666667
+    },
+    {
+      "index": 54,
+      "requested": 1793281499263,
+      "received": 1793281499307,
+      "changedPixels": 148,
+      "meanDelta": 0.39768452380952385
+    },
+    {
+      "index": 55,
+      "requested": 1793281499418,
+      "received": 1793281499463,
+      "changedPixels": 205,
+      "meanDelta": 0.43976488095238087
+    },
+    {
+      "index": 56,
+      "requested": 1793281499575,
+      "received": 1793281499621,
+      "changedPixels": 205,
+      "meanDelta": 0.43976488095238087
+    },
+    {
+      "index": 57,
+      "requested": 1793281499730,
+      "received": 1793281499777,
+      "changedPixels": 205,
+      "meanDelta": 0.43976488095238087
+    },
+    {
+      "index": 58,
+      "requested": 1793281499886,
+      "received": 1793281499932,
+      "changedPixels": 934,
+      "meanDelta": 0.9859166666666666
+    },
+    {
+      "index": 59,
+      "requested": 1793281500042,
+      "received": 1793281500092,
+      "changedPixels": 934,
+      "meanDelta": 0.9859166666666666
+    },
+    {
+      "index": 60,
+      "requested": 1793281500200,
+      "received": 1793281500246,
+      "changedPixels": 424,
+      "meanDelta": 0.6484970238095237
+    },
+    {
+      "index": 61,
+      "requested": 1793281500355,
+      "received": 1793281500400,
+      "changedPixels": 424,
+      "meanDelta": 0.6484970238095237
+    },
+    {
+      "index": 62,
+      "requested": 1793281500513,
+      "received": 1793281500559,
+      "changedPixels": 623,
+      "meanDelta": 0.7805059523809524
+    },
+    {
+      "index": 63,
+      "requested": 1793281500667,
+      "received": 1793281500712,
+      "changedPixels": 623,
+      "meanDelta": 0.7805059523809524
+    },
+    {
+      "index": 64,
+      "requested": 1793281500823,
+      "received": 1793281500871,
+      "changedPixels": 623,
+      "meanDelta": 0.7805059523809524
+    },
+    {
+      "index": 65,
+      "requested": 1793281500978,
+      "received": 1793281501025,
+      "changedPixels": 1144,
+      "meanDelta": 1.161300595238095
+    },
+    {
+      "index": 66,
+      "requested": 1793281501135,
+      "received": 1793281501180,
+      "changedPixels": 1144,
+      "meanDelta": 1.161300595238095
+    },
+    {
+      "index": 67,
+      "requested": 1793281501289,
+      "received": 1793281501335,
+      "changedPixels": 1144,
+      "meanDelta": 1.161300595238095
+    },
+    {
+      "index": 68,
+      "requested": 1793281501446,
+      "received": 1793281501492,
+      "changedPixels": 93,
+      "meanDelta": 0.42859523809523814
+    },
+    {
+      "index": 69,
+      "requested": 1793281501601,
+      "received": 1793281501647,
+      "changedPixels": 93,
+      "meanDelta": 0.42859523809523814
+    },
+    {
+      "index": 70,
+      "requested": 1793281501757,
+      "received": 1793281501802,
+      "changedPixels": 1138,
+      "meanDelta": 1.1530357142857142
+    },
+    {
+      "index": 71,
+      "requested": 1793281501912,
+      "received": 1793281501961,
+      "changedPixels": 1138,
+      "meanDelta": 1.1530357142857142
+    },
+    {
+      "index": 72,
+      "requested": 1793281502067,
+      "received": 1793281502113,
+      "changedPixels": 659,
+      "meanDelta": 0.823297619047619
+    },
+    {
+      "index": 73,
+      "requested": 1793281502225,
+      "received": 1793281502270,
+      "changedPixels": 659,
+      "meanDelta": 0.823297619047619
+    },
+    {
+      "index": 74,
+      "requested": 1793281502381,
+      "received": 1793281502428,
+      "changedPixels": 80,
+      "meanDelta": 0.3505208333333333
+    },
+    {
+      "index": 75,
+      "requested": 1793281502537,
+      "received": 1793281502583,
+      "changedPixels": 80,
+      "meanDelta": 0.3505208333333333
+    },
+    {
+      "index": 76,
+      "requested": 1793281502696,
+      "received": 1793281502743,
+      "changedPixels": 301,
+      "meanDelta": 0.5241755952380952
+    },
+    {
+      "index": 77,
+      "requested": 1793281502852,
+      "received": 1793281502896,
+      "changedPixels": 301,
+      "meanDelta": 0.5241755952380952
+    },
+    {
+      "index": 78,
+      "requested": 1793281503006,
+      "received": 1793281503056,
+      "changedPixels": 301,
+      "meanDelta": 0.5241755952380952
+    },
+    {
+      "index": 79,
+      "requested": 1793281503162,
+      "received": 1793281503207,
+      "changedPixels": 742,
+      "meanDelta": 0.8470178571428572
+    },
+    {
+      "index": 80,
+      "requested": 1793281503318,
+      "received": 1793281503363,
+      "changedPixels": 742,
+      "meanDelta": 0.8470178571428572
+    },
+    {
+      "index": 81,
+      "requested": 1793281503475,
+      "received": 1793281503521,
+      "changedPixels": 79,
+      "meanDelta": 0.33998214285714284
+    },
+    {
+      "index": 82,
+      "requested": 1793281503630,
+      "received": 1793281503679,
+      "changedPixels": 79,
+      "meanDelta": 0.33998214285714284
+    },
+    {
+      "index": 83,
+      "requested": 1793281503784,
+      "received": 1793281503830,
+      "changedPixels": 315,
+      "meanDelta": 0.5268958333333333
+    },
+    {
+      "index": 84,
+      "requested": 1793281503939,
+      "received": 1793281503986,
+      "changedPixels": 315,
+      "meanDelta": 0.5268958333333333
+    },
+    {
+      "index": 85,
+      "requested": 1793281504097,
+      "received": 1793281504145,
+      "changedPixels": 729,
+      "meanDelta": 0.8390267857142857
+    },
+    {
+      "index": 86,
+      "requested": 1793281504253,
+      "received": 1793281504298,
+      "changedPixels": 729,
+      "meanDelta": 0.8390267857142857
+    },
+    {
+      "index": 87,
+      "requested": 1793281504456,
+      "received": 1793281504526,
+      "changedPixels": 729,
+      "meanDelta": 0.8390267857142857
+    },
+    {
+      "index": 88,
+      "requested": 1793281504627,
+      "received": 1793281504673,
+      "changedPixels": 203,
+      "meanDelta": 0.4762113095238096
+    },
+    {
+      "index": 89,
+      "requested": 1793281504783,
+      "received": 1793281504828,
+      "changedPixels": 203,
+      "meanDelta": 0.4762113095238096
+    },
+    {
+      "index": 90,
+      "requested": 1793281504937,
+      "received": 1793281504984,
+      "changedPixels": 1093,
+      "meanDelta": 1.1218422619047619
+    },
+    {
+      "index": 91,
+      "requested": 1793281505092,
+      "received": 1793281505137,
+      "changedPixels": 1093,
+      "meanDelta": 1.1218422619047619
+    },
+    {
+      "index": 92,
+      "requested": 1793281505249,
+      "received": 1793281505295,
+      "changedPixels": 988,
+      "meanDelta": 1.0533125
+    },
+    {
+      "index": 93,
+      "requested": 1793281505406,
+      "received": 1793281505453,
+      "changedPixels": 988,
+      "meanDelta": 1.0533125
+    },
+    {
+      "index": 94,
+      "requested": 1793281505562,
+      "received": 1793281505608,
+      "changedPixels": 129,
+      "meanDelta": 0.4755267857142857
+    },
+    {
+      "index": 95,
+      "requested": 1793281505718,
+      "received": 1793281505765,
+      "changedPixels": 129,
+      "meanDelta": 0.4755267857142857
+    },
+    {
+      "index": 96,
+      "requested": 1793281505874,
+      "received": 1793281505918,
+      "changedPixels": 129,
+      "meanDelta": 0.4755267857142857
+    },
+    {
+      "index": 97,
+      "requested": 1793281506030,
+      "received": 1793281506074,
+      "changedPixels": 1164,
+      "meanDelta": 1.1561934523809525
+    },
+    {
+      "index": 98,
+      "requested": 1793281506185,
+      "received": 1793281506230,
+      "changedPixels": 1164,
+      "meanDelta": 1.1561934523809525
+    },
+    {
+      "index": 99,
+      "requested": 1793281506341,
+      "received": 1793281506388,
+      "changedPixels": 536,
+      "meanDelta": 0.7360803571428571
+    },
+    {
+      "index": 100,
+      "requested": 1793281506496,
+      "received": 1793281506542,
+      "changedPixels": 536,
+      "meanDelta": 0.7360803571428571
+    },
+    {
+      "index": 101,
+      "requested": 1793281506651,
+      "received": 1793281506696,
+      "changedPixels": 536,
+      "meanDelta": 0.7360803571428571
+    },
+    {
+      "index": 102,
+      "requested": 1793281506808,
+      "received": 1793281506854,
+      "changedPixels": 536,
+      "meanDelta": 0.7360803571428571
+    },
+    {
+      "index": 103,
+      "requested": 1793281506964,
+      "received": 1793281507014,
+      "changedPixels": 536,
+      "meanDelta": 0.7360803571428571
+    },
+    {
+      "index": 104,
+      "requested": 1793281507120,
+      "received": 1793281507167,
+      "changedPixels": 621,
+      "meanDelta": 0.7815238095238096
+    },
+    {
+      "index": 105,
+      "requested": 1793281507276,
+      "received": 1793281507323,
+      "changedPixels": 1164,
+      "meanDelta": 1.1850505952380952
+    },
+    {
+      "index": 106,
+      "requested": 1793281507432,
+      "received": 1793281507479,
+      "changedPixels": 1164,
+      "meanDelta": 1.1850505952380952
+    },
+    {
+      "index": 107,
+      "requested": 1793281507587,
+      "received": 1793281507632,
+      "changedPixels": 1164,
+      "meanDelta": 1.1850505952380952
+    },
+    {
+      "index": 108,
+      "requested": 1793281507744,
+      "received": 1793281507790,
+      "changedPixels": 1164,
+      "meanDelta": 1.1850505952380952
+    },
+    {
+      "index": 109,
+      "requested": 1793281507901,
+      "received": 1793281507948,
+      "changedPixels": 201,
+      "meanDelta": 0.5422946428571429
+    },
+    {
+      "index": 110,
+      "requested": 1793281508056,
+      "received": 1793281508101,
+      "changedPixels": 201,
+      "meanDelta": 0.5422946428571429
+    },
+    {
+      "index": 111,
+      "requested": 1793281508215,
+      "received": 1793281508264,
+      "changedPixels": 929,
+      "meanDelta": 1.0250863095238096
+    },
+    {
+      "index": 112,
+      "requested": 1793281508373,
+      "received": 1793281508419,
+      "changedPixels": 929,
+      "meanDelta": 1.0250863095238096
+    },
+    {
+      "index": 113,
+      "requested": 1793281508530,
+      "received": 1793281508575,
+      "changedPixels": 929,
+      "meanDelta": 1.0250863095238096
+    },
+    {
+      "index": 114,
+      "requested": 1793281508688,
+      "received": 1793281508732,
+      "changedPixels": 338,
+      "meanDelta": 0.5871071428571428
+    },
+    {
+      "index": 115,
+      "requested": 1793281508845,
+      "received": 1793281508891,
+      "changedPixels": 338,
+      "meanDelta": 0.5871071428571428
+    },
+    {
+      "index": 116,
+      "requested": 1793281509000,
+      "received": 1793281509045,
+      "changedPixels": 273,
+      "meanDelta": 0.536264880952381
+    },
+    {
+      "index": 117,
+      "requested": 1793281509156,
+      "received": 1793281509201,
+      "changedPixels": 273,
+      "meanDelta": 0.536264880952381
+    },
+    {
+      "index": 118,
+      "requested": 1793281509313,
+      "received": 1793281509359,
+      "changedPixels": 273,
+      "meanDelta": 0.536264880952381
+    },
+    {
+      "index": 119,
+      "requested": 1793281509469,
+      "received": 1793281509515,
+      "changedPixels": 273,
+      "meanDelta": 0.536264880952381
+    },
+    {
+      "index": 120,
+      "requested": 1793281509626,
+      "received": 1793281509671,
+      "changedPixels": 273,
+      "meanDelta": 0.536264880952381
+    },
+    {
+      "index": 121,
+      "requested": 1793281509782,
+      "received": 1793281509827,
+      "changedPixels": 735,
+      "meanDelta": 0.8381696428571427
+    },
+    {
+      "index": 122,
+      "requested": 1793281509938,
+      "received": 1793281509984,
+      "changedPixels": 76,
+      "meanDelta": 0.3346011904761905
+    },
+    {
+      "index": 123,
+      "requested": 1793281510095,
+      "received": 1793281510139,
+      "changedPixels": 76,
+      "meanDelta": 0.3346011904761905
+    },
+    {
+      "index": 124,
+      "requested": 1793281510250,
+      "received": 1793281510295,
+      "changedPixels": 76,
+      "meanDelta": 0.3346011904761905
+    },
+    {
+      "index": 125,
+      "requested": 1793281510405,
+      "received": 1793281510451,
+      "changedPixels": 356,
+      "meanDelta": 0.5553958333333333
+    },
+    {
+      "index": 126,
+      "requested": 1793281510562,
+      "received": 1793281510608,
+      "changedPixels": 356,
+      "meanDelta": 0.5553958333333333
+    },
+    {
+      "index": 127,
+      "requested": 1793281510717,
+      "received": 1793281510762,
+      "changedPixels": 566,
+      "meanDelta": 0.712702380952381
+    },
+    {
+      "index": 128,
+      "requested": 1793281510873,
+      "received": 1793281510918,
+      "changedPixels": 566,
+      "meanDelta": 0.712702380952381
+    },
+    {
+      "index": 129,
+      "requested": 1793281511029,
+      "received": 1793281511073,
+      "changedPixels": 566,
+      "meanDelta": 0.712702380952381
+    },
+    {
+      "index": 130,
+      "requested": 1793281511185,
+      "received": 1793281511230,
+      "changedPixels": 176,
+      "meanDelta": 0.45083630952380954
+    },
+    {
+      "index": 131,
+      "requested": 1793281511340,
+      "received": 1793281511386,
+      "changedPixels": 176,
+      "meanDelta": 0.45083630952380954
+    },
+    {
+      "index": 132,
+      "requested": 1793281511499,
+      "received": 1793281511545,
+      "changedPixels": 1114,
+      "meanDelta": 1.1209047619047618
+    },
+    {
+      "index": 133,
+      "requested": 1793281511654,
+      "received": 1793281511700,
+      "changedPixels": 1114,
+      "meanDelta": 1.1209047619047618
+    },
+    {
+      "index": 134,
+      "requested": 1793281511810,
+      "received": 1793281511858,
+      "changedPixels": 1114,
+      "meanDelta": 1.1209047619047618
+    },
+    {
+      "index": 135,
+      "requested": 1793281511966,
+      "received": 1793281512010,
+      "changedPixels": 85,
+      "meanDelta": 0.3464940476190476
+    },
+    {
+      "index": 136,
+      "requested": 1793281512122,
+      "received": 1793281512169,
+      "changedPixels": 85,
+      "meanDelta": 0.3464940476190476
+    },
+    {
+      "index": 137,
+      "requested": 1793281512277,
+      "received": 1793281512323,
+      "changedPixels": 85,
+      "meanDelta": 0.3464940476190476
+    },
+    {
+      "index": 138,
+      "requested": 1793281512432,
+      "received": 1793281512478,
+      "changedPixels": 1115,
+      "meanDelta": 1.1420803571428573
+    },
+    {
+      "index": 139,
+      "requested": 1793281512588,
+      "received": 1793281512633,
+      "changedPixels": 1115,
+      "meanDelta": 1.1420803571428573
+    },
+    {
+      "index": 140,
+      "requested": 1793281512743,
+      "received": 1793281512788,
+      "changedPixels": 1022,
+      "meanDelta": 1.0516458333333334
+    },
+    {
+      "index": 141,
+      "requested": 1793281512898,
+      "received": 1793281512944,
+      "changedPixels": 1022,
+      "meanDelta": 1.0516458333333334
+    },
+    {
+      "index": 142,
+      "requested": 1793281513053,
+      "received": 1793281513105,
+      "changedPixels": 1022,
+      "meanDelta": 1.0516458333333334
+    },
+    {
+      "index": 143,
+      "requested": 1793281513210,
+      "received": 1793281513258,
+      "changedPixels": 147,
+      "meanDelta": 0.45730952380952383
+    },
+    {
+      "index": 144,
+      "requested": 1793281513368,
+      "received": 1793281513413,
+      "changedPixels": 147,
+      "meanDelta": 0.45730952380952383
+    },
+    {
+      "index": 145,
+      "requested": 1793281513524,
+      "received": 1793281513568,
+      "changedPixels": 1189,
+      "meanDelta": 1.174845238095238
+    },
+    {
+      "index": 146,
+      "requested": 1793281513678,
+      "received": 1793281513726,
+      "changedPixels": 1189,
+      "meanDelta": 1.174845238095238
+    },
+    {
+      "index": 147,
+      "requested": 1793281513833,
+      "received": 1793281513877,
+      "changedPixels": 1189,
+      "meanDelta": 1.174845238095238
+    },
+    {
+      "index": 148,
+      "requested": 1793281513988,
+      "received": 1793281514033,
+      "changedPixels": 254,
+      "meanDelta": 0.4943392857142857
+    },
+    {
+      "index": 149,
+      "requested": 1793281514145,
+      "received": 1793281514191,
+      "changedPixels": 254,
+      "meanDelta": 0.4943392857142857
+    },
+    {
+      "index": 150,
+      "requested": 1793281514300,
+      "received": 1793281514345,
+      "changedPixels": 373,
+      "meanDelta": 0.5910892857142858
+    },
+    {
+      "index": 151,
+      "requested": 1793281514458,
+      "received": 1793281514506,
+      "changedPixels": 373,
+      "meanDelta": 0.5910892857142858
+    },
+    {
+      "index": 152,
+      "requested": 1793281514614,
+      "received": 1793281514660,
+      "changedPixels": 373,
+      "meanDelta": 0.5910892857142858
+    },
+    {
+      "index": 153,
+      "requested": 1793281514769,
+      "received": 1793281514813,
+      "changedPixels": 937,
+      "meanDelta": 0.9926994047619049
+    },
+    {
+      "index": 154,
+      "requested": 1793281514926,
+      "received": 1793281514971,
+      "changedPixels": 937,
+      "meanDelta": 0.9926994047619049
+    },
+    {
+      "index": 155,
+      "requested": 1793281515083,
+      "received": 1793281515129,
+      "changedPixels": 77,
+      "meanDelta": 0.39666964285714285
+    },
+    {
+      "index": 156,
+      "requested": 1793281515239,
+      "received": 1793281515284,
+      "changedPixels": 77,
+      "meanDelta": 0.39666964285714285
+    },
+    {
+      "index": 157,
+      "requested": 1793281515395,
+      "received": 1793281515441,
+      "changedPixels": 77,
+      "meanDelta": 0.39666964285714285
+    },
+    {
+      "index": 158,
+      "requested": 1793281515553,
+      "received": 1793281515601,
+      "changedPixels": 825,
+      "meanDelta": 0.9190892857142857
+    },
+    {
+      "index": 159,
+      "requested": 1793281515710,
+      "received": 1793281515754,
+      "changedPixels": 825,
+      "meanDelta": 0.9190892857142857
+    },
+    {
+      "index": 160,
+      "requested": 1793281515865,
+      "received": 1793281515911,
+      "changedPixels": 1079,
+      "meanDelta": 1.0991190476190476
+    },
+    {
+      "index": 161,
+      "requested": 1793281516021,
+      "received": 1793281516067,
+      "changedPixels": 1079,
+      "meanDelta": 1.0991190476190476
+    },
+    {
+      "index": 162,
+      "requested": 1793281516179,
+      "received": 1793281516225,
+      "changedPixels": 1079,
+      "meanDelta": 1.0991190476190476
+    },
+    {
+      "index": 163,
+      "requested": 1793281516334,
+      "received": 1793281516379,
+      "changedPixels": 295,
+      "meanDelta": 0.5408779761904762
+    },
+    {
+      "index": 164,
+      "requested": 1793281516489,
+      "received": 1793281516535,
+      "changedPixels": 295,
+      "meanDelta": 0.5408779761904762
+    },
+    {
+      "index": 165,
+      "requested": 1793281516644,
+      "received": 1793281516691,
+      "changedPixels": 295,
+      "meanDelta": 0.5408779761904762
+    },
+    {
+      "index": 166,
+      "requested": 1793281516802,
+      "received": 1793281516847,
+      "changedPixels": 1171,
+      "meanDelta": 1.1668214285714287
+    },
+    {
+      "index": 167,
+      "requested": 1793281516956,
+      "received": 1793281517001,
+      "changedPixels": 1171,
+      "meanDelta": 1.1668214285714287
+    }
+  ]
+}

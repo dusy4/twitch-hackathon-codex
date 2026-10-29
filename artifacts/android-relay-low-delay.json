@@ -1,0 +1,268 @@
+{
+  "scope": "Synthetic HTTP action through native scene and SRT relay to independent single-thread FFmpeg RTMP decoder; emulator, excludes OBS and Twitch",
+  "event": {
+    "requested": 1793280733113,
+    "result": {
+      "id": "6848acd7-2a43-4c52-8fa3-c36ee7cee65c",
+      "status": "running",
+      "message": "Moving left"
+    },
+    "completed": 1793280733389
+  },
+  "frames": [
+    {
+      "received": 1793280727703,
+      "changedPixels": 0
+    },
+    {
+      "received": 1793280728177,
+      "changedPixels": 2
+    },
+    {
+      "received": 1793280728476,
+      "changedPixels": 2
+    },
+    {
+      "received": 1793280728933,
+      "changedPixels": 0
+    },
+    {
+      "received": 1793280729266,
+      "changedPixels": 13
+    },
+    {
+      "received": 1793280729796,
+      "changedPixels": 2
+    },
+    {
+      "received": 1793280730180,
+      "changedPixels": 2
+    },
+    {
+      "received": 1793280730686,
+      "changedPixels": 7
+    },
+    {
+      "received": 1793280730979,
+      "changedPixels": 0
+    },
+    {
+      "received": 1793280731427,
+      "changedPixels": 15
+    },
+    {
+      "received": 1793280731735,
+      "changedPixels": 0
+    },
+    {
+      "received": 1793280732203,
+      "changedPixels": 0
+    },
+    {
+      "received": 1793280732515,
+      "changedPixels": 14
+    },
+    {
+      "received": 1793280732973,
+      "changedPixels": 0
+    },
+    {
+      "received": 1793280733253,
+      "changedPixels": 2
+    },
+    {
+      "received": 1793280733703,
+      "changedPixels": 5
+    },
+    {
+      "received": 1793280734004,
+      "changedPixels": 0
+    },
+    {
+      "received": 1793280734496,
+      "changedPixels": 2
+    },
+    {
+      "received": 1793280734784,
+      "changedPixels": 2
+    },
+    {
+      "received": 1793280735317,
+      "changedPixels": 1266
+    },
+    {
+      "received": 1793280735625,
+      "changedPixels": 1257
+    },
+    {
+      "received": 1793280736144,
+      "changedPixels": 1292
+    },
+    {
+      "received": 1793280736424,
+      "changedPixels": 1285
+    },
+    {
+      "received": 1793280736945,
+      "changedPixels": 1288
+    },
+    {
+      "received": 1793280737224,
+      "changedPixels": 1292
+    },
+    {
+      "received": 1793280737654,
+      "changedPixels": 1285
+    },
+    {
+      "received": 1793280737927,
+      "changedPixels": 1291
+    },
+    {
+      "received": 1793280738413,
+      "changedPixels": 1291
+    },
+    {
+      "received": 1793280738693,
+      "changedPixels": 1288
+    },
+    {
+      "received": 1793280739114,
+      "changedPixels": 1292
+    },
+    {
+      "received": 1793280739404,
+      "changedPixels": 1289
+    },
+    {
+      "received": 1793280739865,
+      "changedPixels": 1286
+    },
+    {
+      "received": 1793280740154,
+      "changedPixels": 1290
+    },
+    {
+      "received": 1793280740685,
+      "changedPixels": 1291
+    },
+    {
+      "received": 1793280741004,
+      "changedPixels": 1289
+    },
+    {
+      "received": 1793280741443,
+      "changedPixels": 1290
+    },
+    {
+      "received": 1793280741707,
+      "changedPixels": 1285
+    },
+    {
+      "received": 1793280742184,
+      "changedPixels": 1295
+    },
+    {
+      "received": 1793280742484,
+      "changedPixels": 1295
+    },
+    {
+      "received": 1793280742934,
+      "changedPixels": 1285
+    },
+    {
+      "received": 1793280743255,
+      "changedPixels": 1294
+    },
+    {
+      "received": 1793280743783,
+      "changedPixels": 1291
+    },
+    {
+      "received": 1793280744065,
+      "changedPixels": 1289
+    },
+    {
+      "received": 1793280744585,
+      "changedPixels": 1293
+    },
+    {
+      "received": 1793280744914,
+      "changedPixels": 1290
+    },
+    {
+      "received": 1793280745418,
+      "changedPixels": 1291
+    },
+    {
+      "received": 1793280745734,
+      "changedPixels": 1294
+    },
+    {
+      "received": 1793280746190,
+      "changedPixels": 1287
+    },
+    {
+      "received": 1793280746514,
+      "changedPixels": 1291
+    },
+    {
+      "received": 1793280747085,
+      "changedPixels": 1292
+    },
+    {
+      "received": 1793280747407,
+      "changedPixels": 1289
+    },
+    {
+      "received": 1793280747886,
+      "changedPixels": 1291
+    },
+    {
+      "received": 1793280748207,
+      "changedPixels": 1285
+    },
+    {
+      "received": 1793280748644,
+      "changedPixels": 1289
+    },
+    {
+      "received": 1793280748927,
+      "changedPixels": 1290
+    },
+    {
+      "received": 1793280749334,
+      "changedPixels": 1288
+    },
+    {
+      "received": 1793280749588,
+      "changedPixels": 1290
+    },
+    {
+      "received": 1793280750126,
+      "changedPixels": 1294
+    },
+    {
+      "received": 1793280750418,
+      "changedPixels": 1288
+    },
+    {
+      "received": 1793280750894,
+      "changedPixels": 1289
+    },
+    {
+      "received": 1793280751203,
+      "changedPixels": 1288
+    }
+  ],
+  "analysis": {
+    "apkSha256": "4b53e93ec69adc07f5ba37524d85ebdf8a241201d12306ff239d3edcfdf301be",
+    "firstChanged": {
+      "received": 1793280735317,
+      "changedPixels": 1266
+    },
+    "baseline": 15.0,
+    "threshold": 300,
+    "requestToDecoderUpperBoundMs": 2204
+  }
+}
