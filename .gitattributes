@@ -10,3 +10,5 @@
 apps/android/gradlew text eol=lf
 apps/android/gradlew.bat text eol=crlf
 *.sh text eol=lf
+# Preserve the upstream bundled legal notice verbatim.
+apps/android/app/src/main/assets/notices/WebRTC-Third-Party.md -whitespace
