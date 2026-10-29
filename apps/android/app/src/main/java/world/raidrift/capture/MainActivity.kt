@@ -126,7 +126,9 @@ private fun CaptureApp(connection: WorldConnection) {
     val arDiagnostics = remember { ArFrameDiagnostics() }
     var lightMode by remember { mutableStateOf(LightMode.HDR) }
     var shadowMode by remember { mutableStateOf(ShadowMode.BLOB) }
-    var occlusionOn by remember { mutableStateOf(true) }
+    // Off by default: ARCore depth is low-res and a few cm noisy at the floor, which hides the lower
+    // part (or all) of a 30 cm character standing on it. DBG can switch it on to compare.
+    var occlusionOn by remember { mutableStateOf(false) }
     var shadowPlanes by remember { mutableStateOf<List<Plane>>(emptyList()) }
     var trackingOk by remember { mutableStateOf(false) }
     // Keep the callback stable per light mode: changing it asks SceneView to reconfigure ARCore.
@@ -253,13 +255,18 @@ private fun CaptureApp(connection: WorldConnection) {
                         else if (surfaces == 0) "Tracking ready · move slowly to detect a desk or floor" else "$surfaces surfaces detected · tap a desk or floor"
                     } else if (followMe) "Characters follow you · tap a surface to re-place"
                     else "Room anchor placed · tap another surface to move"
+                    // Known floor height, extended past ARCore's detected patch (see mainFloorY).
+                    val floorY = if (tracked) mainFloorY(session.getAllTrackables(Plane::class.java).toList(), frame.camera.pose.ty()) else null
+                    fun floorAnchor(x: Float, y: Float) = floorY?.let { fy -> infiniteFloorPoint(frame, fy, x, y, viewSize.first, viewSize.second) }
+                        ?.let { p -> runCatching { session.createAnchor(com.google.ar.core.Pose.makeTranslation(p.x, p.y, p.z)) }.getOrNull() }
                     pendingTap?.let { point ->
                         pendingTap = null
                         if (tracked) {
-                            // Plane, then upward depth point; only with neither, ARCore Instant Placement at ~1.2 m.
+                            // Plane, then upward depth point, then the extended floor; only with none, Instant Placement at ~1.2 m.
                             val hit = groundHit(frame, point.first, point.second)
                             val created = if (hit != null) runCatching { anchorGround(session, hit) }.getOrNull()
-                                else runCatching { frame.hitTestInstantPlacement(point.first, point.second, 1.2f).firstOrNull()?.createAnchor() }.getOrNull()
+                                else floorAnchor(point.first, point.second)
+                                    ?: runCatching { frame.hitTestInstantPlacement(point.first, point.second, 1.2f).firstOrNull()?.createAnchor() }.getOrNull()
                             if (BuildConfig.DEBUG) android.util.Log.d("RaidRiftAR", "surfaceTap planes=$surfaces hit=${hit?.trackable?.javaClass?.simpleName} anchored=${created != null}")
                             if (created == null) error = "No floor or desk found there yet. Keep scanning slowly, then tap a surface."
                             else { anchor = created; error = if (hit == null) "Placed with Instant Placement · position refines as you move" else "" }
@@ -274,9 +281,10 @@ private fun CaptureApp(connection: WorldConnection) {
                             kotlin.math.hypot(current.pose.tx() - camPose.tx(), current.pose.tz() - camPose.tz()) > REANCHOR_METRES
                         if (needsAnchor) {
                             lastAutoPlace = SystemClock.elapsedRealtime()
-                            groundHit(frame, viewSize.first / 2f, viewSize.second * 0.8f)?.let { hit ->
-                                runCatching { anchorGround(session, hit) }.onSuccess { anchor = it; error = "" }
-                            }
+                            val hit = groundHit(frame, viewSize.first / 2f, viewSize.second * 0.8f)
+                            val created = if (hit != null) runCatching { anchorGround(session, hit) }.getOrNull()
+                                else floorAnchor(viewSize.first / 2f, viewSize.second * 0.8f)
+                            if (created != null) { anchor = created; error = "" }
                         }
                     }
                     val nowElapsed = SystemClock.elapsedRealtime()
@@ -447,8 +455,9 @@ private fun CaptureApp(connection: WorldConnection) {
                                 SensedWall(origin, axis(1f, 0f, 0f), axis(0f, 0f, 1f), axis(0f, 1f, 0f), points)
                             }.getOrNull()
                         }
-                        // Measured support under a point: tracked upward planes, then recent depth.
-                        fun support(query: FootPosition): Float? {
+                        // Measured support under a point: tracked upward planes, then recent depth, then the
+                        // extended floor (past the detected patch), so characters don't vanish off its edge.
+                        fun measuredSupport(query: FootPosition): Float? {
                             val measured = planes.mapNotNull { plane ->
                                 val height = plane.centerPose.ty()
                                 val sample = com.google.ar.core.Pose.makeTranslation(query.x, height, query.z)
@@ -459,7 +468,8 @@ private fun CaptureApp(connection: WorldConnection) {
                                 ?.floorYAt(query.x, query.y + 0.035f, query.z, 0f)
                             return listOfNotNull(measured, recentDepth).maxOrNull()
                         }
-                        val elapsed = if (contactFrame.timestamp == 0L) 0f else (frame.timestamp - contactFrame.timestamp) / 1_000_000_000f
+                        fun support(query: FootPosition): Float? = measuredSupport(query) ?: floorY?.takeIf { it <= query.y + 0.035f }
+                        val elapsed =if (contactFrame.timestamp == 0L) 0f else (frame.timestamp - contactFrame.timestamp) / 1_000_000_000f
                         contactFrame.timestamp = frame.timestamp
                         contactFrame.pose?.let { previous ->
                             val inverse = previous.inverse()

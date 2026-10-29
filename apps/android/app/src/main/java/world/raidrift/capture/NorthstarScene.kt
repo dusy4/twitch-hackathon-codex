@@ -87,6 +87,23 @@ internal fun lowestGround(planes: List<Plane>): Float? =
     planes.filter { it.trackingState == TrackingState.TRACKING && it.subsumedBy == null && it.type == Plane.Type.HORIZONTAL_UPWARD_FACING }
         .minOfOrNull { it.centerPose.ty() }
 
+/**
+ * Height of the room floor: the lowest tracked upward plane at least 0.5 m below the camera.
+ * ARCore's floor polygon starts as a small patch of dots; past its edge the floor is treated as
+ * continuing at this height (ARKit's "existingPlaneInfinite"), so characters don't vanish there.
+ */
+internal fun mainFloorY(planes: List<Plane>, cameraY: Float): Float? = lowestGround(planes)?.takeIf { it < cameraY - 0.5f }
+
+/** View pixel (x, y) projected onto the infinite floor at [floorY], within 6 m of the camera. */
+internal fun infiniteFloorPoint(frame: Frame, floorY: Float, x: Float, y: Float, viewW: Int, viewH: Int): FootPosition? {
+    if (viewW <= 0 || viewH <= 0) return null
+    val camera = frame.camera.displayOrientedPose
+    val projection = FloatArray(16).also { frame.camera.getProjectionMatrix(it, 0, 0.05f, 50f) }
+    val dirCam = GroundRay.cameraDirection(x / viewW, y / viewH, projection)
+    val d = camera.rotateVector(floatArrayOf(dirCam.x, dirCam.y, dirCam.z))
+    return GroundRay.intersect(FootPosition(camera.tx(), camera.ty(), camera.tz()), FootPosition(d[0], d[1], d[2]), floorY, 6f)
+}
+
 private fun isFloorPlaneHit(hit: HitResult): Boolean {
     val plane = hit.trackable as? Plane ?: return false
     return plane.trackingState == TrackingState.TRACKING && plane.subsumedBy == null && plane.type == Plane.Type.HORIZONTAL_UPWARD_FACING && plane.isPoseInPolygon(hit.hitPose)
