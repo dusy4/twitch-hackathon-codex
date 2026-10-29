@@ -1,0 +1,23 @@
+--------- beginning of kernel
+--------- beginning of system
+--------- beginning of main
+10-29 15:42:57.792  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=1 imageFps=0 anchor=null previousFeet=0
+10-29 15:42:58.885  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=1 anchor=null previousFeet=0
+10-29 15:43:00.267  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0 anchor=null previousFeet=0
+10-29 15:43:01.577  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=97 imageFps=1 anchor=null previousFeet=0
+10-29 15:43:02.663  5080  5080 D RaidRiftAR: frame state=TRACKING floors=0 points=1 imageFps=2 anchor=null previousFeet=0
+10-29 15:43:03.892  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=1 anchor=null previousFeet=0
+10-29 15:43:04.929  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=111 imageFps=0 anchor=null previousFeet=0
+10-29 15:43:06.324  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=2 anchor=null previousFeet=0
+10-29 15:43:07.896  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=1 imageFps=1 anchor=null previousFeet=0
+10-29 15:43:09.091  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=45 imageFps=3 anchor=null previousFeet=0
+10-29 15:43:13.186  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=2 anchor=null previousFeet=0
+10-29 15:43:14.492  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=1 imageFps=2 anchor=null previousFeet=0
+10-29 15:43:15.760  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=1 anchor=null previousFeet=0
+10-29 15:43:16.878  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=28 imageFps=1 anchor=null previousFeet=0
+10-29 15:43:18.650  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=1 anchor=null previousFeet=0
+10-29 15:43:20.448  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=1 anchor=null previousFeet=0
+10-29 15:43:21.510  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=1 anchor=null previousFeet=0
+10-29 15:43:22.653  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=1 anchor=null previousFeet=0
+10-29 15:43:23.837  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=2 anchor=null previousFeet=0
+10-29 15:43:26.175  5080  5080 D RaidRiftAR: frame state=PAUSED floors=0 points=3 imageFps=2 anchor=null previousFeet=0

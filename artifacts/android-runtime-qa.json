@@ -1,0 +1,134 @@
+{
+  "regressions": {
+    "broadBrowserReleaseGatePassed": false,
+    "focusedBrowser": 2,
+    "nativeJvm": 19,
+    "backend": {
+      "total": 64,
+      "log": ".data/relay-receiver-backend.log",
+      "passed": 63,
+      "conditionalSkipped": 1
+    }
+  },
+  "date": "2026-10-29",
+  "arDiagnostic": {
+    "syntheticPlanesInjected": false,
+    "note": "Direct ARCore diagnostic; does not pass product AR placement",
+    "uniqueCameraCadenceMeasured": false,
+    "renderedCharacters": false,
+    "application": "world.raidrift.arprobe",
+    "updateCallsPerSecond": 8,
+    "trackedHorizontalPlanesObserved": 6,
+    "validCenterHitsObserved": 5,
+    "actualArcore": "1.57"
+  },
+  "nativeStreaming": {
+    "transport": "SRT to MediaMTX1.21.3; H264 copied and AAC converted to Opus for WHEP; actual OBS33 Browser Source",
+    "actionPassed": true,
+    "apkSha256": "3f11cb45c9cd601376982c5b58d654c3c9ab2e7104d6669e15b671970752cb54",
+    "pauseToClearedFrameUpperBoundMs": 4579,
+    "actualDecodedInjectedAudio": true,
+    "sustainedPhysicalFieldTestPassed": false,
+    "microphoneFidelityPassed": false,
+    "actualDecodedVideo": true,
+    "actionToObservedFrameUpperBoundMs": 1948,
+    "renderer": "camera-off actual skinned 3D scene; not tracked AR",
+    "pauseClearPassed": true
+  },
+  "gatesStillOpen": [
+    "RaidRift sensed-plane placement with camera+characters",
+    "Tracked AR decoded by OBS",
+    "Physical Android tracking, parallax, drift, thermals and battery",
+    "Physical microphone quality and A/V sync",
+    "Encrypted SRT and RTMPS interoperability",
+    "Relay interruption and recovery runtime acceptance",
+    "Actual streaming provider/direct-platform acceptance"
+  ],
+  "evidence": [
+    {
+      "path": "artifacts/android-obs-native-action.json",
+      "sha256": "4d4c8ab1bbfe33fc2861514801995a866376c018cbecba90f9c082fc0aca32cf"
+    },
+    {
+      "path": "artifacts/android-obs-native-pause.json",
+      "sha256": "fedfd018072351d52ae28988e17b51aa523de6d32d216ac4245f69b9dbf65671"
+    },
+    {
+      "path": "artifacts/android-native-safe-whep-obs.mkv",
+      "sha256": "c31ea932f7dadcba92692e1567c8f08a4cc0d7aa4c46842731e9667d420a8c22"
+    },
+    {
+      "path": "artifacts/android-native-safe-whep-probe.json",
+      "sha256": "f6e59822bc0915fdf11020c605a7ce6b93ddc6ef508bb6f0c7ff8ef794319a95"
+    },
+    {
+      "path": "artifacts/android-native-safe-audio.json",
+      "sha256": "e6b8a31d6891295e30ae1b6d7adb54c685b0d4dea59d3e017fe582854d83c8bd"
+    },
+    {
+      "path": "artifacts/android-direct-arcore-planes.txt",
+      "sha256": "6aac68bab2ae2fe475f3e3e9fba45371eb33efcd242153e18ea976c5d1760698"
+    },
+    {
+      "path": "artifacts/android-sceneview-two-core-ar.txt",
+      "sha256": "b29871e4665f3b3e43e929090a7e4d7364c2f09e9e0fd13539a2dc0576e8fba7"
+    },
+    {
+      "path": "artifacts/android-sceneview-tap-watch.png",
+      "sha256": "66c55558ff3e6351f9a0cc1b821f7a8570cfd879a63a7dc5c54f8eae99436fee"
+    },
+    {
+      "path": "artifacts/android-google-ar-no-hdr.txt",
+      "sha256": "79499c1ff0c825e662fc99ebb3d854ca9018d45af66ece6277b39337608b9c4c"
+    },
+    {
+      "path": "artifacts/android-google-ar-no-hdr.png",
+      "sha256": "8354c02018e158b0f4fe9041844b9936b6ab747adc17ecbf7178ccc895bc4599"
+    },
+    {
+      "path": "artifacts/android-depth-gate-ar.txt",
+      "sha256": "0572a4560aeab2beb0afb2c962cad91d443b613b6c50fef13f8f2a59bc6e3051"
+    }
+  ],
+  "environment": "Boat API30 x86_64 Android emulator, software swangle graphics, private loopback relay and isolated OBS33",
+  "arIntegrationComparison": {
+    "testedApkSha256": "901e1dedc30ebc26bdb2fad165bf1079d40cd853484634976fa74977493b1677",
+    "configuration": "SceneView Performance preset, stock ARCore camera config, ambient light estimation",
+    "singleCoreOutcome": "No placement in initial scan; about 0-2 unique images/second",
+    "twoCoreOutcome": "Intermittent camera tracking and four horizontal planes; actual UI tap returned a plane hit and anchor-created Reset control appeared",
+    "actualAppPlaneHitObserved": true,
+    "stableCharacterPlacementPassed": false,
+    "evidence": [
+      "artifacts/android-sceneview-two-core-ar.txt",
+      "artifacts/android-sceneview-tap-watch.png"
+    ],
+    "physicalPhoneValidated": false,
+    "depthCapabilityBuild": {
+      "sha256": "9e228ff36fa7d25af16d7bf1b58ac35d5082ba3f1046b29a749dd65fd4b35555",
+      "initialScanAndSubsequentObservation": "No successful hit or visible supported character in recorded interval; intermittent camera tracking",
+      "evidence": "artifacts/android-depth-gate-ar.txt"
+    }
+  },
+  "currentBuildSha256": "d6a9cef4d07820950279cebfa5f6f7c41d84fc39c44f06c0028dd00c9498deb4",
+  "officialGoogleSample": {
+    "sourceCommit": "204ddfd1715eb0cb775bf7528c9aee9d93cd4d4a",
+    "buildPassed": true,
+    "buildAdjustment": "AGP9.3.0 to cached9.4.1 after Google Maven TLS tag-mismatch download error; sample Java unchanged",
+    "runtime": "Camera and feature points visible; initial one-core scan still Searching for surfaces; no placement pass",
+    "evidence": "artifacts/android-google-ar-reference.png",
+    "twoCoreScreenshot": "artifacts/android-google-ar-two-core.png",
+    "disabledHdrComparison": {
+      "modifiedSourcePatch": "tests/android-arcore-reference/minimal-lighting.patch",
+      "sampledReports": 24,
+      "maxFloors": 0,
+      "maxAnchors": 0,
+      "trackingReports": 11,
+      "placementPassed": false,
+      "evidence": [
+        "artifacts/android-google-ar-no-hdr.txt",
+        "artifacts/android-google-ar-no-hdr.png"
+      ]
+    }
+  },
+  "currentBuildRuntimeRetested": false
+}

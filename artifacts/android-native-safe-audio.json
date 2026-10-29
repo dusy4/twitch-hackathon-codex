@@ -1,0 +1,66 @@
+{
+  "scope": "Decoded isolated OBS recording of native SRT -> bridge Opus -> WHEP receiver; synthetic 1 kHz microphone injection; no physical microphone or A/V sync claim",
+  "durationSeconds": 96.17066666666666,
+  "nonSilentSeconds": [
+    {
+      "second": 11,
+      "rms": 0.03667481856752596,
+      "peakHz": 1000,
+      "near1kPowerRatio": 0.8714985032566523
+    },
+    {
+      "second": 12,
+      "rms": 0.1853706864178723,
+      "peakHz": 996,
+      "near1kPowerRatio": 0.923678347412217
+    },
+    {
+      "second": 13,
+      "rms": 0.19735468528685332,
+      "peakHz": 996,
+      "near1kPowerRatio": 0.8899632640972142
+    },
+    {
+      "second": 14,
+      "rms": 0.180144038957313,
+      "peakHz": 996,
+      "near1kPowerRatio": 0.9305877413427319
+    },
+    {
+      "second": 15,
+      "rms": 0.1524252731464206,
+      "peakHz": 4003,
+      "near1kPowerRatio": 0.017267839017625238
+    },
+    {
+      "second": 16,
+      "rms": 0.14754280820394797,
+      "peakHz": 4003,
+      "near1kPowerRatio": 0.017344629593913728
+    },
+    {
+      "second": 17,
+      "rms": 0.15469219826778535,
+      "peakHz": 4988,
+      "near1kPowerRatio": 0.017010669369046574
+    },
+    {
+      "second": 18,
+      "rms": 0.15426117860362662,
+      "peakHz": 4003,
+      "near1kPowerRatio": 0.01705613127632161
+    },
+    {
+      "second": 19,
+      "rms": 0.1543245764365976,
+      "peakHz": 4003,
+      "near1kPowerRatio": 0.017537456444461256
+    },
+    {
+      "second": 20,
+      "rms": 0.03105092696584577,
+      "peakHz": 4993,
+      "near1kPowerRatio": 0.012914656906173117
+    }
+  ]
+}

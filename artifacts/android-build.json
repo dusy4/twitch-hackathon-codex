@@ -1,36 +1,28 @@
 {
-  "applicationId": "world.raidrift.capture.android",
-  "khronosModelValidation": "4 models; 0 errors; 0 warnings",
-  "sha256": "dd49f00fee3712288bcd7d19eeac6042ac245c22e74bf7aacfa845b13b3aee5c",
-  "jvmTests": {
-    "skipped": 0,
-    "failures": 0,
-    "total": 12
+  "lint": {
+    "details": "Pinned Gradle/dependency updates and targetSdk 36",
+    "warnings": 6,
+    "errors": 0
   },
-  "notices": [
-    "assets/notices/Fuel-MIT.txt",
-    "assets/notices/Result-MIT.txt",
-    "assets/notices/SceneView-Apache-2.0.txt",
-    "assets/notices/WebRTC-SDK-MIT.txt",
-    "assets/notices/WebRTC-Third-Party.md",
-    "assets/notices/android-dependencies.json",
-    "assets/notices/NOTICE.txt"
+  "commands": [
+    "testDebugUnitTest",
+    "assembleDebug",
+    "lintDebug"
   ],
-  "artifact": "raidrift-capture-debug.apk",
-  "browserMediaRegression": {
-    "proof": "artifacts/webrtc-frame-proof.json",
-    "log": ".data/webrtc-pixel-browser.log",
-    "scope": "Synthetic browser decoded pixels, advancing frames and cleared receiver on shutdown; not native phone",
-    "passed": 1
-  },
+  "microphonePermission": true,
+  "bytes": 77759638,
+  "runtimeEvidence": "artifacts/android-runtime-qa.json",
+  "khronosModelValidation": "4 models; 0 errors; 0 warnings",
+  "microphonePolicy": "Optional explicit relay consent and runtime permission; disabled by default; local clips and LAN WebRTC remain video-only",
+  "date": "2026-10-29",
   "toolchain": {
     "compileSdk": 37,
     "gradle": "9.8.1",
     "jdk": "21.0.13.0.2"
   },
-  "physicalPhoneValidated": false,
-  "bytes": 73163076,
-  "nativeRuntimeValidated": false,
+  "artifact": "raidrift-capture-debug.apk",
+  "device": "Boat emulator runtime evidence is separate; owner will install on Android phone manually",
+  "applicationId": "world.raidrift.capture.android",
   "models": [
     {
       "path": "assets/kaykit/Barbarian.glb",
@@ -49,20 +41,18 @@
       "bytes": 3611896
     }
   ],
-  "lint": {
-    "errors": 0,
-    "details": "Pinned Gradle/dependency updates and targetSdk 36",
-    "warnings": 6
-  },
-  "localDebugSignatureVerified": true,
-  "buildLog": ".data/android-camera-stop-build.log",
-  "commands": [
-    "testDebugUnitTest",
-    "assembleDebug",
-    "lintDebug"
+  "notices": [
+    "assets/notices/Fuel-MIT.txt",
+    "assets/notices/Result-MIT.txt",
+    "assets/notices/SceneView-Apache-2.0.txt",
+    "assets/notices/WebRTC-SDK-MIT.txt",
+    "assets/notices/WebRTC-Third-Party.md",
+    "assets/notices/RootEncoder-LICENSE.txt",
+    "assets/notices/android-dependencies.json",
+    "assets/notices/RootEncoder-NOTICE.txt",
+    "assets/notices/NOTICE.txt",
+    "assets/notices/SLF4J-MIT.txt"
   ],
-  "date": "2026-10-29",
-  "composedVideoDecoded": false,
   "nativeSourceHashes": [
     {
       "sha256": "a843d9f7ed937e0e1196ce3552d13fe3d71b0f98adba57e7ca0f016b4d3c98fc",
@@ -73,8 +63,16 @@
       "path": "apps/android/app/src/main/java/world/raidrift/capture/LocalClip.kt"
     },
     {
-      "sha256": "bae88aabab83b20763a464517742f1b0053be5a0d854447db4be01b5294fa285",
+      "sha256": "bc73dff74864294b31a8b48f7e40321689a8514f235682f17899f275a6262e38",
       "path": "apps/android/app/src/main/java/world/raidrift/capture/MainActivity.kt"
+    },
+    {
+      "sha256": "e5d073a248a937e7101019d3e3f3ca3127c42cdb116fc1e7e1376ecbaf5b2d95",
+      "path": "apps/android/app/src/main/java/world/raidrift/capture/PreviewOrbit.kt"
+    },
+    {
+      "sha256": "44a0311590398e147f6c2fd6ef4183125d7fe71a28c41aaf46b29146d638eb59",
+      "path": "apps/android/app/src/main/java/world/raidrift/capture/RelayOutput.kt"
     },
     {
       "sha256": "c87fa19c0f38b5486c054c4cab12d8f8d58506b3d5488febfc5d10d77a772ea0",
@@ -85,17 +83,18 @@
       "path": "apps/android/app/src/main/java/world/raidrift/capture/SurfaceMotor.kt"
     },
     {
-      "sha256": "d55ec60506f86764574bc9814e90885e02fc4f17342e653a98ee3e0b349162b1",
+      "sha256": "6f5e627ec5abccac83c23c5c3e276410fb799001c2f103b11bfbf33d61709634",
       "path": "apps/android/app/src/main/java/world/raidrift/capture/WorldConnection.kt"
     }
   ],
-  "microphonePermission": false,
-  "device": "Owner will install on Android phone manually; Boat VM authentication pending",
-  "backendRegression": {
-    "skipped": 1,
-    "pass": 61,
-    "concurrency": 2,
-    "log": ".data/android-output-backend.log",
-    "total": 62
-  }
+  "localDebugSignatureVerified": true,
+  "buildLog": ".data/android-ar-library-review-build.log",
+  "sha256": "d6a9cef4d07820950279cebfa5f6f7c41d84fc39c44f06c0028dd00c9498deb4",
+  "jvmTests": {
+    "total": 19,
+    "failures": 0,
+    "skipped": 0
+  },
+  "scope": "Build-only attestation; runtime results are versioned separately and are not inferred from compilation",
+  "physicalPhoneValidated": false
 }

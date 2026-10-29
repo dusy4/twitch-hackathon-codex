@@ -1,0 +1,27 @@
+--------- beginning of kernel
+--------- beginning of system
+--------- beginning of main
+10-29 15:47:40.430  5668  5705 D GoogleARQA: camera=TRACKING floors=0 anchors=0 timestamp=1174216797300
+10-29 15:47:41.711  5668  5705 D GoogleARQA: camera=TRACKING floors=0 anchors=0 timestamp=1175690063239
+10-29 15:47:42.893  5668  5705 D GoogleARQA: camera=TRACKING floors=0 anchors=0 timestamp=1177097364676
+10-29 15:47:43.990  5668  5705 D GoogleARQA: camera=PAUSED floors=0 anchors=0 timestamp=1178619344043
+10-29 15:47:45.282  5668  5705 D GoogleARQA: camera=TRACKING floors=0 anchors=0 timestamp=1179048938916
+10-29 15:47:46.463  5668  5705 D GoogleARQA: camera=PAUSED floors=0 anchors=0 timestamp=1180760440960
+10-29 15:47:47.812  5668  5705 D GoogleARQA: camera=PAUSED floors=0 anchors=0 timestamp=1182045457036
+10-29 15:47:48.939  5668  5705 D GoogleARQA: camera=TRACKING floors=0 anchors=0 timestamp=1182838033239
+10-29 15:47:50.083  5668  5705 D GoogleARQA: camera=TRACKING floors=0 anchors=0 timestamp=1183972469418
+10-29 15:47:51.691  5668  5705 D GoogleARQA: camera=PAUSED floors=0 anchors=0 timestamp=1185528548496
+10-29 15:47:52.823  5668  5705 D GoogleARQA: camera=PAUSED floors=0 anchors=0 timestamp=1186502017623
+10-29 15:47:54.254  5668  5705 D GoogleARQA: camera=TRACKING floors=0 anchors=0 timestamp=1187843563976
+10-29 15:47:55.777  5668  5705 D GoogleARQA: camera=PAUSED floors=0 anchors=0 timestamp=1189307907607
+10-29 15:47:56.903  5668  5705 D GoogleARQA: camera=TRACKING floors=0 anchors=0 timestamp=1191130520453
+10-29 15:47:58.320  5668  5705 D GoogleARQA: camera=TRACKING floors=0 anchors=0 timestamp=1192615321323
+10-29 15:47:59.822  5668  5705 D GoogleARQA: camera=PAUSED floors=0 anchors=0 timestamp=1193356053291
+10-29 15:48:00.942  5668  5705 D GoogleARQA: camera=TRACKING floors=0 anchors=0 timestamp=1194391939789
+10-29 15:48:02.526  5668  5705 D GoogleARQA: camera=TRACKING floors=0 anchors=0 timestamp=1196224603954
+10-29 15:48:03.640  5668  5705 D GoogleARQA: camera=PAUSED floors=0 anchors=0 timestamp=1197552983832
+10-29 15:48:04.893  5668  5705 D GoogleARQA: camera=PAUSED floors=0 anchors=0 timestamp=1199082736874
+10-29 15:48:05.946  5668  5705 D GoogleARQA: camera=PAUSED floors=0 anchors=0 timestamp=1200380611932
+10-29 15:48:07.173  5668  5705 D GoogleARQA: camera=PAUSED floors=0 anchors=0 timestamp=1201434181380
+10-29 15:48:09.014  5668  5705 D GoogleARQA: camera=PAUSED floors=0 anchors=0 timestamp=1203259920309
+10-29 15:48:10.065  5668  5705 D GoogleARQA: camera=PAUSED floors=0 anchors=0 timestamp=1203654212573

@@ -1052,6 +1052,46 @@
       "declaredBy": "com.github.kittinunf.result:result:3.1.0"
     },
     {
+      "coordinate": "com.github.pedroSG94.RootEncoder:common:2.8.1",
+      "licenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.github.pedroSG94.RootEncoder:common:2.8.1"
+    },
+    {
+      "coordinate": "com.github.pedroSG94.RootEncoder:encoder:2.8.1",
+      "licenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.github.pedroSG94.RootEncoder:encoder:2.8.1"
+    },
+    {
+      "coordinate": "com.github.pedroSG94.RootEncoder:rtmp:2.8.1",
+      "licenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.github.pedroSG94.RootEncoder:rtmp:2.8.1"
+    },
+    {
+      "coordinate": "com.github.pedroSG94.RootEncoder:srt:2.8.1",
+      "licenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "com.github.pedroSG94.RootEncoder:srt:2.8.1"
+    },
+    {
       "coordinate": "com.google.android.filament:filament-android:1.72.1",
       "licenses": [
         {
@@ -1212,6 +1252,106 @@
       "declaredBy": "io.github.webrtc-sdk:android:150.7871.04"
     },
     {
+      "coordinate": "io.ktor:ktor-http-jvm:3.5.2",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "io.ktor:ktor-http-jvm:3.5.2"
+    },
+    {
+      "coordinate": "io.ktor:ktor-http:3.5.2",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "io.ktor:ktor-http:3.5.2"
+    },
+    {
+      "coordinate": "io.ktor:ktor-io-jvm:3.5.2",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "io.ktor:ktor-io-jvm:3.5.2"
+    },
+    {
+      "coordinate": "io.ktor:ktor-io:3.5.2",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "io.ktor:ktor-io:3.5.2"
+    },
+    {
+      "coordinate": "io.ktor:ktor-network-jvm:3.5.2",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "io.ktor:ktor-network-jvm:3.5.2"
+    },
+    {
+      "coordinate": "io.ktor:ktor-network-tls-jvm:3.5.2",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "io.ktor:ktor-network-tls-jvm:3.5.2"
+    },
+    {
+      "coordinate": "io.ktor:ktor-network-tls:3.5.2",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "io.ktor:ktor-network-tls:3.5.2"
+    },
+    {
+      "coordinate": "io.ktor:ktor-network:3.5.2",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "io.ktor:ktor-network:3.5.2"
+    },
+    {
+      "coordinate": "io.ktor:ktor-utils-jvm:3.5.2",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "io.ktor:ktor-utils-jvm:3.5.2"
+    },
+    {
+      "coordinate": "io.ktor:ktor-utils:3.5.2",
+      "licenses": [
+        {
+          "name": "The Apache Software License, Version 2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "io.ktor:ktor-utils:3.5.2"
+    },
+    {
       "coordinate": "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.4.10",
       "licenses": [
         {
@@ -1302,34 +1442,74 @@
       "declaredBy": "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0"
     },
     {
-      "coordinate": "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.7.3",
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-io-bytestring-jvm:0.9.1",
       "licenses": [
         {
-          "name": "The Apache Software License, Version 2.0",
+          "name": "Apache-2.0",
           "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
         }
       ],
-      "declaredBy": "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.7.3"
+      "declaredBy": "org.jetbrains.kotlinx:kotlinx-io-bytestring-jvm:0.9.1"
     },
     {
-      "coordinate": "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.7.3",
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-io-bytestring:0.9.1",
       "licenses": [
         {
-          "name": "The Apache Software License, Version 2.0",
+          "name": "Apache-2.0",
           "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
         }
       ],
-      "declaredBy": "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.7.3"
+      "declaredBy": "org.jetbrains.kotlinx:kotlinx-io-bytestring:0.9.1"
     },
     {
-      "coordinate": "org.jetbrains.kotlinx:kotlinx-serialization-core:1.7.3",
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-io-core-jvm:0.9.1",
       "licenses": [
         {
-          "name": "The Apache Software License, Version 2.0",
+          "name": "Apache-2.0",
           "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
         }
       ],
-      "declaredBy": "org.jetbrains.kotlinx:kotlinx-serialization-core:1.7.3"
+      "declaredBy": "org.jetbrains.kotlinx:kotlinx-io-core-jvm:0.9.1"
+    },
+    {
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-io-core:0.9.1",
+      "licenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "org.jetbrains.kotlinx:kotlinx-io-core:0.9.1"
+    },
+    {
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.11.0",
+      "licenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "org.jetbrains.kotlinx:kotlinx-serialization-bom:1.11.0"
+    },
+    {
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.11.0",
+      "licenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "org.jetbrains.kotlinx:kotlinx-serialization-core-jvm:1.11.0"
+    },
+    {
+      "coordinate": "org.jetbrains.kotlinx:kotlinx-serialization-core:1.11.0",
+      "licenses": [
+        {
+          "name": "Apache-2.0",
+          "url": "https://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      ],
+      "declaredBy": "org.jetbrains.kotlinx:kotlinx-serialization-core:1.11.0"
     },
     {
       "coordinate": "org.jetbrains:annotations:23.0.0",
@@ -1350,6 +1530,16 @@
         }
       ],
       "declaredBy": "org.jspecify:jspecify:1.0.0"
+    },
+    {
+      "coordinate": "org.slf4j:slf4j-api:2.0.18",
+      "licenses": [
+        {
+          "name": "MIT",
+          "url": "https://opensource.org/license/mit"
+        }
+      ],
+      "declaredBy": "org.slf4j:slf4j-bom:2.0.18"
     }
   ]
 }

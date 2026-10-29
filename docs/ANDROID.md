@@ -2,7 +2,7 @@
 
 The owner confirmed **Android phone** as the target on 2026-10-29. `apps/android` is a Kotlin/Compose client using pinned SceneView 4.62.0, ARCore 1.57.0 and Filament 1.72.1. It is separate from the preserved Unity source in `apps/mobile`.
 
-Current evidence: debug APK compilation, 12 JVM tests and Android lint (zero errors, six version/target warnings) pass. Four prepared skeletal GLBs pass Khronos glTF-Validator with zero errors and warnings. **No native runtime/phone/recorded-frame pass is established yet.** An APK is a build result, not evidence of working camera tracking or encoding.
+Current evidence: debug APK compilation, 19 JVM tests and Android lint (zero errors, six version/target warnings) pass. Four skeletal GLBs pass Khronos validation. Actual native camera-off 3D has been encoded over SRT, decoded and recorded in OBS through a private MediaMTX/custom WHEP bridge. Latest measured action-to-OBS upper bound is 1.948 seconds; authoritative pause-to-cleared content is 4.579 seconds. This does not pass tracked AR. A direct ARCore diagnostic detected up to six horizontal planes, while integrated tracking/performance is still being isolated. Physical-phone and field acceptance remain open. Exact build scopes: `artifacts/android-runtime-qa.json`. Ready-stack comparison: `AR_OPEN_SOURCE_RESEARCH.md`.
 
 ## Build and install
 
@@ -39,6 +39,14 @@ No phone was attached during the recorded build checks. USB debugging authorizat
 The app polls `/v1/native/world` with a scoped Authorization header. Responses are `private, no-store`; invalid/wrong-role/expired/revoked tokens fail closed. A camera token cannot submit viewer actions. Native world/clip controls do not mint Shards. Connection loss hides paired content and stops recording rather than silently presenting stale characters as live.
 
 The Android client also contains an **experimental, video-only direct-LAN WebRTC producer**, pinned to `io.github.webrtc-sdk:android:150.7871.04`. Enable its explicit sharing consent under LAN output, then Start sharing while an authorized AR room is tracking. SurfaceMirrorer feeds a SurfaceTextureHelper/VideoSource; the existing paired `/receiver` is the destination. Native authentication uses an Authorization header, not a query token. Receiver-first and producer-first signaling, one offer notification and session teardown pass server tests; real browser synthetic frame transport and shutdown pass. Actual native encoded frames and native phone→OBS transport remain unvalidated. No STUN/TURN, microphone or audio mix is configured. A 20-second connection bound, pause, tracking loss, backgrounding, revocation and receiver departure stop output; no automatic retry restarts camera sharing. The uncompiled Unity producer is a separate source path.
+
+## Native relay output
+
+**Broadcast** accepts the streamer's private SRT caller or RTMPS/RTMP ingest URL. The existing relay watch URL goes into the streamer's home/cloud OBS Media Source. This replaces the field encoder for this AR camera angle; no IRL Pro plugin or simultaneous second camera owner is assumed. `RelayOutput` encodes the Filament surface at 1280×720, with an optional permission-gated 48 kHz mono AAC microphone. Compose controls and pairing/ingest fields are absent from that surface. Ingest credentials stay in memory and transport logging is disabled.
+
+Explicit output consent is required. Audio defaults off. Mute and 1/1.5/2.5/4 Mbps manual controls are available during output. AR output requires a tracked anchor; camera-off preview can be broadcast for an explicitly labelled setup test. Backgrounding, tracking loss, pair failure, pause, disconnect and review stop output. Initial connection is bounded to 20 seconds with up to three transport retries. Automatic bitrate adaptation, SRTLA bonding and managed OBS BRB configuration are still open. Plain SRT/RTMP do not imply encryption.
+
+Private SRT → local relay → actual OBS 33 recording has decoded video and AAC signal evidence. Delay remains under investigation; this is not yet a passing real-time streamer trial. No live Twitch/paid provider or physical phone claim is made. Experimental LAN WebRTC remains video-only and has a different validation scope.
 
 ## Phone acceptance still required
 

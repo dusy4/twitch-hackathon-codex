@@ -1,0 +1,57 @@
+--------- beginning of kernel
+--------- beginning of system
+--------- beginning of main
+10-29 15:32:16.375  1566  1566 D RaidRiftAR: frame state=TRACKING floors=0 points=160 imageFps=1
+10-29 15:32:17.983  1566  1566 D RaidRiftAR: frame state=TRACKING floors=0 points=9 imageFps=1
+10-29 15:32:19.109  1566  1566 D RaidRiftAR: frame state=TRACKING floors=0 points=151 imageFps=0
+10-29 15:32:19.132  1566  1566 D RaidRiftAR: surfaceTap planes=0 hit=false
+10-29 15:32:21.076  1566  1566 D RaidRiftAR: frame state=PAUSED floors=0 points=136 imageFps=2
+10-29 15:32:22.273  1566  1566 D RaidRiftAR: frame state=PAUSED floors=1 points=145 imageFps=1
+10-29 15:32:23.666  1566  1566 D RaidRiftAR: frame state=TRACKING floors=0 points=90 imageFps=1
+10-29 15:32:24.768  1566  1566 D RaidRiftAR: frame state=PAUSED floors=0 points=149 imageFps=1
+10-29 15:32:26.172  1566  1566 D RaidRiftAR: frame state=TRACKING floors=1 points=153 imageFps=1
+10-29 15:32:28.521  1566  1566 D RaidRiftAR: frame state=TRACKING floors=0 points=163 imageFps=2
+10-29 15:32:29.939  1566  1566 D RaidRiftAR: frame state=TRACKING floors=0 points=182 imageFps=2
+10-29 15:32:32.236  1566  1566 D RaidRiftAR: frame state=TRACKING floors=0 points=196 imageFps=1
+10-29 15:32:33.297  1566  1566 D RaidRiftAR: frame state=TRACKING floors=0 points=173 imageFps=1
+10-29 15:32:34.858  1566  1566 D RaidRiftAR: frame state=TRACKING floors=1 points=195 imageFps=1
+10-29 15:32:38.361  1566  1566 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=1
+10-29 15:32:39.506  1566  1566 D RaidRiftAR: frame state=TRACKING floors=0 points=0 imageFps=0
+10-29 15:32:40.544  1566  1566 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=2
+10-29 15:32:41.635  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=58 imageFps=0
+10-29 15:32:42.891  1566  1566 D RaidRiftAR: frame state=PAUSED floors=4 points=58 imageFps=2
+10-29 15:32:44.528  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=59 imageFps=0
+10-29 15:32:46.004  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=57 imageFps=0
+10-29 15:32:47.023  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=61 imageFps=2
+10-29 15:32:48.205  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=70 imageFps=1
+10-29 15:32:50.479  1566  1566 D RaidRiftAR: frame state=PAUSED floors=0 points=103 imageFps=0
+10-29 15:32:52.204  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=0 imageFps=1
+10-29 15:32:53.748  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=0 imageFps=1
+10-29 15:32:56.749  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=124 imageFps=0
+10-29 15:32:57.806  1566  1566 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=2
+10-29 15:32:59.213  1566  1566 D RaidRiftAR: frame state=PAUSED floors=4 points=0 imageFps=0
+10-29 15:33:00.580  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=132 imageFps=1
+10-29 15:33:02.961  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=139 imageFps=0
+10-29 15:33:04.517  1566  1566 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0
+10-29 15:33:06.207  1566  1566 D RaidRiftAR: frame state=PAUSED floors=4 points=0 imageFps=1
+10-29 15:33:07.349  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=148 imageFps=2
+10-29 15:33:08.738  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=120 imageFps=2
+10-29 15:33:09.912  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=190 imageFps=2
+10-29 15:33:12.159  1566  1566 D RaidRiftAR: frame state=PAUSED floors=4 points=0 imageFps=0
+10-29 15:33:13.195  1566  1566 D RaidRiftAR: frame state=PAUSED floors=4 points=0 imageFps=0
+10-29 15:33:15.054  1566  1566 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=1
+10-29 15:33:16.133  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=222 imageFps=0
+10-29 15:33:17.538  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=230 imageFps=2
+10-29 15:33:18.569  1566  1566 D RaidRiftAR: frame state=PAUSED floors=0 points=188 imageFps=1
+10-29 15:33:19.695  1566  1566 D RaidRiftAR: surfaceTap planes=0 hit=true
+10-29 15:33:19.698  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=166 imageFps=0
+10-29 15:33:21.003  1566  1566 D RaidRiftAR: frame state=PAUSED floors=4 points=0 imageFps=2
+10-29 15:33:22.926  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=211 imageFps=1
+10-29 15:33:24.450  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=0 imageFps=0
+10-29 15:33:26.303  1566  1566 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0
+10-29 15:33:27.453  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=224 imageFps=0
+10-29 15:33:29.981  1566  1566 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0
+10-29 15:33:31.713  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=112 imageFps=0
+10-29 15:33:33.028  1566  1566 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0
+10-29 15:33:34.041  1566  1566 D RaidRiftAR: frame state=TRACKING floors=4 points=147 imageFps=1
+10-29 15:33:35.191  1566  1566 D RaidRiftAR: frame state=PAUSED floors=4 points=0 imageFps=1

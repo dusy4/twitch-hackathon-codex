@@ -1,0 +1,8 @@
+10-29 14:48:04.005  7614  7635 I RaidRiftARProbe: QA ONLY · direct ARCore 1.57 Camera: TRACKING / NONE Planes total=5 tracked=5 floor=5 Points=293 centerHits=4 Update fps=8 Config=HORIZONTAL_AND_VERTICAL
+10-29 14:48:05.058  7614  7635 I RaidRiftARProbe: QA ONLY · direct ARCore 1.57 Camera: TRACKING / NONE Planes total=5 tracked=5 floor=5 Points=306 centerHits=4 Update fps=8 Config=HORIZONTAL_AND_VERTICAL
+10-29 14:48:06.081  7614  7635 I RaidRiftARProbe: QA ONLY · direct ARCore 1.57 Camera: TRACKING / NONE Planes total=5 tracked=5 floor=5 Points=309 centerHits=4 Update fps=8 Config=HORIZONTAL_AND_VERTICAL
+10-29 14:48:07.087  7614  7635 I RaidRiftARProbe: QA ONLY · direct ARCore 1.57 Camera: TRACKING / NONE Planes total=5 tracked=5 floor=5 Points=201 centerHits=4 Update fps=8 Config=HORIZONTAL_AND_VERTICAL
+10-29 14:48:08.208  7614  7635 I RaidRiftARProbe: QA ONLY · direct ARCore 1.57 Camera: TRACKING / NONE Planes total=5 tracked=5 floor=5 Points=116 centerHits=4 Update fps=8 Config=HORIZONTAL_AND_VERTICAL
+10-29 14:48:09.314  7614  7635 I RaidRiftARProbe: QA ONLY · direct ARCore 1.57 Camera: TRACKING / NONE Planes total=6 tracked=6 floor=6 Points=107 centerHits=4 Update fps=8 Config=HORIZONTAL_AND_VERTICAL
+10-29 14:48:10.430  7614  7635 I RaidRiftARProbe: QA ONLY · direct ARCore 1.57 Camera: TRACKING / NONE Planes total=6 tracked=6 floor=6 Points=119 centerHits=5 Update fps=8 Config=HORIZONTAL_AND_VERTICAL
+10-29 14:48:11.481  7614  7635 I RaidRiftARProbe: QA ONLY · direct ARCore 1.57 Camera: TRACKING / NONE Planes total=6 tracked=6 floor=6 Points=119 centerHits=4 Update fps=8 Config=HORIZONTAL_AND_VERTICAL

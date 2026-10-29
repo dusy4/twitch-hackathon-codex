@@ -1,0 +1,481 @@
+{
+  "scope": "Synthetic world pause request to received OBS source clearing; actual native SRT, private WebRTC bridge, emulator camera-off",
+  "receiver": "Native WHEP Relay",
+  "mode": "stop",
+  "eventRequested": 1793284146858,
+  "event": {
+    "completed": 1793284146889,
+    "result": {
+      "paused": true
+    }
+  },
+  "roi": [
+    500,
+    220,
+    900,
+    500
+  ],
+  "baselineContainsRenderedContent": true,
+  "baselineMinimumColoredPixels": 11218,
+  "actionChangeThreshold": null,
+  "firstObserved": {
+    "index": 37,
+    "requested": 1793284151398,
+    "received": 1793284151437,
+    "path": ".data/native-pause-proof/037.png",
+    "coloredPixels": 0,
+    "changedPixels": 11189
+  },
+  "requestToObservedFrameUpperBoundMs": 4579,
+  "passed": true,
+  "samples": [
+    {
+      "index": 0,
+      "requested": 1793284145611,
+      "received": 1793284145655,
+      "coloredPixels": 11265,
+      "changedPixels": 0
+    },
+    {
+      "index": 1,
+      "requested": 1793284145769,
+      "received": 1793284145813,
+      "coloredPixels": 11265,
+      "changedPixels": 0
+    },
+    {
+      "index": 2,
+      "requested": 1793284145924,
+      "received": 1793284145970,
+      "coloredPixels": 11284,
+      "changedPixels": 461
+    },
+    {
+      "index": 3,
+      "requested": 1793284146080,
+      "received": 1793284146124,
+      "coloredPixels": 11284,
+      "changedPixels": 461
+    },
+    {
+      "index": 4,
+      "requested": 1793284146236,
+      "received": 1793284146281,
+      "coloredPixels": 11236,
+      "changedPixels": 305
+    },
+    {
+      "index": 5,
+      "requested": 1793284146391,
+      "received": 1793284146437,
+      "coloredPixels": 11218,
+      "changedPixels": 395
+    },
+    {
+      "index": 6,
+      "requested": 1793284146547,
+      "received": 1793284146592,
+      "coloredPixels": 11218,
+      "changedPixels": 395
+    },
+    {
+      "index": 7,
+      "requested": 1793284146703,
+      "received": 1793284146747,
+      "coloredPixels": 11218,
+      "changedPixels": 395
+    },
+    {
+      "index": 8,
+      "requested": 1793284146880,
+      "received": 1793284146923,
+      "coloredPixels": 11300,
+      "changedPixels": 485
+    },
+    {
+      "index": 9,
+      "requested": 1793284147029,
+      "received": 1793284147077,
+      "coloredPixels": 11242,
+      "changedPixels": 222
+    },
+    {
+      "index": 10,
+      "requested": 1793284147185,
+      "received": 1793284147229,
+      "coloredPixels": 11242,
+      "changedPixels": 222
+    },
+    {
+      "index": 11,
+      "requested": 1793284147340,
+      "received": 1793284147382,
+      "coloredPixels": 11242,
+      "changedPixels": 222
+    },
+    {
+      "index": 12,
+      "requested": 1793284147496,
+      "received": 1793284147540,
+      "coloredPixels": 11200,
+      "changedPixels": 418
+    },
+    {
+      "index": 13,
+      "requested": 1793284147652,
+      "received": 1793284147697,
+      "coloredPixels": 11200,
+      "changedPixels": 418
+    },
+    {
+      "index": 14,
+      "requested": 1793284147807,
+      "received": 1793284147850,
+      "coloredPixels": 11278,
+      "changedPixels": 163
+    },
+    {
+      "index": 15,
+      "requested": 1793284147965,
+      "received": 1793284148010,
+      "coloredPixels": 11278,
+      "changedPixels": 163
+    },
+    {
+      "index": 16,
+      "requested": 1793284148120,
+      "received": 1793284148164,
+      "coloredPixels": 11281,
+      "changedPixels": 406
+    },
+    {
+      "index": 17,
+      "requested": 1793284148278,
+      "received": 1793284148325,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 18,
+      "requested": 1793284148434,
+      "received": 1793284148478,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 19,
+      "requested": 1793284148590,
+      "received": 1793284148633,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 20,
+      "requested": 1793284148747,
+      "received": 1793284148791,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 21,
+      "requested": 1793284148904,
+      "received": 1793284148947,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 22,
+      "requested": 1793284149059,
+      "received": 1793284149102,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 23,
+      "requested": 1793284149217,
+      "received": 1793284149261,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 24,
+      "requested": 1793284149374,
+      "received": 1793284149417,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 25,
+      "requested": 1793284149530,
+      "received": 1793284149573,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 26,
+      "requested": 1793284149686,
+      "received": 1793284149729,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 27,
+      "requested": 1793284149840,
+      "received": 1793284149883,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 28,
+      "requested": 1793284149996,
+      "received": 1793284150040,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 29,
+      "requested": 1793284150152,
+      "received": 1793284150197,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 30,
+      "requested": 1793284150308,
+      "received": 1793284150353,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 31,
+      "requested": 1793284150465,
+      "received": 1793284150509,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 32,
+      "requested": 1793284150621,
+      "received": 1793284150665,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 33,
+      "requested": 1793284150777,
+      "received": 1793284150821,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 34,
+      "requested": 1793284150932,
+      "received": 1793284150978,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 35,
+      "requested": 1793284151086,
+      "received": 1793284151133,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 36,
+      "requested": 1793284151242,
+      "received": 1793284151286,
+      "coloredPixels": 11245,
+      "changedPixels": 238
+    },
+    {
+      "index": 37,
+      "requested": 1793284151398,
+      "received": 1793284151437,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 38,
+      "requested": 1793284151538,
+      "received": 1793284151576,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 39,
+      "requested": 1793284151678,
+      "received": 1793284151717,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 40,
+      "requested": 1793284151821,
+      "received": 1793284151860,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 41,
+      "requested": 1793284151960,
+      "received": 1793284151999,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 42,
+      "requested": 1793284152100,
+      "received": 1793284152139,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 43,
+      "requested": 1793284152240,
+      "received": 1793284152278,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 44,
+      "requested": 1793284152379,
+      "received": 1793284152424,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 45,
+      "requested": 1793284152534,
+      "received": 1793284152572,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 46,
+      "requested": 1793284152674,
+      "received": 1793284152711,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 47,
+      "requested": 1793284152816,
+      "received": 1793284152854,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 48,
+      "requested": 1793284152956,
+      "received": 1793284152993,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 49,
+      "requested": 1793284153096,
+      "received": 1793284153133,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 50,
+      "requested": 1793284153235,
+      "received": 1793284153272,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 51,
+      "requested": 1793284153374,
+      "received": 1793284153413,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 52,
+      "requested": 1793284153515,
+      "received": 1793284153554,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 53,
+      "requested": 1793284153656,
+      "received": 1793284153693,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 54,
+      "requested": 1793284153795,
+      "received": 1793284153833,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 55,
+      "requested": 1793284153937,
+      "received": 1793284153975,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 56,
+      "requested": 1793284154078,
+      "received": 1793284154116,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 57,
+      "requested": 1793284154218,
+      "received": 1793284154257,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 58,
+      "requested": 1793284154358,
+      "received": 1793284154396,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 59,
+      "requested": 1793284154498,
+      "received": 1793284154538,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 60,
+      "requested": 1793284154639,
+      "received": 1793284154678,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 61,
+      "requested": 1793284154779,
+      "received": 1793284154817,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 62,
+      "requested": 1793284154921,
+      "received": 1793284154959,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    },
+    {
+      "index": 63,
+      "requested": 1793284155061,
+      "received": 1793284155099,
+      "coloredPixels": 0,
+      "changedPixels": 11189
+    }
+  ]
+}
