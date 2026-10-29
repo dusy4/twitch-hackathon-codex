@@ -2,7 +2,7 @@
 
 ## Android phone client — 2026-10-29
 
-The owner confirmed an Android phone. `apps/android` now compiles a native SceneView/ARCore/Filament debug APK with the same licensed skeletal character cast, actual anchors, supported depth composition, measured floor/depth contact, scoped world pairing and explicit bounded silent local recording. Seven JVM tests and Android lint pass; generated models pass Khronos validation. No native runtime/physical-phone/encoded-frame pass is claimed. Installation and limits are documented in **[ANDROID.md](ANDROID.md)**. Native live streaming to OBS, wall collision and hand interaction remain unfinished. The Unity source below remains uncompiled.
+The owner confirmed an Android phone. `apps/android` now compiles a native SceneView/ARCore/Filament debug APK with the same licensed skeletal character cast, actual anchors, supported depth composition, measured floor/depth contact, scoped world pairing and explicit bounded silent local recording. 12 JVM tests and Android lint pass; generated models pass Khronos validation. No native runtime/physical-phone/encoded-frame pass is claimed. Installation and limits are documented in **[ANDROID.md](ANDROID.md)**. Detected-wall collision and a direct-LAN native WebRTC producer now compile with JVM/signaling coverage; native encoded frames/OBS transport and hand interaction remain unvalidated. Shared pause/revocation/loss also exits the camera session; resumption requires an explicit Start room AR. The Unity source below remains uncompiled.
 
 ## Browser AR path added 2026-10-29
 

@@ -1,11 +1,36 @@
 {
-  "artifact": "raidrift-capture-debug.apk",
-  "device": "Android phone requested; no ADB device attached",
-  "toolchain": {
-    "gradle": "9.8.1",
-    "jdk": "21.0.13.0.2",
-    "compileSdk": 37
+  "applicationId": "world.raidrift.capture.android",
+  "khronosModelValidation": "4 models; 0 errors; 0 warnings",
+  "sha256": "dd49f00fee3712288bcd7d19eeac6042ac245c22e74bf7aacfa845b13b3aee5c",
+  "jvmTests": {
+    "skipped": 0,
+    "failures": 0,
+    "total": 12
   },
+  "notices": [
+    "assets/notices/Fuel-MIT.txt",
+    "assets/notices/Result-MIT.txt",
+    "assets/notices/SceneView-Apache-2.0.txt",
+    "assets/notices/WebRTC-SDK-MIT.txt",
+    "assets/notices/WebRTC-Third-Party.md",
+    "assets/notices/android-dependencies.json",
+    "assets/notices/NOTICE.txt"
+  ],
+  "artifact": "raidrift-capture-debug.apk",
+  "browserMediaRegression": {
+    "proof": "artifacts/webrtc-frame-proof.json",
+    "log": ".data/webrtc-pixel-browser.log",
+    "scope": "Synthetic browser decoded pixels, advancing frames and cleared receiver on shutdown; not native phone",
+    "passed": 1
+  },
+  "toolchain": {
+    "compileSdk": 37,
+    "gradle": "9.8.1",
+    "jdk": "21.0.13.0.2"
+  },
+  "physicalPhoneValidated": false,
+  "bytes": 73163076,
+  "nativeRuntimeValidated": false,
   "models": [
     {
       "path": "assets/kaykit/Barbarian.glb",
@@ -24,41 +49,53 @@
       "bytes": 3611896
     }
   ],
-  "sha256": "9a3ac914c612edfe9bd4dbeb245718ea9e48b039fc97cbea5d10c77b631fe267",
-  "composedVideoDecoded": false,
-  "applicationId": "world.raidrift.capture.android",
-  "physicalPhoneValidated": false,
-  "bytes": 41441245,
+  "lint": {
+    "errors": 0,
+    "details": "Pinned Gradle/dependency updates and targetSdk 36",
+    "warnings": 6
+  },
+  "localDebugSignatureVerified": true,
+  "buildLog": ".data/android-camera-stop-build.log",
   "commands": [
     "testDebugUnitTest",
     "assembleDebug",
     "lintDebug"
   ],
-  "jvmTests": {
-    "total": 7,
-    "failures": 0,
-    "skipped": 0
-  },
-  "backendRegression": {
-    "total": 61,
-    "concurrency": 2,
-    "pass": 60,
-    "skipped": 1
-  },
-  "notices": [
-    "assets/notices/Fuel-MIT.txt",
-    "assets/notices/NOTICE.txt",
-    "assets/notices/Result-MIT.txt",
-    "assets/notices/SceneView-Apache-2.0.txt",
-    "assets/notices/android-dependencies.json"
-  ],
-  "nativeRuntimeValidated": false,
   "date": "2026-10-29",
-  "khronosModelValidation": "4 models; 0 errors; 0 warnings",
-  "localDebugSignatureVerified": true,
-  "lint": {
-    "errors": 0,
-    "warnings": 6,
-    "details": "Pinned Gradle/dependency updates and targetSdk 36"
+  "composedVideoDecoded": false,
+  "nativeSourceHashes": [
+    {
+      "sha256": "a843d9f7ed937e0e1196ce3552d13fe3d71b0f98adba57e7ca0f016b4d3c98fc",
+      "path": "apps/android/app/src/main/java/world/raidrift/capture/CompositeOutput.kt"
+    },
+    {
+      "sha256": "023a164b0493279f09a87c1ef53645e10dc3647dee4133dfbae6c233fd718a1c",
+      "path": "apps/android/app/src/main/java/world/raidrift/capture/LocalClip.kt"
+    },
+    {
+      "sha256": "bae88aabab83b20763a464517742f1b0053be5a0d854447db4be01b5294fa285",
+      "path": "apps/android/app/src/main/java/world/raidrift/capture/MainActivity.kt"
+    },
+    {
+      "sha256": "c87fa19c0f38b5486c054c4cab12d8f8d58506b3d5488febfc5d10d77a772ea0",
+      "path": "apps/android/app/src/main/java/world/raidrift/capture/SensedWall.kt"
+    },
+    {
+      "sha256": "b16744a9145e5033e42b701bfa57426f7a39dd3617a82e1896f1fad2b8651730",
+      "path": "apps/android/app/src/main/java/world/raidrift/capture/SurfaceMotor.kt"
+    },
+    {
+      "sha256": "d55ec60506f86764574bc9814e90885e02fc4f17342e653a98ee3e0b349162b1",
+      "path": "apps/android/app/src/main/java/world/raidrift/capture/WorldConnection.kt"
+    }
+  ],
+  "microphonePermission": false,
+  "device": "Owner will install on Android phone manually; Boat VM authentication pending",
+  "backendRegression": {
+    "skipped": 1,
+    "pass": 61,
+    "concurrency": 2,
+    "log": ".data/android-output-backend.log",
+    "total": 62
   }
 }

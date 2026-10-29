@@ -44,6 +44,12 @@ class NativeSafetyTest {
         response(302, "redirect").use { assertThrows(java.io.IOException::class.java) { readNativeWorld(it) } }
         response(200, "x".repeat(2_000_001)).use { assertThrows(IllegalArgumentException::class.java) { readNativeWorld(it) } }
     }
+    @Test fun nativeMediaUsesAuthorizationHeaderRatherThanUrlToken() {
+        val request = nativeMediaRequest(ServerAddress.parse("https://example.com", false), "private-pairing-token")
+        assertEquals("https://example.com/v1/media", request.url.toString())
+        assertNull(request.url.query)
+        assertEquals("Bearer private-pairing-token", request.header("Authorization"))
+    }
     @Test fun actorFallsFromMeasuredDeskToMeasuredFloor() {
         val motor = SurfaceMotor()
         fun floor(p: FootPosition): Float = if (p.x < .2f) 0f else -.75f
@@ -63,5 +69,14 @@ class NativeSafetyTest {
         assertTrue(blocked!!.x < .1f)
         motor.clear()
         assertNull(motor.update("viewer", start, 0f) { null })
+    }
+    @Test fun trackingOriginCorrectionRebasesExistingBodiesWithoutStaleRoomCoordinates() {
+        val motor = SurfaceMotor()
+        motor.update("viewer", FootPosition(0f, 0f, 0f), 0f) { 0f }
+        motor.rebase { FootPosition(it.x + 3f, it.y + 1f, it.z - 2f) }
+        val corrected = FootPosition(3f, 1f, -2f)
+        assertEquals(corrected, motor.update("viewer", corrected, 0f) { 1f })
+        assertThrows(IllegalArgumentException::class.java) { motor.rebase { FootPosition(Float.NaN, 0f, 0f) } }
+        assertEquals(corrected, motor.update("viewer", corrected, 0f) { 1f })
     }
 }

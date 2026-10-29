@@ -11,9 +11,18 @@ class SurfaceMotor {
     private val bodies = mutableMapOf<String, Body>()
     fun clear() = bodies.clear()
     fun retain(ids: Set<String>) { bodies.keys.retainAll(ids) }
+    fun rebase(transform: (FootPosition) -> FootPosition) {
+        val mapped = bodies.mapValues { (_, body) -> transform(body.foot).also { point ->
+            require(listOf(point.x, point.y, point.z).all { it.isFinite() }) { "Invalid tracking origin transform" }
+        } }
+        mapped.forEach { (id, point) -> bodies.getValue(id).foot = point }
+    }
 
     /** A missing observation freezes the actor; it must never invent an infinite room floor. */
-    fun update(id: String, target: FootPosition, elapsed: Float, floor: (FootPosition) -> Float?): FootPosition? {
+    fun update(id: String, target: FootPosition, elapsed: Float, floor: (FootPosition) -> Float?): FootPosition? =
+        updateWithWalls(id, target, elapsed, { _, _ -> false }, floor)
+
+    fun updateWithWalls(id: String, target: FootPosition, elapsed: Float, blocked: (FootPosition, FootPosition) -> Boolean, floor: (FootPosition) -> Float?): FootPosition? {
         require(listOf(target.x, target.y, target.z, elapsed).all { it.isFinite() })
         val body = bodies[id] ?: run {
             val observed = floor(target) ?: return null
@@ -26,6 +35,7 @@ class SurfaceMotor {
         val distance = hypot(target.x - current.x, target.z - current.z)
         val fraction = if (distance > 0f) min(1f, 0.45f * dt / distance) else 0f
         val next = FootPosition(current.x + (target.x - current.x) * fraction, current.y, current.z + (target.z - current.z) * fraction)
+        if (blocked(current, next)) return current
         val support = floor(next) ?: run { body.velocityY = 0f; return current }
         if (!support.isFinite() || support > current.y + 0.035f) return current
         body.velocityY = (body.velocityY - 9.81f * dt).coerceAtLeast(-3f)

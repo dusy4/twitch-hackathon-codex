@@ -4,6 +4,8 @@ SceneView 4.62.0 and its Apache-2.0 runtime components: retain the accompanying 
 
 Fuel 2.3.1 and Result 3.1.0: MIT notices and copyright texts accompany this file.
 
+WebRTC SDK Android 150.7871.04: runtime binary license declaration BSD-3-Clause. The distribution wrapper retains its MIT notice. WebRTC and its bundled third-party copyright/license texts are reproduced in WebRTC-Third-Party.md; WebRTC-SDK-MIT.txt retains the wrapper notice. Sources: https://github.com/webrtc-sdk/android and https://github.com/webrtc-sdk/android/blob/main/Licenses/WEBRTC.md . No STUN/TURN service or microphone capture is configured.
+
 ARCore 1.57.0 is distributed by Google under ARCore Additional Terms of Service, not Apache-2.0: https://developers.google.com/ar/develop/terms . Google Play Services for AR is installed separately by the device owner/provider. Cloud Anchors, geospatial APIs, location and cloud service keys are not enabled by this app.
 
 KayKit Character Pack Adventures 1.0 by Kay Lousberg: CC0-1.0. Original source, full license and hashes are bundled under assets/kaykit. Native derivatives remove root translation channels and unselected hand weapons; generated hashes are recorded in native-derivatives.json. No Nintendo/Minecraft assets or reference-video content are included.

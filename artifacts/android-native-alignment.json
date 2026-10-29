@@ -1,0 +1,215 @@
+{
+  "scope": "ELF PT_LOAD and RELRO structural checks; separate official zipalign check; no 16 KiB runtime pass",
+  "libraries": [
+    {
+      "path": "lib/arm64-v8a/libandroidx.graphics.path.so",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "supports16KiBLoadAlignment": true,
+      "relro": [
+        {
+          "endAligned16KiB": false,
+          "writableTailInRoundedPage": false
+        }
+      ]
+    },
+    {
+      "path": "lib/arm64-v8a/libarcore_sdk_c.so",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "supports16KiBLoadAlignment": true,
+      "relro": [
+        {
+          "endAligned16KiB": false,
+          "writableTailInRoundedPage": false
+        }
+      ]
+    },
+    {
+      "path": "lib/arm64-v8a/libarcore_sdk_jni.so",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "supports16KiBLoadAlignment": true,
+      "relro": [
+        {
+          "endAligned16KiB": false,
+          "writableTailInRoundedPage": false
+        }
+      ]
+    },
+    {
+      "path": "lib/arm64-v8a/libfilament-jni.so",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "supports16KiBLoadAlignment": true,
+      "relro": [
+        {
+          "endAligned16KiB": false,
+          "writableTailInRoundedPage": false
+        }
+      ]
+    },
+    {
+      "path": "lib/arm64-v8a/libfilament-utils-jni.so",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "supports16KiBLoadAlignment": true,
+      "relro": [
+        {
+          "endAligned16KiB": false,
+          "writableTailInRoundedPage": false
+        }
+      ]
+    },
+    {
+      "path": "lib/arm64-v8a/libgltfio-jni.so",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "supports16KiBLoadAlignment": true,
+      "relro": [
+        {
+          "endAligned16KiB": true,
+          "writableTailInRoundedPage": false
+        }
+      ]
+    },
+    {
+      "path": "lib/arm64-v8a/libjingle_peerconnection_so.so",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "supports16KiBLoadAlignment": true,
+      "relro": [
+        {
+          "endAligned16KiB": false,
+          "writableTailInRoundedPage": false
+        }
+      ]
+    },
+    {
+      "path": "lib/x86_64/libandroidx.graphics.path.so",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "supports16KiBLoadAlignment": true,
+      "relro": [
+        {
+          "endAligned16KiB": false,
+          "writableTailInRoundedPage": false
+        }
+      ]
+    },
+    {
+      "path": "lib/x86_64/libarcore_sdk_c.so",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "supports16KiBLoadAlignment": true,
+      "relro": [
+        {
+          "endAligned16KiB": false,
+          "writableTailInRoundedPage": false
+        }
+      ]
+    },
+    {
+      "path": "lib/x86_64/libarcore_sdk_jni.so",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "supports16KiBLoadAlignment": true,
+      "relro": [
+        {
+          "endAligned16KiB": false,
+          "writableTailInRoundedPage": false
+        }
+      ]
+    },
+    {
+      "path": "lib/x86_64/libfilament-jni.so",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "supports16KiBLoadAlignment": true,
+      "relro": [
+        {
+          "endAligned16KiB": false,
+          "writableTailInRoundedPage": false
+        }
+      ]
+    },
+    {
+      "path": "lib/x86_64/libfilament-utils-jni.so",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "supports16KiBLoadAlignment": true,
+      "relro": [
+        {
+          "endAligned16KiB": false,
+          "writableTailInRoundedPage": false
+        }
+      ]
+    },
+    {
+      "path": "lib/x86_64/libgltfio-jni.so",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "supports16KiBLoadAlignment": true,
+      "relro": [
+        {
+          "endAligned16KiB": false,
+          "writableTailInRoundedPage": false
+        }
+      ]
+    },
+    {
+      "path": "lib/x86_64/libjingle_peerconnection_so.so",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "supports16KiBLoadAlignment": true,
+      "relro": [
+        {
+          "endAligned16KiB": false,
+          "writableTailInRoundedPage": false
+        }
+      ]
+    }
+  ]
+}

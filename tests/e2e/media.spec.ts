@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { writeFile } from "node:fs/promises";
 test("real browser WebRTC transports synthetic composed frames through authenticated relay to receiver", async ({
   page,
 }, info) => {
@@ -105,8 +106,75 @@ test("real browser WebRTC transports synthetic composed frames through authentic
       { timeout: 15000 },
     )
     .toBe(640);
+  await expect
+    .poll(
+      () =>
+        receiver.locator("video").evaluate((video: HTMLVideoElement) => {
+          if (video.videoWidth !== 640 || video.videoHeight !== 360)
+            return false;
+          const canvas = document.createElement("canvas");
+          canvas.width = 640;
+          canvas.height = 360;
+          const context = canvas.getContext("2d")!;
+          context.drawImage(video, 0, 0);
+          const background = context.getImageData(5, 5, 1, 1).data;
+          const character = context.getImageData(150, 160, 1, 1).data;
+          return (
+            [68, 34, 105].every(
+              (value, index) => Math.abs(background[index] - value) < 15,
+            ) &&
+            [185, 237, 199].every(
+              (value, index) => Math.abs(character[index] - value) < 15,
+            ) &&
+            video.currentTime > 0.25 &&
+            video.getVideoPlaybackQuality().totalVideoFrames >= 3
+          );
+        }),
+      { timeout: 15000 },
+    )
+    .toBe(true);
+  const proof = await receiver
+    .locator("video")
+    .evaluate((video: HTMLVideoElement) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 640;
+      canvas.height = 360;
+      const context = canvas.getContext("2d")!;
+      context.drawImage(video, 0, 0);
+      return {
+        background: Array.from(context.getImageData(5, 5, 1, 1).data),
+        character: Array.from(context.getImageData(150, 160, 1, 1).data),
+        currentTime: video.currentTime,
+        decodedFrames: video.getVideoPlaybackQuality().totalVideoFrames,
+      };
+    });
+  await writeFile(
+    "artifacts/webrtc-frame-proof.json",
+    JSON.stringify(
+      {
+        source: "synthetic browser canvas; no native camera or AR evidence",
+        ...proof,
+      },
+      null,
+      2,
+    ),
+  );
   await receiver.screenshot({ path: "artifacts/chromium-webrtc-receiver.png" });
   await sender.evaluate(() => (window as any).cleanupMedia());
+  await expect
+    .poll(() =>
+      receiver
+        .locator("video")
+        .evaluate((video: HTMLVideoElement) => video.srcObject === null),
+    )
+    .toBe(true);
+  await expect
+    .poll(() =>
+      receiver
+        .locator("video")
+        .evaluate((video: HTMLVideoElement) => video.videoWidth),
+    )
+    .toBe(0);
   await sender.close();
   await receiver.close();
 });

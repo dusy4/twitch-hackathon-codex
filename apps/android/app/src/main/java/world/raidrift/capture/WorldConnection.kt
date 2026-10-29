@@ -109,6 +109,11 @@ class WorldConnection : ViewModel() {
         }
     }
     fun pause() { foreground = false; job?.cancel(); job = null; call?.cancel(); call = null }
+    fun startOutput(output: CompositeOutput) {
+        val pair = credentials ?: throw IllegalStateException("Pair the room first")
+        check(mutable.value.authorized && mutable.value.world?.paused == false) { "An active paired world is required" }
+        output.start(pair.first, pair.second)
+    }
     fun disconnect() { pause(); credentials = null; mutable.value = ConnectionState() }
     override fun onCleared() { disconnect(); client.dispatcher.executorService.shutdown(); client.connectionPool.evictAll() }
 }

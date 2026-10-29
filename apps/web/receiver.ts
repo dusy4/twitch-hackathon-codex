@@ -8,7 +8,21 @@ export function receiveMedia(
   );
   const peer = new RTCPeerConnection({ iceServers: [] });
   const buffered: RTCIceCandidateInit[] = [];
+  let closed = false;
+  const release = () => {
+    if (closed) return;
+    closed = true;
+    buffered.length = 0;
+    peer.close();
+    const stream = video.srcObject as MediaStream | null;
+    stream?.getTracks().forEach((track) => track.stop());
+    video.srcObject = null;
+  };
   peer.ontrack = (e) => {
+    if (closed) {
+      e.track.stop();
+      return;
+    }
     video.srcObject = e.streams[0] || new MediaStream([e.track]);
     void video.play().catch(() => status("Click play to enable media."));
     status("Receiving composed camera + AR video");
@@ -24,9 +38,11 @@ export function receiveMedia(
         }),
       );
   };
-  peer.onconnectionstatechange = () =>
-    status(`Media ${peer.connectionState} · direct LAN mode`);
+  peer.onconnectionstatechange = () => {
+    if (!closed) status(`Media ${peer.connectionState} · direct LAN mode`);
+  };
   socket.onmessage = (e) => {
+    if (closed) return;
     void (async () => {
       const data = JSON.parse(e.data);
       if (data.type === "offer") {
@@ -50,11 +66,12 @@ export function receiveMedia(
     status("Waiting for an explicitly paired mobile broadcaster");
     socket.send(JSON.stringify({ type: "ready" }));
   };
-  socket.onclose = () =>
+  socket.onclose = () => {
+    release();
     status("Media session ended. Generate a fresh pairing token.");
+  };
   return () => {
     socket.close();
-    peer.close();
-    video.srcObject = null;
+    release();
   };
 }

@@ -1,0 +1,23 @@
+{
+  "outcome": "Emulator crashes before Android boot; no ADB device",
+  "modesAttempted": [
+    "headless SwiftShader TCG",
+    "hidden Qt host graphics TCG"
+  ],
+  "imageSource": "https://dl.google.com/android/repository/sys-img/google_apis/x86_64-30_r16.zip",
+  "physicalDevicePass": false,
+  "physicalDevicePlan": "Owner will install APK manually later",
+  "temporaryAvdDirectory": "E:/Codex-RaidRift-QA-2026-10-29/RaidRift_API30.avd",
+  "arcoreApkSha256": "92741f6f873c232a07173b50adeee6b1c2f5a048bc071c80cf741b0cde0f73c4",
+  "systemImage": "Android 30 Google APIs x86_64 r16",
+  "emulator": "37.2.12.0 build 16428233",
+  "hypervisorPresent": false,
+  "notes": "Software CPU mode is explicitly unsupported by Google; no BIOS/security changes or reboot performed. No crash report submitted.",
+  "nativeRuntimePass": false,
+  "exceptionCode": "0xc0000005",
+  "arcoreEmulatorApk": "1.57.0",
+  "imageSha1": "6ae21030eaadc041078444d3798e4b399f3e787d",
+  "date": "2026-10-29",
+  "firmwareVirtualizationEnabled": false,
+  "faultingHeadlessModule": "qemu-system-x86_64-headless.exe"
+}

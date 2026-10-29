@@ -31,7 +31,12 @@ export function installMediaRelay(
     try {
       if (req.headers.origin && req.headers.origin !== origin)
         throw Error("Origin");
-      const payload = security.verify(url.searchParams.get("token") || "");
+      const authorization = req.headers.authorization;
+      const payload = security.verify(
+        typeof authorization === "string" && authorization.startsWith("Bearer ")
+          ? authorization.slice(7)
+          : url.searchParams.get("token") || "",
+      );
       if (!["capture", "overlay"].includes(payload.role)) throw Error("Role");
       const channel = (
         await db.query(
@@ -68,6 +73,9 @@ export function installMediaRelay(
             if (times.length >= 30) throw Error("Rate");
             times.push(Date.now());
             const signal = Signal.parse(JSON.parse(String(raw)));
+            // The server notifies the producer once when both roles are present.
+            // Forwarding explicit ready messages too races two simultaneous offers.
+            if (signal.type === "ready") return;
             if (
               (payload.role === "overlay" && signal.type === "offer") ||
               (payload.role === "capture" && signal.type === "answer")
@@ -80,12 +88,19 @@ export function installMediaRelay(
             ws.close(1008, "Invalid signaling");
           }
         });
-        for (const peer of room!.keys())
-          if (peer !== ws && peer.readyState === WebSocket.OPEN)
-            peer.send(JSON.stringify({ type: "ready" }));
+        if (room!.size === 2)
+          for (const [peer, participant] of room!)
+            if (
+              participant.role === "capture" &&
+              peer.readyState === WebSocket.OPEN
+            )
+              peer.send(JSON.stringify({ type: "ready" }));
         ws.on("error", () => {});
         ws.on("close", () => {
           room!.delete(ws);
+          for (const peer of room!.keys())
+            if (peer.readyState === WebSocket.OPEN)
+              peer.close(1000, "Paired peer left");
           if (!room!.size) rooms.delete(payload.room);
         });
       });

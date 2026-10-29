@@ -17,12 +17,22 @@ class LocalClip(private val context: Context, private val mirror: SurfaceMirrore
     var file by mutableStateOf<File?>(null); private set
     var message by mutableStateOf("Silent MP4 · saved only on this device"); private set
     private var recorder: MediaRecorder? = null
+    init {
+        context.getExternalFilesDir(Environment.DIRECTORY_MOVIES)?.let { root ->
+            file = File(root, "raidrift").listFiles { candidate -> candidate.isFile && candidate.name.startsWith("raidrift-") && candidate.extension == "mp4" }
+                ?.maxByOrNull { it.lastModified() }
+            if (file != null) message = "Previous local clip recovered · review or discard before recording again"
+        }
+    }
 
     @Suppress("DEPRECATION")
     fun start() {
         check(!recording && file == null) { "Share or discard the previous clip first" }
-        val folder = File(context.getExternalFilesDir(Environment.DIRECTORY_MOVIES), "raidrift").apply { mkdirs() }
-        val destination = File(folder, "raidrift-${System.currentTimeMillis()}.mp4")
+        val storage = context.getExternalFilesDir(Environment.DIRECTORY_MOVIES)
+            ?: run { message = "Device storage is unavailable"; return }
+        val folder = File(storage, "raidrift")
+        if (!folder.isDirectory && !folder.mkdirs()) { message = "Device storage is unavailable"; return }
+        val destination = File(folder, "raidrift-pending.mp4")
         val capture = MediaRecorder()
         try {
             capture.setVideoSource(MediaRecorder.VideoSource.SURFACE)

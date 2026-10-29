@@ -1,0 +1,17 @@
+{
+  "source": "synthetic browser canvas; no native camera or AR evidence",
+  "background": [
+    73,
+    35,
+    100,
+    255
+  ],
+  "character": [
+    187,
+    236,
+    204,
+    255
+  ],
+  "currentTime": 1.073783,
+  "decodedFrames": 8
+}

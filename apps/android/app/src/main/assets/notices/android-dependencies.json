@@ -1202,6 +1202,16 @@
       "declaredBy": "io.github.sceneview:sceneview:4.62.0"
     },
     {
+      "coordinate": "io.github.webrtc-sdk:android:150.7871.04",
+      "licenses": [
+        {
+          "name": "The 3-Clause BSD License",
+          "url": "https://opensource.org/license/bsd-3-clause/"
+        }
+      ],
+      "declaredBy": "io.github.webrtc-sdk:android:150.7871.04"
+    },
+    {
       "coordinate": "org.jetbrains.kotlin:kotlin-android-extensions-runtime:1.4.10",
       "licenses": [
         {
