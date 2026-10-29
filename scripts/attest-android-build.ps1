@@ -11,7 +11,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'APK signature verification failed' }
     $badging = & .tools/android-sdk/build-tools/36.0.0/aapt2.exe dump badging $sourceApk
     if ($LASTEXITCODE -ne 0) { throw 'APK manifest inspection failed' }
-    if ($badging -match "uses-permission: name='android.permission.RECORD_AUDIO'") { throw 'Unexpected microphone permission in video-only client' }
+    $microphonePermission = [bool]($badging -match "uses-permission: name='android.permission.RECORD_AUDIO'")
+    if (!$microphonePermission) { throw 'Optional relay microphone permission is missing from the manifest' }
     $total = 0; $failures = 0; $skipped = 0
     foreach ($report in Get-ChildItem apps/android/app/build/test-results/testDebugUnitTest -Filter '*.xml') {
         [xml]$result = Get-Content -LiteralPath $report.FullName
@@ -43,12 +44,13 @@ try {
         lint = @{ errors = 0; warnings = [int]$lintSummary.Groups[2].Value; details = 'Pinned Gradle/dependency updates and targetSdk 36' }
         models = $models; notices = $notices; nativeSourceHashes = $sources
         khronosModelValidation = '4 models; 0 errors; 0 warnings'
-        nativeRuntimeValidated = $false; physicalPhoneValidated = $false; composedVideoDecoded = $false
-        microphonePermission = $false
-        backendRegression = @{ total = 62; pass = 61; skipped = 1; concurrency = 2; log = '.data/android-output-backend.log' }
-        browserMediaRegression = @{ passed = 1; scope = 'Synthetic browser decoded pixels, advancing frames and cleared receiver on shutdown; not native phone'; log = '.data/webrtc-pixel-browser.log'; proof = 'artifacts/webrtc-frame-proof.json' }
+        scope = 'Build-only attestation; runtime results are versioned separately and are not inferred from compilation'
+        runtimeEvidence = 'artifacts/android-runtime-qa.json'
+        physicalPhoneValidated = $false
+        microphonePermission = $microphonePermission
+        microphonePolicy = 'Optional explicit relay consent and runtime permission; disabled by default; local clips and LAN WebRTC remain video-only'
         toolchain = @{ gradle = '9.8.1'; jdk = '21.0.13.0.2'; compileSdk = 37 }
-        device = 'Owner will install on Android phone manually; Boat VM authentication pending'
+        device = 'Boat emulator runtime evidence is separate; owner will install on Android phone manually'
     } | ConvertTo-Json -Depth 8 | Set-Content artifacts/android-build.json
-    Write-Output "Verified local debug APK: $($apk.Length) bytes; $total native tests; no microphone permission. Runtime validation is separate."
+    Write-Output "Verified local debug APK: $($apk.Length) bytes; $total native tests; optional relay microphone permission declared. Runtime validation is separate."
 } finally { Pop-Location }

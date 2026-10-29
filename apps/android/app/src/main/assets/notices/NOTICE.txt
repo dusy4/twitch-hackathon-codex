@@ -16,3 +16,5 @@ https://github.com/kittinunf/fuel/blob/2.3.1/LICENSE.md
 https://github.com/kittinunf/Result/blob/3.1.0/LICENSE.md
 
 The component inventory records POM license declarations and inheritance. It is not a vulnerability scan, endorsement or physical-device validation.
+
+RootEncoder 2.8.1, Copyright (C) pedroSG94 and contributors: Apache-2.0. The full upstream LICENSE and NOTICE accompany this distribution. Its Ktor and kotlinx runtime dependencies declare Apache-2.0. SLF4J 2.0.18 retains the complete QOS.ch MIT copyright/license in SLF4J-MIT.txt. Relay microphone audio is optional and explicitly permission-gated; the separate LAN WebRTC transport remains video-only.

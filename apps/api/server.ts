@@ -134,7 +134,11 @@ export async function createApp(
       .header("Permissions-Policy", "camera=(self), microphone=(self)")
       .header(
         "Content-Security-Policy",
-        "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' blob: ws: wss:; media-src 'self' blob:; worker-src 'self' blob:; frame-ancestors 'self'",
+        "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src " +
+          (req.url.split("?")[0] === "/relay-receiver"
+            ? "'self' https: http://127.0.0.1:* http://localhost:*"
+            : "'self' blob: ws: wss:") +
+          "; media-src 'self' blob:; worker-src 'self' blob:; frame-ancestors 'self'",
       );
     if (
       ["POST", "PATCH", "DELETE", "PUT"].includes(req.method) &&
@@ -1677,6 +1681,13 @@ export async function createApp(
   const webRoot = resolve(options.webRoot || "dist/web");
   if (existsSync(resolve(webRoot, "index.html"))) {
     const htmlTemplate = await readFile(resolve(webRoot, "index.html"), "utf8");
+    for (const path of ["/receiver", "/relay-receiver"])
+      app.get(path, async (_req, reply) =>
+        reply
+          .type("text/html")
+          .header("Cache-Control", "no-store")
+          .send(htmlTemplate),
+      );
     for (const path of ["/", "/leaderboard", "/live", "/players/:id"])
       app.get(path, async (req, reply) =>
         reply

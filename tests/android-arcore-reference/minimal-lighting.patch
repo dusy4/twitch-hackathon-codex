@@ -1,0 +1,47 @@
+diff --git a/samples/hello_ar_java/app/src/main/java/com/google/ar/core/examples/java/helloar/HelloArActivity.java b/samples/hello_ar_java/app/src/main/java/com/google/ar/core/examples/java/helloar/HelloArActivity.java
+--- a/samples/hello_ar_java/app/src/main/java/com/google/ar/core/examples/java/helloar/HelloArActivity.java
++++ b/samples/hello_ar_java/app/src/main/java/com/google/ar/core/examples/java/helloar/HelloArActivity.java
+@@ -89,6 +89,7 @@ import java.util.List;
+  * plane to place a 3D model.
+  */
+ public class HelloArActivity extends AppCompatActivity implements SampleRender.Renderer {
++  private long qaLastReport;
+ 
+   private static final String TAG = HelloArActivity.class.getSimpleName();
+ 
+@@ -482,6 +483,14 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
+     Frame frame;
+     try {
+       frame = session.update();
++      long qaNow = android.os.SystemClock.elapsedRealtime();
++      if (qaNow - qaLastReport >= 1000) {
++        qaLastReport = qaNow;
++        int qaPlanes = 0;
++        for (Plane qaPlane : session.getAllTrackables(Plane.class))
++          if (qaPlane.getTrackingState() == TrackingState.TRACKING && qaPlane.getType() == Plane.Type.HORIZONTAL_UPWARD_FACING) qaPlanes++;
++        Log.d("GoogleARQA", "camera=" + frame.getCamera().getTrackingState() + " floors=" + qaPlanes + " anchors=" + wrappedAnchors.size() + " timestamp=" + frame.getTimestamp());
++      }
+     } catch (CameraNotAvailableException e) {
+       Log.e(TAG, "Camera not available during onDrawFrame", e);
+       messageSnackbarHelper.showError(this, "Camera not available. Try restarting the app.");
+@@ -837,7 +846,7 @@ public class HelloArActivity extends AppCompatActivity implements SampleRender.R
+   /** Configures the session with feature settings. */
+   private void configureSession() {
+     Config config = session.getConfig();
+-    config.setLightEstimationMode(Config.LightEstimationMode.ENVIRONMENTAL_HDR);
++    config.setLightEstimationMode(Config.LightEstimationMode.DISABLED);
+     if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
+       config.setDepthMode(Config.DepthMode.AUTOMATIC);
+     } else {
+diff --git a/samples/hello_ar_java/build.gradle b/samples/hello_ar_java/build.gradle
+--- a/samples/hello_ar_java/build.gradle
++++ b/samples/hello_ar_java/build.gradle
+@@ -23,7 +23,7 @@ buildscript {
+         mavenCentral()
+     }
+     dependencies {
+-        classpath 'com.android.tools.build:gradle:9.3.0'
++        classpath 'com.android.tools.build:gradle:9.4.1'
+         // NOTE: Do not place your application dependencies here; they belong
+         // in the individual module build.gradle files
+     }

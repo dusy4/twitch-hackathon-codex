@@ -31,11 +31,11 @@ yes | "$sdk/sdkmanager" --licenses > "$qa_root/evidence/sdk-licenses.log"
 license_status=$?
 set -o pipefail
 test "$license_status" = 0
-"$sdk/sdkmanager" 'platform-tools' 'emulator' 'system-images;android-34;google_apis;x86_64'
+"$sdk/sdkmanager" 'platform-tools' 'emulator' 'system-images;android-30;google_apis;x86_64'
 adb="$ANDROID_HOME/platform-tools/adb"
 "$ANDROID_HOME/emulator/emulator-check" accel > "$qa_root/evidence/kvm-check.txt"
 if ! test -f "$ANDROID_AVD_HOME/raidrift_qa.ini"; then
-    echo no | "$sdk/avdmanager" create avd -n raidrift_qa -k 'system-images;android-34;google_apis;x86_64' -d pixel_6
+    echo no | "$sdk/avdmanager" create avd -n raidrift_qa -k 'system-images;android-30;google_apis;x86_64' -d pixel_6
 fi
 python3 - "$ANDROID_AVD_HOME/raidrift_qa.avd/config.ini" <<'PY'
 import pathlib,sys
@@ -43,11 +43,11 @@ p=pathlib.Path(sys.argv[1]); entries={}
 for line in p.read_text().splitlines():
     if '=' in line:
         key,value=line.split('=',1); entries[key]=value
-entries.update({'hw.camera.back':'virtualscene','hw.camera.front':'none','hw.lcd.width':'720','hw.lcd.height':'1280','hw.lcd.density':'320','hw.ramSize':'3072','hw.cpu.ncore':'2','hw.gpu.enabled':'yes','hw.gpu.mode':'swiftshader','showDeviceFrame':'no','fastboot.forceColdBoot':'yes'})
+entries.update({'hw.camera.back':'virtualscene','hw.camera.front':'none','hw.lcd.width':'720','hw.lcd.height':'1280','hw.lcd.density':'320','hw.ramSize':'3072','hw.cpu.ncore':'2','hw.gpu.enabled':'yes','hw.gpu.mode':'swangle','showDeviceFrame':'no','fastboot.forceColdBoot':'yes'})
 p.write_text('\n'.join(f'{k}={v}' for k,v in entries.items())+'\n')
 PY
 if ! "$adb" devices | grep -q '^emulator-'; then
-    nohup "$ANDROID_HOME/emulator/emulator" -avd raidrift_qa -no-window -no-audio -gpu swiftshader -no-snapshot -no-boot-anim -camera-back virtualscene -accel on -memory 3072 -cores 2 -no-metrics > "$qa_root/evidence/emulator.log" 2>&1 &
+    nohup "$ANDROID_HOME/emulator/emulator" -avd raidrift_qa -no-window -no-audio -gpu swangle -no-snapshot -no-boot-anim -camera-back virtualscene -accel on -memory 3072 -cores 2 -no-metrics > "$qa_root/evidence/emulator.log" 2>&1 &
     echo "$!" > "$qa_root/emulator.pid"
 fi
 timeout 120 "$adb" wait-for-device
@@ -57,6 +57,16 @@ for attempt in $(seq 1 90); do
     sleep 2
 done
 test "$booted" = 1 || { echo 'Android failed to boot within the QA bound.' >&2; exit 4; }
+# API 30 on emulator 37 can select an unreachable virtual Wi-Fi route. Its emulated
+# mobile network remains usable; this is not a physical cellular field test.
+"$adb" shell svc wifi disable
+# API 34 r14 exposes virtualscene as camera 10; the emulator ARCore profile needs 0.
+# API 30 r16 exposes the compatible camera. Keep the topology probe as an explicit gate.
+"$adb" shell dumpsys media.camera > "$qa_root/evidence/camera-topology.txt"
+grep -q 'Device 0 maps to "0"' "$qa_root/evidence/camera-topology.txt" || {
+    echo 'The virtual camera HAL is incompatible with the emulator ARCore profile (camera 0 absent).' >&2
+    exit 5
+}
 arcore_apk="$qa_root/downloads/arcore-1.57.0-emulator.apk"
 if ! test -f "$arcore_apk"; then curl --fail --location --retry 3 -o "$arcore_apk" https://github.com/google-ar/arcore-android-sdk/releases/download/1.57.0/Google_Play_Services_for_AR_1.57.0_x86_for_emulator.apk; fi
 echo "92741f6f873c232a07173b50adeee6b1c2f5a048bc071c80cf741b0cde0f73c4  $arcore_apk" | sha256sum --check -

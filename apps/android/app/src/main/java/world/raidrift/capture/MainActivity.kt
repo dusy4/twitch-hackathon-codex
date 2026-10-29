@@ -1,10 +1,13 @@
 package world.raidrift.capture
 
 import android.os.Bundle
+import android.Manifest
 import android.os.SystemClock
 import android.view.MotionEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -46,20 +49,23 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme(colorScheme = darkColorScheme(primary = Color(0xffbca6ff))) {
-                CaptureApp(connection)
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    CaptureApp(connection)
+                }
             }
         }
     }
 }
 
 private class ContactFrame(var timestamp: Long = 0, var pose: Pose? = null)
+private class ArFrameDiagnostics(var timestamp: Long = 0, var frames: Int = 0, var since: Long = 0)
 
 @Composable
 private fun CaptureApp(connection: WorldConnection) {
     val state by connection.state.collectAsStateWithLifecycle()
     var server by remember { mutableStateOf(if (BuildConfig.DEBUG) "http://127.0.0.1:3400" else "") }
     var token by remember { mutableStateOf("") }
-    var paired by remember { mutableStateOf(false) }
+    val paired = state.pairingRequested
     var pairingPanel by remember { mutableStateOf(false) }
     var outputPanel by remember { mutableStateOf(false) }
     var reviewClip by remember { mutableStateOf(false) }
@@ -69,39 +75,70 @@ private fun CaptureApp(connection: WorldConnection) {
     var pendingTap by remember { mutableStateOf<Pair<Float, Float>?>(null) }
     var tracking by remember { mutableStateOf("Camera is off · orbit the 3D preview with one finger") }
     var depth by remember { mutableStateOf("Depth not started") }
+    var depthSupported by remember { mutableStateOf(false) }
     var lastDepthCheck by remember { mutableLongStateOf(0) }
+    var surfaces by remember { mutableIntStateOf(0) }
     val motor = remember { SurfaceMotor() }
     var feet by remember { mutableStateOf<Map<String, Position>>(emptyMap()) }
     var depthCollider by remember { mutableStateOf<DepthCollider?>(null) }
     val contactFrame = remember { ContactFrame() }
+    val arDiagnostics = remember { ArFrameDiagnostics() }
+    // Keep the callback stable: changing it asks SceneView to reconfigure ARCore.
+    // Ambient estimation avoids rebuilding HDR cubemaps during a live mobile feed.
+    val configureArSession = remember {
+        { _: com.google.ar.core.Session, config: Config ->
+            config.lightEstimationMode = Config.LightEstimationMode.AMBIENT_INTENSITY
+        }
+    }
     val engine = rememberEngine()
     val modelLoader = rememberModelLoader(engine)
     val materialLoader = rememberMaterialLoader(engine)
     val camera = rememberCameraNode(engine) {
         position = Position(0f, 1.3f, 2f); lookAt(Position(0f, 0.15f, 0f))
     }
+    val previewOrbit = remember { PreviewOrbit() }
+    var orbitRevision by remember { mutableIntStateOf(0) }
+    var lastPreviewTouch by remember { mutableStateOf<Pair<Float, Float>?>(null) }
+    var lastPreviewPinch by remember { mutableStateOf<Float?>(null) }
+    LaunchedEffect(orbitRevision) {
+        val eye = previewOrbit.eye()
+        camera.position = Position(eye.x, eye.y, eye.z)
+        camera.lookAt(Position(0f, 0.15f, 0f))
+    }
     val arCamera = rememberARCameraNode(engine)
     val mirror = rememberSurfaceMirrorer()
     val context = LocalContext.current
     val clip = remember(mirror) { LocalClip(context, mirror) }
     val output = remember(mirror) { CompositeOutput(context, mirror) }
+    val relay = remember(mirror) { RelayOutput(context, mirror) }
+    var relayPanel by remember { mutableStateOf(false) }
+    var relayUrl by remember { mutableStateOf("") }
+    var relayConsent by remember { mutableStateOf(false) }
+    var includeMicrophone by remember { mutableStateOf(false) }
+    var microphoneMuted by remember { mutableStateOf(false) }
+    var qualityMenu by remember { mutableStateOf(false) }
+    val microphonePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        includeMicrophone = granted
+        if (!granted) error = "Microphone permission denied · video-only output remains available"
+    }
     var outputConsent by remember { mutableStateOf(false) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, clip) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
-                clip.stop(); output.stop(); connection.pause(); ar = false; reviewClip = false
+                clip.stop(); output.stop(); relay.stop(); connection.pause(); ar = false; reviewClip = false
+                relayConsent = false; includeMicrophone = false; microphoneMuted = false
             } else if (event == Lifecycle.Event.ON_START) connection.resume()
         }
         lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer); clip.stop(); output.dispose() }
+        onDispose { lifecycle.removeObserver(observer); clip.stop(); output.dispose(); relay.stop() }
     }
     DisposableEffect(anchor) { val current = anchor; onDispose { current?.detach() } }
     LaunchedEffect(anchor) { motor.clear(); feet = emptyMap(); contactFrame.timestamp = 0; contactFrame.pose = null }
-    LaunchedEffect(ar) { if (!ar) { anchor = null; pendingTap = null; clip.stop(); output.stop() } }
+    LaunchedEffect(ar) { if (!ar) { anchor = null; pendingTap = null; clip.stop(); output.stop(); relay.stop() } }
     LaunchedEffect(clip.recording) { if (clip.recording) { delay(20_000); clip.stop() } }
     val visibleWorld = state.world?.takeIf { state.authorized && !it.paused }
-    LaunchedEffect(visibleWorld == null, paired) { if (paired && visibleWorld == null) { clip.stop(); output.stop(); ar = false } }
+    LaunchedEffect(visibleWorld == null, paired) { if (paired && visibleWorld == null) { clip.stop(); output.stop(); relay.stop(); ar = false } }
     val preview = NativeWorld("local", "LOCAL PREVIEW", false, false,
         listOf(Hero("preview-knight", "3D preview", 0.5f, 0.5f, "idle")), null)
     val world = if (paired) visibleWorld else preview
@@ -113,27 +150,56 @@ private fun CaptureApp(connection: WorldConnection) {
                 materialLoader = materialLoader, cameraNode = arCamera, surfaceMirrorer = mirror,
                 depthMode = Config.DepthMode.AUTOMATIC,
                 planeFindingMode = Config.PlaneFindingMode.HORIZONTAL_AND_VERTICAL,
-                sceneUnderstanding = SceneUnderstanding(occlusion = true, lighting = true, planeVisualization = true),
+                sessionConfiguration = configureArSession,
+                // Use ARCore's camera default rather than SceneView's recording-oriented
+                // highest-resolution selector; reserve the device budget for tracking.
+                sessionCameraConfig = null,
+                renderQuality = RenderQuality.Performance,
+                sceneUnderstanding = SceneUnderstanding(occlusion = depthSupported, lighting = true, planeVisualization = anchor == null),
                 onSessionCreated = { session ->
-                    depth = if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) "Depth supported · waiting for frames" else "Depth unavailable · anchors only"
+                    if (BuildConfig.DEBUG) android.util.Log.d("RaidRiftAR", "config planes=${session.config.planeFindingMode} light=${session.config.lightEstimationMode} update=${session.config.updateMode}")
+                    depthSupported = session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)
+                    depth = if (depthSupported) "Depth supported · waiting for frames" else "Depth unavailable · anchors only"
                 },
                 onSessionUpdated = { session, frame ->
+                    if (frame.timestamp != arDiagnostics.timestamp) { arDiagnostics.timestamp = frame.timestamp; arDiagnostics.frames++ }
                     val tracked = frame.camera.trackingState == TrackingState.TRACKING
                     val anchorTracked = anchor == null || anchor?.trackingState == TrackingState.TRACKING
-                    if (!tracked || !anchorTracked) { clip.stop(); if (output.active) output.stop("Tracking lost · sharing stopped") }
-                    tracking = if (!tracked || !anchorTracked) "Tracking lost · move slowly in good light" else if (anchor == null) "Move to scan a desk or floor, then tap it" else "Room anchor placed · tap another surface to move"
+                    if (!tracked || !anchorTracked) {
+                        clip.stop()
+                        if (output.active) output.stop("Tracking lost · sharing stopped")
+                        if (relay.active) relay.stop("Tracking lost · relay output stopped")
+                    }
+                    tracking = if (!tracked) {
+                        val reason = frame.camera.trackingFailureReason.name.lowercase().replace('_', ' ')
+                        if (reason == "none") "Camera tracking paused · move slowly" else "Camera tracking paused · $reason · move slowly"
+                    } else if (!anchorTracked) {
+                        if (anchor?.trackingState == TrackingState.STOPPED) "Room anchor lost · reset placement" else "Room anchor tracking paused · move slowly to relocalize"
+                    } else if (anchor == null) {
+                        if (surfaces == 0) "Tracking ready · move slowly to detect a desk or floor" else "$surfaces surfaces detected · tap a desk or floor"
+                    } else "Room anchor placed · tap another surface to move"
                     pendingTap?.let { point ->
                         pendingTap = null
                         if (tracked) {
-                            frame.hitTest(point.first, point.second).firstOrNull { hit ->
+                            val hit = frame.hitTest(point.first, point.second).firstOrNull { hit ->
                                 val plane = hit.trackable as? Plane
-                                plane != null && plane.type == Plane.Type.HORIZONTAL_UPWARD_FACING && plane.isPoseInPolygon(hit.hitPose)
-                            }?.let { hit -> runCatching { hit.createAnchor() }.onSuccess { anchor = it }.onFailure { error = "Surface could not be anchored. Try again." } }
+                                plane != null && plane.trackingState == TrackingState.TRACKING && plane.subsumedBy == null && plane.type == Plane.Type.HORIZONTAL_UPWARD_FACING && plane.isPoseInPolygon(hit.hitPose)
+                            }
+                            if (BuildConfig.DEBUG) android.util.Log.d("RaidRiftAR", "surfaceTap planes=$surfaces hit=${hit != null}")
+                            if (hit == null) error = "No detected floor or desk at that point. Keep scanning, then tap a detected surface."
+                            else runCatching { hit.createAnchor() }.onSuccess { anchor = it; error = "" }.onFailure { error = "Surface could not be anchored. Try again." }
                         }
                     }
-                    if (SystemClock.elapsedRealtime() - lastDepthCheck > 1000 && session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
+                    if (SystemClock.elapsedRealtime() - lastDepthCheck > 1000) {
                         lastDepthCheck = SystemClock.elapsedRealtime()
-                        depth = runCatching { frame.acquireDepthImage16Bits().use { "Depth frames available · occlusion enabled" } }.getOrDefault("Depth supported · no current depth frame")
+                        surfaces = session.getAllTrackables(Plane::class.java).count { it.trackingState == TrackingState.TRACKING && it.subsumedBy == null && it.type == Plane.Type.HORIZONTAL_UPWARD_FACING }
+                        if (BuildConfig.DEBUG) {
+                            val points = runCatching { frame.acquirePointCloud().use { it.points.remaining() / 4 } }.getOrDefault(0)
+                            val elapsed = (lastDepthCheck - arDiagnostics.since).coerceAtLeast(1)
+                            android.util.Log.d("RaidRiftAR", "frame state=${frame.camera.trackingState} floors=$surfaces points=$points imageFps=${arDiagnostics.frames * 1000L / elapsed} anchor=${anchor?.trackingState} previousFeet=${feet.size}")
+                            arDiagnostics.frames = 0; arDiagnostics.since = lastDepthCheck
+                        }
+                        if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) depth = runCatching { frame.acquireDepthImage16Bits().use { "Depth frames available · occlusion enabled" } }.getOrDefault("Depth supported · no current depth frame")
                     }
                     val origin = anchor?.takeIf { tracked && it.trackingState == TrackingState.TRACKING }?.pose
                     if (origin != null && world != null) {
@@ -193,9 +259,11 @@ private fun CaptureApp(connection: WorldConnection) {
                     true
                 }
             ) {
-                val collider = rememberDepthCollider(refreshIntervalMs = 200, stride = 8)
-                SideEffect { depthCollider = collider }
-                DisposableEffect(collider) { onDispose { depthCollider = null } }
+                if (depthSupported) {
+                    val collider = rememberDepthCollider(refreshIntervalMs = 200, stride = 8)
+                    SideEffect { depthCollider = collider }
+                    DisposableEffect(collider) { onDispose { depthCollider = null } }
+                }
                 anchor?.let { origin -> AnchorNode(anchor = origin) {
                     world?.let { CharacterWorld(it, feet) { arCamera.worldPosition } }
                 } }
@@ -203,7 +271,29 @@ private fun CaptureApp(connection: WorldConnection) {
         } else {
             SceneView(Modifier.fillMaxSize(), engine = engine, modelLoader = modelLoader,
                 materialLoader = materialLoader, cameraNode = camera, autoCenterContent = false,
-                surfaceMirrorer = mirror) {
+                cameraManipulator = null, surfaceMirrorer = mirror,
+                onTouchEvent = { event, _ ->
+                    when (event.actionMasked) {
+                        MotionEvent.ACTION_DOWN -> { lastPreviewTouch = event.x to event.y; lastPreviewPinch = null }
+                        MotionEvent.ACTION_POINTER_DOWN -> if (event.pointerCount >= 2) {
+                            lastPreviewPinch = kotlin.math.hypot(event.getX(0) - event.getX(1), event.getY(0) - event.getY(1))
+                        }
+                        MotionEvent.ACTION_MOVE -> {
+                            if (event.pointerCount >= 2) {
+                                val distance = kotlin.math.hypot(event.getX(0) - event.getX(1), event.getY(0) - event.getY(1))
+                                lastPreviewPinch?.takeIf { it > 1f }?.let { previewOrbit.zoom(distance / it) }
+                                lastPreviewPinch = distance
+                            } else {
+                                lastPreviewTouch?.let { previewOrbit.drag(event.x - it.first, event.y - it.second) }
+                                lastPreviewTouch = event.x to event.y
+                            }
+                            orbitRevision++
+                        }
+                        MotionEvent.ACTION_POINTER_UP -> { lastPreviewTouch = null; lastPreviewPinch = null }
+                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { lastPreviewTouch = null; lastPreviewPinch = null }
+                    }
+                    true
+                }) {
                 world?.let { CharacterWorld(it) { camera.worldPosition } }
             }
         }
@@ -212,29 +302,44 @@ private fun CaptureApp(connection: WorldConnection) {
             Text("RaidRift · characters in your room", style = MaterialTheme.typography.titleMedium)
             Text(if (ar) "ROOM AR" else "3D PREVIEW · CAMERA OFF", style = MaterialTheme.typography.labelSmall)
             Text(state.message, style = MaterialTheme.typography.bodySmall)
+            if (BuildConfig.DEBUG && world?.mode == "SIMULATOR") {
+                Text(world.heroes.take(3).joinToString(" · ") { "${it.name}: ${it.animation} x=${"%.2f".format(java.util.Locale.ROOT, it.x)}" }, style = MaterialTheme.typography.labelSmall)
+            }
             if (state.world?.paused == true) Text("Streamer paused the world · characters hidden")
             if (ar) { Text(tracking, style = MaterialTheme.typography.bodySmall); Text(depth, style = MaterialTheme.typography.bodySmall) }
             if (error.isNotEmpty()) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(enabled = ar || !paired || visibleWorld != null, onClick = { clip.stop(); output.stop(); ar = !ar; error = "" }) { Text(if (ar) "Exit AR" else "Start room AR") }
+                Button(enabled = ar || !paired || visibleWorld != null, onClick = { clip.stop(); output.stop(); relay.stop(); ar = !ar; error = "" }) { Text(if (ar) "Exit AR" else "Start room AR") }
                 OutlinedButton(onClick = { pairingPanel = true }) { Text("Pair room") }
-                if (anchor != null) TextButton(onClick = { clip.stop(); output.stop(); anchor = null }) { Text("Reset") }
+                if (anchor != null) TextButton(onClick = { clip.stop(); output.stop(); relay.stop(); anchor = null }) { Text("Reset") }
             }
         }
         Column(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().fillMaxWidth()
             .background(Color(0xdc10121c)).heightIn(max = 190.dp).verticalScroll(rememberScrollState()).padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(if (output.active || outputConsent) output.status else clip.message, style = MaterialTheme.typography.bodySmall)
+            Text(if (relay.active) "${relay.status} · ${relay.bitrate / 1000} kbps" else if (output.active || outputConsent) output.status else if (relay.attempted && !clip.recording && clip.file == null) relay.status else clip.message, style = MaterialTheme.typography.bodySmall)
             Text("Camera footage + viewer names · review clips before sharing", style = MaterialTheme.typography.bodySmall)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (!clip.recording && clip.file != null) {
-                    TextButton(onClick = { output.stop(); ar = false; reviewClip = true }) { Text("Review") }
+                    TextButton(onClick = { output.stop(); relay.stop(); ar = false; reviewClip = true }) { Text("Review") }
                     TextButton(onClick = { runCatching { clip.share() }.onFailure { error = "No video sharing app available" } }) { Text("Share") }
                     TextButton(onClick = { clip.discard() }) { Text("Discard") }
                 } else {
-                    Button(enabled = !output.active && world != null && (!ar || anchor?.trackingState == TrackingState.TRACKING),
+                    Button(enabled = !output.active && !relay.active && world != null && (!ar || anchor?.trackingState == TrackingState.TRACKING),
                         onClick = { if (clip.recording) clip.stop() else runCatching { clip.start() }.onFailure { error = it.message ?: "Recording unavailable" } }) { Text(if (clip.recording) "Stop recording" else "Record 20s") }
-                    OutlinedButton(onClick = { if (output.active) output.stop() else outputPanel = true }, enabled = output.active || paired) { Text(if (output.active) "Stop sharing" else "LAN output") }
+                    OutlinedButton(onClick = { if (relay.active) relay.stop() else relayPanel = true }, enabled = relay.active || !clip.recording && !output.active && world != null) { Text(if (relay.active) "Stop relay" else "Broadcast") }
+                }
+            }
+            if (relay.active && relay.microphone) Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = microphoneMuted, onCheckedChange = { microphoneMuted = it; relay.mute(it) })
+                Text("Mute microphone", style = MaterialTheme.typography.bodySmall)
+            }
+            if (relay.active) Box {
+                TextButton(onClick = { qualityMenu = true }) { Text("Adjust video bitrate") }
+                DropdownMenu(expanded = qualityMenu, onDismissRequest = { qualityMenu = false }) {
+                    listOf(1000, 1500, 2500, 4000).forEach { value ->
+                        DropdownMenuItem(text = { Text("$value kbps") }, onClick = { relay.setQuality(value); qualityMenu = false })
+                    }
                 }
             }
             Text("25 cm 3D characters · up to 12 visible · measured floor and detected wall contact", style = MaterialTheme.typography.bodySmall)
@@ -248,11 +353,41 @@ private fun CaptureApp(connection: WorldConnection) {
             OutlinedTextField(token, { token = it }, label = { Text("Camera pairing token") }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false), modifier = Modifier.fillMaxWidth(), singleLine = true)
             if (error.isNotEmpty()) Text(error, color = MaterialTheme.colorScheme.error)
         } },
-        confirmButton = { TextButton(onClick = { runCatching { connection.connect(server, token) }.onSuccess { clip.stop(); output.stop(); paired = true; token = ""; error = ""; pairingPanel = false }.onFailure { error = it.message ?: "Pairing failed" } }) { Text("Connect") } },
+        confirmButton = { TextButton(onClick = { runCatching { connection.connect(server, token) }.onSuccess { clip.stop(); output.stop(); relay.stop(); token = ""; error = ""; pairingPanel = false }.onFailure { error = it.message ?: "Pairing failed" } }) { Text("Connect") } },
         dismissButton = { Row {
-            if (paired) TextButton(onClick = { clip.stop(); output.stop(); connection.disconnect(); ar = false; paired = false; outputConsent = false; token = ""; pairingPanel = false }) { Text("Disconnect") }
+            if (paired) TextButton(onClick = { clip.stop(); output.stop(); relay.stop(); connection.disconnect(); ar = false; outputConsent = false; token = ""; pairingPanel = false }) { Text("Disconnect") }
             TextButton(onClick = { pairingPanel = false }) { Text("Cancel") }
         } }
+    )
+    if (relayPanel) AlertDialog(
+        onDismissRequest = { relayPanel = false }, title = { Text("Broadcast to your relay") },
+        text = { Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(if (ar) "Sends the camera + 3D characters to your existing relay or cloud OBS." else "Camera is off. This broadcasts only the 3D preview for a private setup test.")
+            Text("720p30 H.264 · SRT or RTMPS/RTMP · no SRTLA bonding. Plain SRT/RTMP are not automatically encrypted.", style = MaterialTheme.typography.bodySmall)
+            OutlinedTextField(relayUrl, { relayUrl = it.take(4096) }, label = { Text("Private ingest URL") },
+                visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
+                modifier = Modifier.fillMaxWidth(), singleLine = true)
+            Text("SRT URL options follow OBS/FFmpeg: latency in microseconds, pbkeylen in bytes. Example: latency=200000 means 200 ms.", style = MaterialTheme.typography.bodySmall)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = includeMicrophone, onCheckedChange = {
+                    if (it) microphonePermission.launch(Manifest.permission.RECORD_AUDIO) else includeMicrophone = false
+                })
+                Text("Include microphone audio")
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = relayConsent, onCheckedChange = { relayConsent = it })
+                Text("Allow this view and visible names to be sent")
+            }
+            Text(relay.status, style = MaterialTheme.typography.bodySmall)
+            if (error.isNotEmpty()) Text(error, color = MaterialTheme.colorScheme.error)
+            TextButton(enabled = paired && !clip.recording, onClick = { relayPanel = false; outputPanel = true }) { Text("Experimental LAN WebRTC instead") }
+        } },
+        confirmButton = { TextButton(enabled = relayConsent && world != null && !clip.recording && !output.active && (!ar || anchor?.trackingState == TrackingState.TRACKING), onClick = {
+            runCatching { RelayEndpoint.parse(relayUrl); relay.start(relayUrl, includeMicrophone) }
+                .onSuccess { if (relay.active) { relayPanel = false; microphoneMuted = false; error = "" } else error = relay.status }
+                .onFailure { error = it.message ?: "Invalid ingest configuration" }
+        }) { Text("Start broadcast") } },
+        dismissButton = { TextButton(onClick = { relayPanel = false }) { Text("Cancel") } }
     )
     if (outputPanel) AlertDialog(
         onDismissRequest = { outputPanel = false }, title = { Text("Experimental LAN output") },
@@ -284,6 +419,9 @@ private fun CaptureApp(connection: WorldConnection) {
 
 @Composable
 private fun SceneScope.CharacterWorld(world: NativeWorld, feet: Map<String, Position>? = null, cameraPosition: () -> Position) {
+    SideEffect {
+        if (BuildConfig.DEBUG && world.mode == "SIMULATOR") android.util.Log.d("RaidRiftScene", world.heroes.take(3).joinToString { "${it.id.take(8)}:${it.x}:${it.animation}" })
+    }
     TextNode(text = "RAIDRIFT · ${world.mode}", position = Position(0f, 0.55f, 0f), widthMeters = 0.9f, heightMeters = 0.1f, cameraPositionProvider = cameraPosition)
     world.heroes.take(12).forEach { hero -> key(hero.id) {
         val models = listOf("Knight", "Mage", "Rogue", "Barbarian")

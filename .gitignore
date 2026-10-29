@@ -16,3 +16,6 @@ apps/android/.gradle/
 apps/android/**/build/
 apps/android/local.properties
 artifacts/*.apk
+tests/android-arcore-probe/.gradle/
+tests/android-arcore-probe/**/build/
+tests/android-arcore-probe/local.properties

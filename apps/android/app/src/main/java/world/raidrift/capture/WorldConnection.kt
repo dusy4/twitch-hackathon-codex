@@ -54,7 +54,7 @@ object ServerAddress {
     }
 }
 
-data class ConnectionState(val world: NativeWorld? = null, val message: String = "Local 3D preview · not connected", val authorized: Boolean = false)
+data class ConnectionState(val world: NativeWorld? = null, val message: String = "Local 3D preview · not connected", val authorized: Boolean = false, val pairingRequested: Boolean = false)
 
 internal class ExpiredPairing : IOException()
 internal fun nativeWorldRequest(server: HttpUrl, token: String): Request = Request.Builder()
@@ -85,7 +85,7 @@ class WorldConnection : ViewModel() {
         val url = ServerAddress.parse(server, BuildConfig.DEBUG)
         require(token.isNotBlank() && token.length <= 4000) { "Paste the camera pairing token from Creator Studio" }
         require(token.trim().all { it.code in 33..126 }) { "Pairing token contains invalid characters" }
-        pause(); mutable.value = ConnectionState(message = "Connecting to your room…"); credentials = url to token.trim(); foreground = true; resume()
+        pause(); mutable.value = ConnectionState(message = "Connecting to your room…", pairingRequested = true); credentials = url to token.trim(); foreground = true; resume()
     }
     fun resume() {
         foreground = true
@@ -100,11 +100,11 @@ class WorldConnection : ViewModel() {
                             readNativeWorld(response)
                         }
                     }
-                    mutable.value = ConnectionState(world, "${world.mode} · ${world.heroes.size} connected characters", true)
+                    mutable.value = ConnectionState(world, "${world.mode} · ${world.heroes.size} connected characters", true, true)
                     delay(150)
                 } catch (cancel: CancellationException) { throw cancel }
-                catch (_: ExpiredPairing) { credentials = null; mutable.value = ConnectionState(message = "Pairing expired or revoked. Re-pair in Creator Studio."); break }
-                catch (_: Exception) { mutable.value = ConnectionState(message = "World connection lost · reconnecting"); delay(1200) }
+                catch (_: ExpiredPairing) { credentials = null; mutable.value = ConnectionState(message = "Pairing expired or revoked. Re-pair in Creator Studio.", pairingRequested = true); break }
+                catch (_: Exception) { mutable.value = ConnectionState(message = "World connection lost · reconnecting", pairingRequested = true); delay(1200) }
             }
         }
     }

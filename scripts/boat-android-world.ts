@@ -43,18 +43,34 @@ const scope = {
   version,
   exp: Date.now() + 3_600_000,
 };
+const captureToken = security.sign({ ...scope, role: "capture" });
+const eventsPath = ".data/boat-android-world-events.jsonl";
+s.app.addHook("onRequest", async (request) => {
+  if (request.url === "/v1/native/world") {
+    const supplied =
+      request.headers.authorization?.replace(/^Bearer /, "") ?? "";
+    await appendFile(
+      eventsPath,
+      JSON.stringify({
+        type: "native-request",
+        at: Date.now(),
+        tokenLength: supplied.length,
+        matchesFixture: supplied === captureToken,
+      }) + "\n",
+    );
+  }
+});
 await mkdir(".data", { recursive: true });
 await writeFile(
   ".data/boat-android-pairing.json",
   JSON.stringify({
     server: origin,
-    token: security.sign({ ...scope, role: "capture" }),
+    token: captureToken,
     receiverUrl: `${origin}/receiver#token=${security.sign({ ...scope, role: "overlay" })}`,
     mode: "SIMULATOR",
     purpose: "Disposable native emulator QA only",
   }),
 );
-const eventsPath = ".data/boat-android-world-events.jsonl";
 await writeFile(
   eventsPath,
   JSON.stringify({
@@ -90,6 +106,10 @@ s.app.post("/__qa/action", async (request) => {
 });
 s.app.post("/__qa/pause", async () => {
   world.stop();
+  return { paused: world.state.config.paused };
+});
+s.app.post("/__qa/resume", async () => {
+  world.state.config.paused = false;
   return { paused: world.state.config.paused };
 });
 s.app.post("/__qa/revoke", async () => {

@@ -758,7 +758,42 @@ async function dashboard() {
     const d = await api("/v1/creator/mobile-token", "POST", { consent: true });
     const el = $("#mobile-pairing");
     el.hidden = false;
-    el.textContent = `Experimental LAN video only. Server: ${d.server} | Room: ${d.room} | Capture token: ${d.token} | OBS receiver: ${d.receiverUrl}`;
+    el.className = "panel";
+    el.innerHTML = `<h4>Connect your Android camera</h4>
+      <p>Install RaidRift on your Android phone. In Pair room, enter this server and pairing token.</p>
+      <label>Server<input readonly value="${esc(d.server)}"></label>
+      <label>One-hour pairing token<input id="mobile-capture-token" type="password" readonly autocomplete="off" value="${esc(d.token)}"></label>
+      <button id="copy-mobile-token">Copy pairing token</button>
+      <p>In the phone app, choose Broadcast and enter your existing SRT or RTMPS ingest. Add your relay's watch feed to your existing OBS scene.</p>
+      <details><summary>WebRTC watch feed for OBS</summary>
+        <p>If your relay or private receiver bridge provides a WHEP watch URL, use it here to create an OBS Browser Source with automatic frozen-frame clearing.</p>
+        <label>Private WHEP watch URL<input id="mobile-relay-watch" type="password" autocomplete="off" spellcheck="false" placeholder="https://relay.example/live/whep"></label>
+        <button id="copy-relay-receiver">Copy OBS Browser Source URL</button>
+      </details>
+      <details><summary>Experimental LAN video-only receiver</summary>
+        <label>LAN receiver URL<input type="password" readonly autocomplete="off" value="${esc(d.receiverUrl)}"></label>
+        <button id="copy-lan-receiver">Copy LAN receiver URL</button>
+      </details>`;
+    bind("#copy-mobile-token", async () => {
+      await navigator.clipboard.writeText(d.token);
+      toast("Pairing token copied. Keep it private.");
+    });
+    bind("#copy-lan-receiver", async () => {
+      await navigator.clipboard.writeText(d.receiverUrl);
+      toast("Experimental LAN receiver URL copied.");
+    });
+    bind("#copy-relay-receiver", async () => {
+      const { relayEndpoint } = await import("./relay-receiver.js");
+      const endpoint = relayEndpoint(
+        $<HTMLInputElement>("#mobile-relay-watch").value.trim(),
+      );
+      await navigator.clipboard.writeText(
+        `${location.origin}/relay-receiver#source=${encodeURIComponent(endpoint.href)}`,
+      );
+      toast(
+        "OBS Browser Source URL copied. It contains your private watch address.",
+      );
+    });
     toast(
       "One-hour pairing created. Camera sharing begins only after consent in the native app.",
     );
@@ -1417,6 +1452,25 @@ async function render() {
     location.pathname === "/overlay",
   );
   try {
+    if (location.pathname === "/relay-receiver") {
+      document.body.classList.add("overlay-body");
+      root.innerHTML =
+        '<video id="relay-video" autoplay playsinline hidden style="width:100vw;height:100vh;max-height:none;background:#10121c"></video><div class="overlay-status" id="relay-status" role="status">Connecting to relay…</div>';
+      const params = new URLSearchParams(location.hash.slice(1));
+      const { relayEndpoint, receiveRelay } = await import(
+        "./relay-receiver.js"
+      );
+      routeCleanup = receiveRelay(
+        $<HTMLVideoElement>("#relay-video"),
+        relayEndpoint(params.get("source") || ""),
+        params.get("bearer") || "",
+        (text) => {
+          $("#relay-status").textContent = text;
+          $("#relay-status").hidden = !text;
+        },
+      );
+      return;
+    }
     if (location.pathname === "/receiver") {
       document.body.classList.add("overlay-body");
       root.innerHTML =

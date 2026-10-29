@@ -1,0 +1,7 @@
+RootEncoder 2.8.1 by pedroSG94
+Modules: encoder, common, srt, rtmp
+Source: https://github.com/pedroSG94/RootEncoder/tree/2.8.1
+Tag commit: cca548ab7942ab50d34dede272d5da90d46c6b67
+License: Apache License 2.0 (full text in RootEncoder-LICENSE.txt).
+The upstream dependency binaries are used without changes to their source.
+RaidRift's relay adapter is separate application code.

@@ -1,0 +1,47 @@
+# Private rehearsal only. Every listener is loopback-bound; do not expose this
+# anonymous fixture to the internet. No camera recording is enabled here.
+logLevel: info
+rtsp: true
+rtspAddress: 127.0.0.1:18554
+rtspTransports: [tcp]
+rtmp: true
+rtmpAddress: 127.0.0.1:1935
+hls: false
+moq: false
+srt: true
+srtAddress: 127.0.0.1:8890
+webrtc: true
+webrtcAddress: 127.0.0.1:8889
+webrtcLocalUDPAddress: ''
+webrtcLocalTCPAddress: 127.0.0.1:8189
+webrtcIPsFromInterfaces: false
+webrtcAdditionalHosts: [127.0.0.1]
+webrtcICEServers2: []
+webrtcAllowOrigins: ['http://127.0.0.1:8889', 'http://localhost:8889', 'http://127.0.0.1:3400', 'http://127.0.0.1:3401', 'http://127.0.0.1:3403']
+api: true
+apiAddress: 127.0.0.1:9997
+authInternalUsers:
+- user: any
+  ips: ['127.0.0.1', '::1']
+  permissions:
+  - action: publish
+    path: live/qa
+  - action: read
+    path: live/qa
+  - action: publish
+    path: live/webrtc
+  - action: read
+    path: live/webrtc
+  - action: api
+paths:
+  live/qa:
+    # Keep native H.264 untouched. Convert optional AAC to WebRTC-compatible
+    # Opus at the receiving bridge; the phone's normal SRT/RTMP AAC stays usable.
+    runOnAvailable: >-
+      ffmpeg -nostdin -hide_banner -loglevel warning
+      -rtmp_live live -rtmp_buffer 100 -i rtmp://127.0.0.1:1935/live/qa
+      -map 0:v:0 -map 0:a:0? -c:v copy -c:a libopus
+      -ar 48000 -ac 2 -b:a 96000 -application lowdelay
+      -f rtsp -rtsp_transport tcp rtsp://127.0.0.1:18554/live/webrtc
+    runOnAvailableRestart: true
+  live/webrtc:
