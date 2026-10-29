@@ -60,6 +60,10 @@ export const Track = z
       .optional(),
     seenAt: z.number().finite(),
     classifiedAt: z.number().finite().optional(),
+    /** Who detected it: the phone's on-device detector (absent = phone) or the server's open-vocabulary detector. */
+    source: z.enum(["phone", "server"]).optional(),
+    /** Server detections: id of the phone frame (POST /v1/native/frame) the box was found in. */
+    frameId: z.string().max(80).optional(),
   })
   .strict();
 export type SceneTrack = z.infer<typeof Track>;

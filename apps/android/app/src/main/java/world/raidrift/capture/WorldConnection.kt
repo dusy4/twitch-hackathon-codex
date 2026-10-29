@@ -28,7 +28,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 data class Hero(val id: String, val name: String, val x: Float, val y: Float, val animation: String, val target: String? = null, val spawnedAt: Long? = null, val message: String = "")
 data class Raid(val id: String, val started: Long, val count: Int, val from: String = "", val test: Boolean = false)
-data class ServerTrack(val id: String, val label: String, val box: TrackBox, val confidence: Float, val seenAt: Long)
+/** [source] = "server" marks open-vocabulary detections made on the PC in uploaded frame [frameId]. */
+data class ServerTrack(val id: String, val label: String, val box: TrackBox, val confidence: Float, val seenAt: Long,
+                       val source: String? = null, val frameId: String? = null)
 data class WorldProp(val id: String, val kind: String, val x: Float, val y: Float, val expires: Long)
 data class Quest(val title: String, val progress: String, val completed: Boolean, val action: String, val targetClass: String)
 data class NativeWorld(
@@ -63,7 +65,8 @@ data class NativeWorld(
                 require(values.all { finite(it) && it in -0.01..1.01 })
                 val id = t.getString("id"); require(id.length in 1..80)
                 ServerTrack(id, t.optString("class", "").take(40), TrackBox(values[0].toFloat(), values[1].toFloat(), values[2].toFloat(), values[3].toFloat()),
-                    t.optDouble("confidence", 0.0).toFloat().coerceIn(0f, 1f), t.optLong("seenAt"))
+                    t.optDouble("confidence", 0.0).toFloat().coerceIn(0f, 1f), t.optLong("seenAt"),
+                    text(t, "source", 20)?.trim()?.takeIf { it.isNotEmpty() }, text(t, "frameId", 80)?.trim()?.takeIf { it.isNotEmpty() })
             }.getOrNull() } } ?: emptyList()
             val props = json.optJSONArray("props")?.let { a -> (0 until minOf(a.length(), 100)).mapNotNull { i -> runCatching {
                 val p = a.getJSONObject(i)
@@ -280,6 +283,32 @@ class WorldConnection(application: Application) : AndroidViewModel(application) 
                 if (code in 200..299) "ok · ${tracks.size} tracks" else "HTTP $code"
             } catch (cancel: CancellationException) { throw cancel } catch (e: Exception) { e.message?.take(60) ?: "failed" }
             finally { tracksInFlight.set(false) }
+        }
+    }
+
+    private val frameInFlight = AtomicBoolean(false)
+    @Volatile var lastFrameResult = "not sent"; private set
+    val frameBusy get() = frameInFlight.get()
+
+    /**
+     * POST /v1/native/frame for server open-vocabulary detection. [jpegBase64] is the displayed
+     * camera image (same coordinate space as track boxes). Skipped while a previous upload is in flight.
+     */
+    fun postFrame(frameId: String, jpegBase64: String, width: Int, height: Int, bytes: Int) {
+        if (credentials == null || !mutable.value.authorized) return
+        if (!frameInFlight.compareAndSet(false, true)) return
+        viewModelScope.launch {
+            lastFrameResult = try {
+                val (code, raw) = post("v1/native/frame", framePayload(frameId, jpegBase64, width, height), slowClient)
+                val size = "${bytes / 1024} KB ${width}x$height"
+                when {
+                    code == 404 -> "$frameId · frame route missing (404)"
+                    code !in 200..299 -> "$frameId · HTTP $code · $size"
+                    runCatching { JSONObject(raw).optBoolean("ok") }.getOrDefault(false) -> "$frameId · ok · $size"
+                    else -> "$frameId · refused · $size"
+                }
+            } catch (cancel: CancellationException) { throw cancel } catch (e: Exception) { "$frameId · ${e.message?.take(60) ?: "failed"}" }
+            finally { frameInFlight.set(false) }
         }
     }
 

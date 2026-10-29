@@ -31,11 +31,8 @@ data class TrackBox(val x: Float, val y: Float, val w: Float, val h: Float) {
     }
 }
 
-/** COCO classes the phone reports. Everything else is dropped on device. */
-val INTEREST_CLASSES = setOf(
-    "dog", "cat", "person", "bench", "chair", "bicycle", "car", "bird", "potted plant", "couch",
-    "dining table", "bottle", "cup", "sports ball", "skateboard"
-)
+/** Track ids use the class with spaces replaced by `_` ("ph-potted_plant-2"); the `class` field keeps the real label. */
+fun trackIdFor(label: String, n: Int) = "ph-${label.trim().replace(' ', '_')}-$n"
 
 data class Detection(val label: String, val score: Float, val box: TrackBox)
 
@@ -77,7 +74,7 @@ class ObjectTracker(private val maxAgeMs: Long = 1500, private val iouThreshold:
             if (index in usedDets) return@forEachIndexed
             val n = (counters[det.label] ?: 0) + 1
             counters[det.label] = n
-            tracks += TrackedObject("ph-${det.label.replace(' ', '_')}-$n", det.label, det.box, det.score, now)
+            tracks += TrackedObject(trackIdFor(det.label, n), det.label, det.box, det.score, now)
         }
         return active(now)
     }
@@ -129,24 +126,28 @@ class ImageToView(val width: Int, val height: Int, private val p00: FloatArray, 
 
 /**
  * YUV_420_888 planes -> downscaled ARGB pixels rotated clockwise by [rotation].
- * Returns the pixel array plus upright width/height.
+ * [crop] = (left, top, width, height) in full-resolution UPRIGHT pixels (null = whole image).
+ * Returns the pixel array plus output width/height.
  */
 fun yuvToUprightArgb(
     y: ByteArray, yRowStride: Int, u: ByteArray, v: ByteArray, uvRowStride: Int, uvPixelStride: Int,
-    width: Int, height: Int, step: Int, rotation: Int
+    width: Int, height: Int, step: Int, rotation: Int, crop: IntArray? = null
 ): Triple<IntArray, Int, Int> {
     require(step >= 1 && width > 0 && height > 0)
-    val sw = width / step; val sh = height / step
-    val (ow, oh) = if (rotation == 90 || rotation == 270) sh to sw else sw to sh
+    val (uw, uh) = if (rotation == 90 || rotation == 270) height to width else width to height
+    val c = crop ?: intArrayOf(0, 0, uw, uh)
+    require(c.size == 4 && c[0] >= 0 && c[1] >= 0 && c[2] > 0 && c[3] > 0 && c[0] + c[2] <= uw && c[1] + c[3] <= uh) { "Invalid crop" }
+    val ow = c[2] / step; val oh = c[3] / step
+    require(ow > 0 && oh > 0)
     val out = IntArray(ow * oh)
     for (oy in 0 until oh) for (ox in 0 until ow) {
-        val (sx, sy) = when (rotation) {
-            90 -> oy to sh - 1 - ox
-            180 -> sw - 1 - ox to sh - 1 - oy
-            270 -> sw - 1 - oy to ox
-            else -> ox to oy
+        val ux = c[0] + ox * step; val uy = c[1] + oy * step
+        val (px, py) = when (rotation) {
+            90 -> uy to height - 1 - ux
+            180 -> width - 1 - ux to height - 1 - uy
+            270 -> width - 1 - uy to ux
+            else -> ux to uy
         }
-        val px = sx * step; val py = sy * step
         val yy = (y.getOrElse(py * yRowStride + px) { 0 }.toInt() and 0xff) - 16
         val uvIndex = (py / 2) * uvRowStride + (px / 2) * uvPixelStride
         val uu = (u.getOrElse(uvIndex) { -128 }.toInt() and 0xff) - 128
@@ -184,30 +185,91 @@ object GroundRay {
         if (depth <= 0f || projection11 <= 0f) 0f else boxHeight * 2f * depth / projection11
 }
 
-/** trackId -> smoothed 3D foot position (ARCore world metres). */
-class TrackSpace(private val alpha: Float = 0.35f, private val dropMs: Long = 2000, private val holdMs: Long = 5000) {
-    class Spot(var foot: FootPosition, var topY: Float?, var lastSeen: Long, val label: String, var source: String)
+/** What the caller should do with an ARCore anchor after an observation. */
+enum class AnchorAction { NONE, CREATE, MOVE }
+
+/**
+ * trackId -> 3D foot position (ARCore world metres). Fresh observations are smoothed; once
+ * [samplesNeeded] consecutive samples agree within [maxSpread] m the caller is asked to create an
+ * ARCore anchor ([AnchorAction.CREATE] at [Spot.anchorAt]) and the spot then follows the anchor
+ * ([setAnchoredFoot]) instead of re-projected boxes, so static furniture does not jitter. Only
+ * [moveSamples] consecutive observations farther than [moveDistance] m re-anchor it ([AnchorAction.MOVE]).
+ * [pin]ned spots belong to server-detected tracks and are removed by their owner, not by [prune].
+ */
+class TrackSpace(
+    private val alpha: Float = 0.35f, private val dropMs: Long = 2000, private val holdMs: Long = 5000,
+    private val anchoredHoldMs: Long = 15_000, private val samplesNeeded: Int = 4, private val maxSpread: Float = 0.12f,
+    private val moveDistance: Float = 0.35f, private val moveSamples: Int = 3
+) {
+    class Spot(var foot: FootPosition, var topY: Float?, var lastSeen: Long, val label: String, var source: String) {
+        internal val samples = ArrayDeque<FootPosition>()
+        internal var outliers = 0
+        var anchored = false; internal set
+        var pinned = false; internal set
+        /** Where to put the anchor after [AnchorAction.CREATE]/[AnchorAction.MOVE]. */
+        var anchorAt: FootPosition? = null; internal set
+    }
     private val spots = mutableMapOf<String, Spot>()
 
-    fun observe(id: String, label: String, foot: FootPosition, topY: Float?, source: String, now: Long) {
+    fun observe(id: String, label: String, foot: FootPosition, topY: Float?, source: String, now: Long): AnchorAction {
         require(listOf(foot.x, foot.y, foot.z).all(Float::isFinite))
         val spot = spots[id]
-        if (spot == null || hypot(spot.foot.x - foot.x, spot.foot.z - foot.z) > 1.5f) {
-            spots[id] = Spot(foot, topY, now, label, source); return
+        if (spot == null || !spot.anchored && hypot(spot.foot.x - foot.x, spot.foot.z - foot.z) > 1.5f) {
+            spots[id] = Spot(foot, topY, now, label, source).also { it.samples.addLast(foot) }; return AnchorAction.NONE
+        }
+        spot.lastSeen = now
+        spot.topY = when { topY == null -> spot.topY; spot.topY == null -> topY; else -> lerp(spot.topY!!, topY) }
+        if (spot.pinned) return AnchorAction.NONE
+        spot.source = source
+        if (spot.anchored) {
+            if (distance(spot.foot, foot) <= moveDistance) { spot.outliers = 0; spot.samples.clear(); return AnchorAction.NONE }
+            spot.samples.addLast(foot); spot.outliers++
+            while (spot.samples.size > moveSamples) spot.samples.removeFirst()
+            if (spot.outliers < moveSamples) return AnchorAction.NONE
+            spot.anchorAt = mean(spot.samples); spot.outliers = 0; spot.samples.clear()
+            return AnchorAction.MOVE
         }
         spot.foot = FootPosition(lerp(spot.foot.x, foot.x), lerp(spot.foot.y, foot.y), lerp(spot.foot.z, foot.z))
-        spot.topY = when { topY == null -> spot.topY; spot.topY == null -> topY; else -> lerp(spot.topY!!, topY) }
-        spot.lastSeen = now; spot.source = source
+        spot.samples.addLast(foot)
+        while (spot.samples.size > samplesNeeded) spot.samples.removeFirst()
+        if (spot.samples.size < samplesNeeded) return AnchorAction.NONE
+        val center = mean(spot.samples)
+        if (spot.samples.any { distance(it, center) > maxSpread }) return AnchorAction.NONE
+        spot.anchorAt = center
+        return AnchorAction.CREATE
     }
 
-    /** Drops spots unseen for ~2 s, except ones a resting hero uses (kept ~5 s). */
-    fun prune(now: Long, held: Set<String>) {
-        spots.entries.removeAll { (id, s) -> now - s.lastSeen > if (id in held) holdMs else dropMs }
+    /** The caller created an anchor at [foot]. */
+    fun anchor(id: String, foot: FootPosition) { spots[id]?.let { it.anchored = true; it.foot = foot; it.samples.clear(); it.outliers = 0 } }
+    /** Per-frame anchor pose (ARCore refines anchors as its map improves). */
+    fun setAnchoredFoot(id: String, foot: FootPosition) { spots[id]?.takeIf { it.anchored }?.foot = foot }
+    /** The anchor stopped tracking: fall back to fresh observations. */
+    fun unanchor(id: String) { spots[id]?.let { it.anchored = false; it.samples.clear(); it.outliers = 0 } }
+    /** Creates/refreshes an anchored spot owned elsewhere (server-detected track). */
+    fun pin(id: String, label: String, foot: FootPosition, topY: Float?, source: String, now: Long) {
+        val spot = spots.getOrPut(id) { Spot(foot, topY, now, label, source) }
+        spot.foot = foot; spot.lastSeen = now; spot.anchored = true; spot.pinned = true; spot.source = source
+        if (topY != null) spot.topY = topY
+    }
+    fun remove(id: String) { spots.remove(id) }
+
+    /**
+     * Drops spots unseen for ~2 s, except ones a resting hero uses (kept ~5 s) and anchored
+     * furniture (kept ~15 s). Pinned spots are skipped. Returns removed ids (caller detaches anchors).
+     */
+    fun prune(now: Long, held: Set<String>): List<String> {
+        val gone = spots.filter { (id, s) ->
+            !s.pinned && now - s.lastSeen > when { s.anchored -> maxOf(anchoredHoldMs, holdMs); id in held -> holdMs; else -> dropMs }
+        }.keys.toList()
+        gone.forEach { spots.remove(it) }
+        return gone
     }
     operator fun get(id: String): Spot? = spots[id]
     fun all(): Map<String, Spot> = spots
     fun clear() = spots.clear()
     private fun lerp(a: Float, b: Float) = a + (b - a) * alpha
+    private fun distance(a: FootPosition, b: FootPosition) = kotlin.math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) + (a.z - b.z) * (a.z - b.z))
+    private fun mean(points: Collection<FootPosition>) = FootPosition(points.map { it.x }.average().toFloat(), points.map { it.y }.average().toFloat(), points.map { it.z }.average().toFloat())
 }
 
 val RESTING_ANIMATIONS = setOf("sit", "lie", "sleep")
@@ -310,19 +372,29 @@ data class DebugState(
     }
 }
 
-/** A detected object ready to POST. [anchor] is the bottom-centre (ground contact). */
-data class OutgoingTrack(val id: String, val label: String, val box: TrackBox, val confidence: Float, val seenAt: Long)
+/**
+ * A detected object ready to POST. [anchor] is the bottom-centre (ground contact).
+ * Server-detected tracks this phone anchored are re-posted with [source] = "server" and their
+ * [frameId] (keeps them alive server-side); phone-detected tracks omit both.
+ */
+data class OutgoingTrack(val id: String, val label: String, val box: TrackBox, val confidence: Float, val seenAt: Long,
+                         val source: String? = null, val frameId: String? = null)
 
 fun tracksPayload(tracks: List<OutgoingTrack>): JSONObject {
     val array = JSONArray()
-    tracks.filter { it.id.length in 1..80 && it.label.length in 1..40 }.sortedByDescending { it.confidence }.take(50).forEach { t ->
+    // Server-anchored tracks first so the 50-track cap never drops them.
+    tracks.filter { it.id.length in 1..80 && it.label.length in 1..40 }
+        .sortedWith(compareByDescending<OutgoingTrack> { it.source == "server" }.thenByDescending { it.confidence }).take(50).forEach { t ->
         val x = t.box.x.coerceIn(0f, 1f); val y = t.box.y.coerceIn(0f, 1f)
         val w = t.box.w.coerceIn(0f, 1f - x); val h = t.box.h.coerceIn(0f, 1f - y)
-        array.put(JSONObject().put("id", t.id).put("class", t.label).put("attributes", JSONArray())
+        val item = JSONObject().put("id", t.id).put("class", t.label).put("attributes", JSONArray())
             .put("box", JSONArray().put(x.toDouble()).put(y.toDouble()).put(w.toDouble()).put(h.toDouble()))
             .put("confidence", t.confidence.coerceIn(0f, 1f).toDouble())
             .put("anchor", JSONArray().put((x + w / 2f).toDouble()).put((y + h).toDouble()))
-            .put("seenAt", t.seenAt))
+            .put("seenAt", t.seenAt)
+        t.source?.takeIf { it.isNotBlank() }?.let { item.put("source", it) }
+        t.frameId?.takeIf { it.isNotBlank() }?.let { item.put("frameId", it.take(80)) }
+        array.put(item)
     }
     return JSONObject().put("tracks", array)
 }

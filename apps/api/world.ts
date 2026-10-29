@@ -16,7 +16,9 @@ import {
   compileAI,
   validatePlan,
   summarizePlan,
+  type TargetResolver,
 } from "./compiler.js";
+import { mentions, targetNouns } from "./targets.js";
 import { credit } from "./economy.js";
 import type { Database } from "./db.js";
 import { DuelArena } from "./duels.js";
@@ -38,6 +40,10 @@ export type DebugEntry = { at: number; kind: string; text: string };
 const DEBUG_LOG_SIZE = 60;
 /** Phone (ARCore) tracks stay anchored in 3D between detections; hold them this long after the last report. */
 export const NATIVE_TRACK_HOLD_MS = 4000;
+/** A fresh server detection survives this long without phone reports (the phone re-posts it once anchored). */
+export const SERVER_TRACK_HOLD_MS = 10000;
+/** Open-vocabulary detector scores are lower than the phone's COCO scores. */
+const SERVER_MIN_CONFIDENCE = 0.2;
 export class World extends EventEmitter {
   debugLog: DebugEntry[] = [];
   ai: { lastLatencyMs: number | null; lastError: string | null } = {
@@ -45,6 +51,43 @@ export class World extends EventEmitter {
     lastError: null,
   };
   trackHolds = new Map<string, number>();
+  /** Server open-vocabulary detector on the latest phone frame (set by the server; absent in plain worlds). */
+  findObjects?: TargetResolver;
+  private serverTrackSeq = 0;
+  /** Adds server detections as tracks "ov-<n>" (held like phone tracks until the phone re-posts them). */
+  addServerTracks(
+    found: {
+      class: string;
+      box: [number, number, number, number];
+      confidence: number;
+      frameId: string;
+    }[],
+    holdMs = SERVER_TRACK_HOLD_MS,
+  ): SceneTrack[] {
+    const now = Date.now();
+    const added = found.map(
+      (f): SceneTrack => ({
+        id: `ov-${++this.serverTrackSeq}`,
+        class: f.class.slice(0, 40),
+        attributes: [],
+        box: f.box,
+        confidence: f.confidence,
+        seenAt: now,
+        source: "server",
+        frameId: f.frameId,
+      }),
+    );
+    for (const t of added) {
+      this.state.tracks.push(t);
+      this.trackHolds.set(t.id, now + holdMs);
+    }
+    if (added.length)
+      this.log(
+        "detect",
+        `server found: ${added.map((t) => `${t.class} ${t.confidence.toFixed(2)} (${t.id})`).join(", ")}`,
+      );
+    return added;
+  }
   private lastTrackLog = 0;
   private questCounts = new Map<string, number>();
   log(kind: string, text: string) {
@@ -280,6 +323,32 @@ export class World extends EventEmitter {
       this.planningFence === planningFence &&
       this.state.epoch === planningEpoch &&
       this.cooldowns.get(who.id) === now;
+    // Open vocabulary: objects the request names that no track shows yet are
+    // looked up once by the server detector on the phone's latest frame.
+    const tried = new Map<string, SceneTrack | null>();
+    const resolve = async (nouns: string[]) => {
+      const out: SceneTrack[] = [];
+      const ask = nouns.filter((n) => !tried.has(n));
+      if (ask.length && this.findObjects) {
+        const found = await this.findObjects(ask).catch(() => []);
+        for (const n of ask)
+          tried.set(n, found.find((t) => t.class === n) || null);
+      }
+      for (const n of nouns) {
+        const hit = tried.get(n);
+        if (hit) out.push(hit);
+      }
+      return out;
+    };
+    if (!targetHint && this.findObjects) {
+      const fresh = this.state.tracks.filter(
+        (t) => Date.now() - t.seenAt < TRACK_TTL_MS,
+      );
+      const missing = targetNouns(prompt).filter(
+        (n) => !fresh.some((t) => mentions(t.class, n)),
+      );
+      if (missing.length) await resolve(missing);
+    }
     const tracks = targetHint
       ? this.state.tracks.filter((t) => t.id === targetHint)
       : this.state.tracks;
@@ -309,7 +378,12 @@ export class World extends EventEmitter {
       this.aiInFlight++;
       const started = Date.now();
       try {
-        plan = await compileAI(prompt, tracks);
+        plan = await compileAI(
+          prompt,
+          tracks,
+          fetch,
+          targetHint ? undefined : resolve,
+        );
         this.ai.lastError = null;
       } catch (error) {
         this.ai.lastError =
@@ -433,7 +507,7 @@ export class World extends EventEmitter {
         now - t.seenAt >= -200 &&
         (t.classifiedAt === undefined ||
           (now - t.classifiedAt < 2000 && now - t.classifiedAt >= -200)) &&
-        t.confidence >= 0.5,
+        t.confidence >= (t.source === "server" ? SERVER_MIN_CONFIDENCE : 0.5),
     );
     const [left, top, right, bottom] = this.state.config.geometry.crop;
     const current = observed.filter((t) => {
@@ -637,7 +711,8 @@ export class World extends EventEmitter {
           now - a.lastActive < 20000 &&
           (!q.targetClass ||
             this.state.tracks.some((t) => {
-              if (t.id !== a.target || t.class !== q.targetClass) return false;
+              if (t.id !== a.target || !mentions(t.class, q.targetClass!))
+                return false;
               const [x, y] = transformPoint(
                 t.anchor?.[0] ?? t.box[0] + t.box[2] / 2,
                 t.anchor?.[1] ?? t.box[1],

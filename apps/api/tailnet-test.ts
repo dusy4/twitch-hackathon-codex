@@ -34,6 +34,7 @@ export async function createTailnetTestApp(options: {
   relayUrl?: string;
   timers?: boolean;
   debugChatStaggerMs?: number;
+  ovDetectorUrl?: string;
 }) {
   const { host, port } = options;
   if (!(host === "127.0.0.1" || tailscaleIpv4(host)))
@@ -68,6 +69,7 @@ export async function createTailnetTestApp(options: {
     debugRoom: TAILNET_ROOM,
     debugChatStaggerMs: options.debugChatStaggerMs,
     relayUrl: options.relayUrl,
+    ovDetectorUrl: options.ovDetectorUrl,
   });
   try {
     const { db } = server;

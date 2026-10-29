@@ -21,6 +21,7 @@ import { NATIVE_TRACK_HOLD_MS } from "./world.js";
 import { installApiContract } from "./openapi.js";
 import { installMediaRelay } from "./media.js";
 import { EvidenceInput, verifyEvidence } from "./vision.js";
+import { FRAME_FRESH_MS, OvDetector, type PhoneFrame } from "./ov-detector.js";
 import {
   Config,
   defaultConfig,
@@ -39,6 +40,14 @@ const body = <T>(schema: z.ZodType<T>, v: unknown) => schema.parse(v);
 const OVERLAY_TOKEN_MS = 365 * 86400000;
 const CAPTURE_TOKEN_MS = 24 * 3600000;
 const idSchema = z.string().min(1).max(100);
+/** Quest target: any short object noun ("dog", "potted plant"), trimmed and lowercased. */
+const QuestTarget = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(1)
+  .max(40)
+  .regex(/^[a-z][a-z \-']*$/, "Use a short object noun");
 export async function createApp(
   options: {
     db?: Database;
@@ -56,6 +65,8 @@ export async function createApp(
     debugChatStaggerMs?: number;
     /** Optional RTMP/SRT publish hint returned with pairing responses. */
     relayUrl?: string;
+    /** Open-vocabulary detector sidecar (services/ov-detector). Defaults to OV_DETECTOR_URL or http://127.0.0.1:3420. */
+    ovDetectorUrl?: string;
   } = {},
 ) {
   const debugTools = options.debugTools ?? process.env.DEBUG_TOOLS === "true";
@@ -104,6 +115,20 @@ export async function createApp(
     bodyLimit: 1100000,
   });
   const worlds = new Map<string, World>();
+  const ov = new OvDetector(
+    (
+      options.ovDetectorUrl ||
+      process.env.OV_DETECTOR_URL ||
+      "http://127.0.0.1:3420"
+    ).replace(/\/+$/, ""),
+  );
+  /** Latest phone camera frame per room (memory only, overwritten on every post). */
+  const frames = new Map<string, PhoneFrame>();
+  const latestFrame = (room: string) => {
+    const f = frames.get(room);
+    if (f && Date.now() - f.receivedAt > 60000) frames.delete(room);
+    return frames.get(room);
+  };
   const metrics = {
     webhooks: 0,
     duplicates: 0,
@@ -242,6 +267,35 @@ export async function createApp(
       await db.query("SELECT state FROM world_saves WHERE channel_id=$1", [id])
     ).rows[0];
     w = new World(db, channel, saved?.state);
+    const room = w;
+    room.findObjects = async (nouns) => {
+      const frame = latestFrame(id);
+      if (
+        !room.state.config.vision ||
+        !frame ||
+        Date.now() - frame.receivedAt > FRAME_FRESH_MS
+      ) {
+        if (nouns.length)
+          room.log(
+            "detect",
+            `no fresh phone frame to look for ${nouns.join(", ")}`,
+          );
+        return [];
+      }
+      const hits = await ov.detect(frame.jpeg, nouns);
+      room.log(
+        "detect",
+        `looked for ${nouns.join(", ")} in ${frame.id}: ${hits.length ? hits.map((h) => `${h.label} ${h.score.toFixed(2)}`).join(", ") : ov.status.lastError || "nothing"} (${ov.status.lastMs} ms)`,
+      );
+      return room.addServerTracks(
+        hits.map((h) => ({
+          class: h.label,
+          box: h.box,
+          confidence: h.score,
+          frameId: frame.id,
+        })),
+      );
+    };
     await w.loadQuests();
     w.state.structures = await loadStructures(db, id);
     await w.refreshIdentities();
@@ -1120,7 +1174,9 @@ export async function createApp(
       title: z.string().min(1).max(80),
       type: z.enum(["virtual", "camera", "hybrid"]),
       action: z.enum(["dance", "sit", "wave", "cheer", "build_voxel"]),
-      targetClass: z.enum(["dog", "bench", "bicycle", "red"]).nullable(),
+      // Any short object noun: virtual quests are verified from world tracks
+      // (phone or server open-vocabulary detections).
+      targetClass: QuestTarget.nullable(),
       minPlayers: z.number().int().min(1).max(20),
       sustainMs: z.number().int().min(1000).max(7000),
       reward: z.number().int().min(1).max(100),
@@ -1792,6 +1848,59 @@ export async function createApp(
     w.updateTracks(tracks, w.state.epoch, NATIVE_TRACK_HOLD_MS);
     return { ok: true, epoch: w.state.epoch };
   });
+  const MAX_FRAME_BYTES = 400 * 1024;
+  /** Latest displayed camera image (same space as track boxes) for the server detector. */
+  app.post(
+    "/v1/native/frame",
+    { bodyLimit: Math.ceil((MAX_FRAME_BYTES * 4) / 3) + 4096 },
+    async (req) => {
+      const room = await captureRoom(req);
+      const data = body(
+        z
+          .object({
+            frameId: z.string().min(1).max(80),
+            jpeg: z
+              .string()
+              .min(4)
+              .max(Math.ceil(MAX_FRAME_BYTES / 3) * 4 + 4),
+            width: z.number().int().min(16).max(8192),
+            height: z.number().int().min(16).max(8192),
+          })
+          .strict(),
+        req.body,
+      );
+      const w = await world(room);
+      if (!w.state.config.vision)
+        throw new GameError(
+          "NO_CONSENT",
+          "Enable camera processing first.",
+          403,
+        );
+      const jpeg = data.jpeg.replace(/^data:image\/jpeg;base64,/, "");
+      if (!/^[A-Za-z0-9+/]+={0,2}$/.test(jpeg))
+        throw new GameError("BAD_FRAME", "jpeg must be base64", 400);
+      const bytes =
+        Math.floor((jpeg.length * 3) / 4) -
+        (jpeg.match(/=+$/)?.[0].length || 0);
+      if (bytes > MAX_FRAME_BYTES)
+        throw new GameError(
+          "FRAME_TOO_LARGE",
+          "Frames are limited to 400 KB",
+          413,
+        );
+      if (!jpeg.startsWith("/9j/"))
+        throw new GameError("BAD_FRAME", "Only JPEG frames are accepted", 400);
+      frames.set(room, {
+        id: data.frameId,
+        jpeg,
+        bytes,
+        width: data.width,
+        height: data.height,
+        receivedAt: Date.now(),
+      });
+      return { ok: true };
+    },
+  );
   if (debugTools) {
     const RAIDER_A = [
       "Pixel",
@@ -1912,10 +2021,7 @@ export async function createApp(
           action: z
             .enum(["dance", "sit", "wave", "cheer", "build_voxel"])
             .optional(),
-          targetClass: z
-            .enum(["dog", "bench", "bicycle"])
-            .nullable()
-            .optional(),
+          targetClass: QuestTarget.nullable().optional(),
           minPlayers: z.number().int().min(1).max(20).optional(),
           reward: z.number().int().min(1).max(100).optional(),
         })
@@ -2081,7 +2187,24 @@ export async function createApp(
         else if (r.status === "done") inbox.done += r.n;
         else inbox.failed += r.n;
       const provider = aiProvider();
+      const ovStatus = await ov.health();
+      const frame = latestFrame(room);
       return {
+        ov: {
+          up: ovStatus.up,
+          device: ovStatus.device,
+          lastMs: ovStatus.lastMs,
+          lastQuery: ovStatus.lastQuery,
+          lastHits: ovStatus.lastHits,
+          lastError: ovStatus.lastError,
+        },
+        frame: frame
+          ? {
+              id: frame.id,
+              ageMs: Date.now() - frame.receivedAt,
+              bytes: frame.bytes,
+            }
+          : null,
         log: w.debugLog.slice(-60),
         inbox,
         ai: {
@@ -2095,6 +2218,7 @@ export async function createApp(
           id: t.id,
           class: t.class,
           confidence: t.confidence,
+          ...(t.source ? { source: t.source } : {}),
         })),
         quests: w.state.quests.map((q) => ({
           title: q.title,
