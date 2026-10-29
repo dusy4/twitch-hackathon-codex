@@ -19,6 +19,7 @@ export class SpatialWorld {
   private reticle: THREE.Mesh;
   private portal = new THREE.Group();
   private actors = new Map<string, SpatialActor>();
+  private sensed: import("./sensed-room.js").SensedRoom | null = null;
   private pending = new Set<string>();
   private failed = new Set<string>();
   private placementVersion = 0;
@@ -139,7 +140,12 @@ export class SpatialWorld {
       // Must stay in the user's click gesture; do not await model loads before permission.
       session = await navigator.xr.requestSession("immersive-ar", {
         requiredFeatures: ["hit-test"],
-        optionalFeatures: ["anchors", "dom-overlay"],
+        optionalFeatures: [
+          "anchors",
+          "dom-overlay",
+          "mesh-detection",
+          "plane-detection",
+        ],
         domOverlay: { root: this.controls },
       });
       if (this.disposed) {
@@ -150,6 +156,20 @@ export class SpatialWorld {
       session.addEventListener("end", this.onEnd);
       session.addEventListener("select", this.onSelect);
       await this.renderer.xr.setSession(session);
+      if (!this.sensed) {
+        try {
+          const { createSensedRoom } = await import("./sensed-room.js");
+          const sensed = await createSensedRoom(this.content);
+          if (this.disposed || session !== this.session) {
+            sensed.dispose();
+            return;
+          }
+          this.sensed = sensed;
+        } catch {
+          this.host.dataset.surfaceProvider = "unavailable";
+        }
+        if (this.disposed || session !== this.session) return;
+      }
       this.space = this.renderer.xr.getReferenceSpace();
       if (!this.space) throw Error("AR reference space unavailable");
       this.space.addEventListener("reset", this.onReset);
@@ -209,7 +229,7 @@ export class SpatialWorld {
         ? "webxr-anchor"
         : "webxr-local-space";
       this.report(
-        `${this.anchor ? "Runtime anchor active" : "Placed in tracked local space; anchor API unavailable"}. Characters are about 25 cm tall. No room collision mesh or depth occlusion is enabled.`,
+        `${this.anchor ? "Runtime anchor active" : "Placed in tracked local space; anchor API unavailable"}. Characters are about 25 cm tall. ${this.sensed ? "Sensed-room contacts activate when geometry is available" : "Sensed-room contacts could not initialize; using anchored placement only"}. Per-pixel depth is not enabled.`,
       );
     } finally {
       this.placing = false;
@@ -217,6 +237,8 @@ export class SpatialWorld {
   }
   recenter() {
     this.placementVersion++;
+    this.sensed?.clear();
+    this.resetActors();
     this.anchor?.delete();
     this.anchor = null;
     this.placed = false;
@@ -232,6 +254,15 @@ export class SpatialWorld {
     this.recenter();
     this.report("Tracking origin changed. Place your world again.");
   };
+  private resetActors() {
+    for (const avatar of this.snapshot()?.avatars || []) {
+      const entry = this.actors.get(avatar.id);
+      if (entry) {
+        entry.position.copy(this.localPosition(avatar.x, avatar.y));
+        entry.actor.root.position.copy(entry.position);
+      }
+    }
+  }
   private frame = (time: number, frame?: XRFrame) => {
     if (!frame || !this.space || !this.session || this.disposed) return;
     const delta = this.lastTime
@@ -286,11 +317,28 @@ export class SpatialWorld {
         ].map((value) => Math.round(value * 10000) / 10000),
       );
     this.content.visible = this.placed && !!state && !state.config.paused;
+    if (this.placed && this.sensed) {
+      this.sensed.update(frame, this.space);
+      const provider = this.sensed.provider;
+      if (this.host.dataset.surfaceProvider !== provider)
+        this.report(
+          provider === "none"
+            ? "No localized room geometry. Anchored placement remains available; sensed contacts and occlusion are unavailable."
+            : `${provider === "mesh" ? "Room mesh" : "Coarse surface planes"} active: contact and geometry occlusion enabled. Per-pixel depth and hand occlusion are not enabled.`,
+        );
+      this.host.dataset.surfaceProvider = provider;
+      this.host.dataset.surfaceCount = String(
+        this.sensed.contacts.surfaceCount,
+      );
+      this.host.dataset.surfaceTriangles = String(this.sensed.triangles);
+    }
+    const targets = new Map<string, THREE.Vector3>();
     this.portal.visible = !!state?.raid;
     const wanted = new Set(state?.avatars.map((avatar) => avatar.id));
     for (const [id, entry] of this.actors)
       if (!wanted.has(id)) {
         entry.actor.dispose();
+        this.sensed?.contacts.removeActor(id);
         this.actors.delete(id);
       }
     for (const avatar of state?.avatars || []) {
@@ -340,10 +388,14 @@ export class SpatialWorld {
       entry = this.actors.get(avatar.id);
       if (!entry) continue;
       const target = this.localPosition(avatar.x, avatar.y);
+      targets.set(avatar.id, target);
+      if (this.placed && this.sensed?.contacts.surfaceCount)
+        this.sensed.contacts.addActor(avatar.id, entry.position);
       const movement = target.clone().sub(entry.position);
       if (movement.lengthSq() > 0.000001)
         entry.yaw = Math.atan2(movement.x, movement.z);
-      entry.position.lerp(target, 1 - Math.exp(-delta * 15));
+      if (!this.sensed?.contacts.foot(avatar.id))
+        entry.position.lerp(target, 1 - Math.exp(-delta * 15));
       entry.actor.root.position.copy(entry.position);
       entry.actor.root.rotation.y = entry.yaw;
       entry.actor.update(
@@ -354,12 +406,27 @@ export class SpatialWorld {
         state!.config.reducedMotion,
       );
     }
+    let grounded = 0;
+    if (this.placed && this.sensed && !state?.config.paused) {
+      this.sensed.contacts.step(delta, targets);
+      for (const [id, entry] of this.actors) {
+        const foot = this.sensed.contacts.foot(id);
+        if (foot) {
+          entry.position.copy(foot.position);
+          entry.actor.root.position.copy(foot.position);
+          if (foot.grounded) grounded++;
+        }
+      }
+    }
+    this.host.dataset.groundedAvatarCount = String(grounded);
     this.host.dataset.riggedAvatarCount = String(this.actors.size);
     this.renderer.render(this.scene, this.camera);
     this.host.dataset.rendered = "true";
   };
   private onEnd = () => {
     this.placementVersion++;
+    this.sensed?.clear();
+    this.resetActors();
     this.renderer.setAnimationLoop(null);
     this.space?.removeEventListener("reset", this.onReset);
     this.session?.removeEventListener("select", this.onSelect);
@@ -396,6 +463,8 @@ export class SpatialWorld {
     );
     for (const entry of this.actors.values()) entry.actor.dispose();
     this.actors.clear();
+    this.sensed?.dispose();
+    this.sensed = null;
     const geometries = new Set<THREE.BufferGeometry>();
     const materials = new Set<THREE.Material>();
     this.scene.traverse((node) => {

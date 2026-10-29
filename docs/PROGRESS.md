@@ -1,5 +1,13 @@
 # RaidRift implementation progress
 
+## 2026-10-29 — sensed-room contact and coarse occlusion follow-up
+
+Optional WebXR meshes/planes now feed Rapier capsule contact and the same geometry's depth-only draw pass. Real physics tests cover a desk, falling to a lower floor, walls and lost-geometry freeze; the plane bridge tests pose updates without geometry revision and disposal. Actual GPU pixel readback confirms occlusion and removal, rather than relying only on metadata. The official IWER room test now asserts supplied meshes and grounded characters. These are software/emulator tests, not physical-device evidence. Normalized server coordinates remain desired choreography; local contacts never become trusted quest proof or rewards. Geometry is ephemeral and is not uploaded.
+
+Latest checks: build/typecheck/lint pass. Full suite **59 passed, 1 conditional PostgreSQL skip**. Focused spatial browser suite **3 passed**, including the GPU mask check. Prior cross-browser product/character checks and signed-event rendering smoke remain passing evidence for the preceding 3D slice. Rapier's lazy compatibility chunk is 4.34 MB (~1.65 MB gzip); hardware download/thermal/render quality remains unmeasured. Its Apache license is shipped. Local startup now snapshots built assets so the running review app survives subsequent rebuilds, with verified-path temp cleanup.
+
+See `ADR-003-spatial-characters.md`. Dynamic hand/per-pixel depth, native build and physical-device/media validation remain open. The owner’s available device has not yet been supplied; portable WebXR implementation proceeded while that optional question remains pending. Android-first native options are the next research path specified by the handoff.
+
 ## 2026-10-29 — real 3D models and room-AR direction
 
 Owner rejected the flat presentation, authorized any 3D model and supplied Lucas Martinic's mixed-reality Mario demonstration as the physical-room reference. Deep Exa/Firecrawl research preceded renderer implementation. Parallel was checked but unavailable without a connection/key. Primary-source comparisons, licensing decisions and failed retrievals are recorded in `RESEARCH_3D_2026-10-29.md`. The actual reference video was downloaded and frames inspected; author source and public SDK/code were investigated independently of the screenshot's Grok response (`LUCAS_MR_REFERENCE.md`). No Mario/ROM content is bundled.

@@ -1,0 +1,29 @@
+{
+  "scope": "Synthetic provider geometry + actual WebGL pixel readback; not a physical-device test",
+  "visible": [
+    255,
+    0,
+    0,
+    255
+  ],
+  "hidden": [
+    34,
+    51,
+    68,
+    255
+  ],
+  "poseMoved": [
+    255,
+    0,
+    0,
+    255
+  ],
+  "lost": [
+    255,
+    0,
+    0,
+    255
+  ],
+  "surfaces": 1,
+  "afterLost": 0
+}

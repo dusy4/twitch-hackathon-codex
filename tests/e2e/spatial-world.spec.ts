@@ -99,6 +99,17 @@ test("official IWER emulator exercises real XR API placement, independent rigged
   const anchor = await page
     .locator("#stage")
     .getAttribute("data-anchor-position");
+  await expect(page.locator("#stage")).toHaveAttribute(
+    "data-surface-provider",
+    "mesh",
+  );
+  await expect
+    .poll(async () =>
+      Number(
+        await page.locator("#stage").getAttribute("data-grounded-avatar-count"),
+      ),
+    )
+    .toBeGreaterThan(0);
   await page.screenshot({ path: "artifacts/webxr-emulator-anchored.png" });
   await page.evaluate(() =>
     (window as any).__xrTest.remote.dispatch("set_transform", {
