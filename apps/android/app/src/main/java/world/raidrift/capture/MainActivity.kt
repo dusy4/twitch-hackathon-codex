@@ -77,6 +77,9 @@ private const val REANCHOR_METRES = 6f
 private const val RECALL_METRES = 5f
 /** Rendered character height: a small creature on a desk or floor. */
 private const val CHARACTER_HEIGHT_METRES = 0.30f
+// KayKit heroes share one skeleton: GLB origin is between the feet on the ground, head top at
+// ~2.19 units (hats/capes excluded). One fixed scale keeps every hero the same body size.
+private const val KAYKIT_BODY_HEIGHT_UNITS = 2.19f
 
 private class ContactFrame(var timestamp: Long = 0, var pose: Pose? = null)
 private class ArFrameDiagnostics(var timestamp: Long = 0, var frames: Int = 0, var since: Long = 0)
@@ -747,11 +750,12 @@ private fun SceneScope.CharacterWorld(world: NativeWorld, feet: Map<String, Hero
                 intensity = BlobShadow.intensity(airborne), position = Position(at.x, at.y + 0.008f, at.z), scale = Scale(BlobShadow.scale(airborne)))
         }
         Node(position = position, rotation = Rotation(0f, pose?.yaw ?: 0f, 0f), isVisible = visible) {
-            // ~30 cm tall (KayKit bounds are ~2.3 units, height is the largest extent); origin at the feet.
+            // ~30 cm tall. Uses the GLB's own origin (feet) and a fixed scale. Not scaleToUnits/centerOrigin:
+            // those fit the bounding box (hats, capes, T-pose arms), so size and pivot varied per hero.
             instance?.let { ModelNode(modelInstance = it, autoAnimate = false,
                 animationName = pose?.clip ?: if (world.reducedMotion) "Idle" else characterClip(hero.animation),
                 animationSpeed = if (world.reducedMotion) 0.25f else 1f,
-                scaleToUnits = CHARACTER_HEIGHT_METRES, centerOrigin = Position(0f, -1f, 0f),
+                scale = Scale(CHARACTER_HEIGHT_METRES / KAYKIT_BODY_HEIGHT_UNITS),
                 rotation = Rotation(0f, 0f, 0f)) }
             TextNode(text = hero.name, position = Position(0f, CHARACTER_HEIGHT_METRES + 0.06f, 0f), widthMeters = 0.28f, heightMeters = 0.06f, cameraPositionProvider = cameraPosition)
         }
