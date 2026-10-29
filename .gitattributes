@@ -5,3 +5,7 @@
 *.sql text eol=lf
 *.png binary
 *.webm binary
+*.kt text eol=lf
+*.kts text eol=lf
+apps/android/gradlew text eol=lf
+apps/android/gradlew.bat text eol=crlf

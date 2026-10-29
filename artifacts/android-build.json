@@ -1,0 +1,64 @@
+{
+  "artifact": "raidrift-capture-debug.apk",
+  "device": "Android phone requested; no ADB device attached",
+  "toolchain": {
+    "gradle": "9.8.1",
+    "jdk": "21.0.13.0.2",
+    "compileSdk": 37
+  },
+  "models": [
+    {
+      "path": "assets/kaykit/Barbarian.glb",
+      "bytes": 3608880
+    },
+    {
+      "path": "assets/kaykit/Knight.glb",
+      "bytes": 3655140
+    },
+    {
+      "path": "assets/kaykit/Mage.glb",
+      "bytes": 3584848
+    },
+    {
+      "path": "assets/kaykit/Rogue.glb",
+      "bytes": 3611896
+    }
+  ],
+  "sha256": "9a3ac914c612edfe9bd4dbeb245718ea9e48b039fc97cbea5d10c77b631fe267",
+  "composedVideoDecoded": false,
+  "applicationId": "world.raidrift.capture.android",
+  "physicalPhoneValidated": false,
+  "bytes": 41441245,
+  "commands": [
+    "testDebugUnitTest",
+    "assembleDebug",
+    "lintDebug"
+  ],
+  "jvmTests": {
+    "total": 7,
+    "failures": 0,
+    "skipped": 0
+  },
+  "backendRegression": {
+    "total": 61,
+    "concurrency": 2,
+    "pass": 60,
+    "skipped": 1
+  },
+  "notices": [
+    "assets/notices/Fuel-MIT.txt",
+    "assets/notices/NOTICE.txt",
+    "assets/notices/Result-MIT.txt",
+    "assets/notices/SceneView-Apache-2.0.txt",
+    "assets/notices/android-dependencies.json"
+  ],
+  "nativeRuntimeValidated": false,
+  "date": "2026-10-29",
+  "khronosModelValidation": "4 models; 0 errors; 0 warnings",
+  "localDebugSignatureVerified": true,
+  "lint": {
+    "errors": 0,
+    "warnings": 6,
+    "details": "Pinned Gradle/dependency updates and targetSdk 36"
+  }
+}

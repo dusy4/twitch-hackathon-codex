@@ -1,4 +1,8 @@
-# Native AR capture: source implementation and device gates
+# Mobile AR: browser, Android and preserved Unity source
+
+## Android phone client — 2026-10-29
+
+The owner confirmed an Android phone. `apps/android` now compiles a native SceneView/ARCore/Filament debug APK with the same licensed skeletal character cast, actual anchors, supported depth composition, measured floor/depth contact, scoped world pairing and explicit bounded silent local recording. Seven JVM tests and Android lint pass; generated models pass Khronos validation. No native runtime/physical-phone/encoded-frame pass is claimed. Installation and limits are documented in **[ANDROID.md](ANDROID.md)**. Native live streaming to OBS, wall collision and hand interaction remain unfinished. The Unity source below remains uncompiled.
 
 ## Browser AR path added 2026-10-29
 
@@ -10,9 +14,9 @@ Official IWER + SEM tests exercise the actual XR API lifecycle, surface hits, an
 
 See `RESEARCH_3D_2026-10-29.md`, `LUCAS_MR_REFERENCE.md` and `artifacts/webxr-emulator.json`.
 
-## Native implementation
+## Preserved Unity implementation
 
-**Status: uncompiled, untested native source. No APK/IPA or working-device claim.** This workstation has no Unity Editor, Android SDK, AR handset, Apple signing identity or configured Unity license. Do not equate the browser overlay or browser WebRTC transport test with native AR completion.
+**Unity status: uncompiled, untested source. No Unity APK/IPA or working-device claim.** A project-local Android SDK now builds the separate Kotlin client above. This workstation still has no licensed Unity Editor, attached AR handset or Apple signing identity. Do not equate browser transport or APK compilation with physical AR validation.
 
 `apps/mobile` targets Unity 6 with AR Foundation/ARCore/ARKit 6.1.1 and Unity WebRTC 3.0.0. The project includes:
 

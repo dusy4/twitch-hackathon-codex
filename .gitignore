@@ -12,3 +12,7 @@ apps/web/public/vision/
 tests/fixtures/*.webm
 
 .tools/
+apps/android/.gradle/
+apps/android/**/build/
+apps/android/local.properties
+artifacts/*.apk

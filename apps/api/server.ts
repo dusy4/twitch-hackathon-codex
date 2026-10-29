@@ -1596,7 +1596,8 @@ export async function createApp(
       mode: "EXPERIMENTAL LAN VIDEO; AUDIO NOT IMPLEMENTED",
     };
   });
-  app.get("/v1/native/world", async (req) => {
+  app.get("/v1/native/world", async (req, reply) => {
+    reply.header("Cache-Control", "private, no-store");
     const token = req.headers.authorization?.replace(/^Bearer /, "") || "";
     const p = security.verify(token);
     if (p.role !== "capture")
