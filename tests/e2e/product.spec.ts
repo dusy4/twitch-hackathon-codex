@@ -14,7 +14,14 @@ test("public website, working simulation, authoritative quest reward and leaderb
     path: `artifacts/${info.project.name}-home.png`,
     fullPage: true,
   });
+  const joining = page.waitForResponse(
+    (response) =>
+      /\/v1\/worlds\/[^/]+\/join$/.test(response.url()) &&
+      response.request().method() === "POST",
+  );
   await page.getByRole("button", { name: "Enter the world" }).click();
+  const joined = await joining;
+  expect(joined.status(), await joined.text()).toBe(200);
   await expect(page).toHaveURL(/controller/);
   await expect(page.getByRole("heading", { name: /Hello/ })).toBeVisible();
   await page.getByRole("button", { name: "dance", exact: true }).click();

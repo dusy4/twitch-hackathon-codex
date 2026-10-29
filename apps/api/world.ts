@@ -20,6 +20,11 @@ import { credit } from "./economy.js";
 import type { Database } from "./db.js";
 import { DuelArena } from "./duels.js";
 import { TRACK_TTL_MS } from "../../packages/shared/tracker.js";
+import {
+  PORTAL_FOOT,
+  arrivalPosition,
+  makeArrival,
+} from "../../packages/shared/arrivals.js";
 type Running = {
   id: string;
   actorId: string;
@@ -53,16 +58,19 @@ export class World extends EventEmitter {
     super();
     this.state = {
       roomId: channel.id,
-      mode: channel.id.startsWith("demo")
-        ? "SIMULATOR"
-        : channel.connected
-          ? "LIVE TWITCH"
-          : "OFFLINE",
+      mode:
+        channel.demo === true || channel.id.startsWith("demo")
+          ? "SIMULATOR"
+          : channel.connected
+            ? "LIVE TWITCH"
+            : "OFFLINE",
       epoch: Date.now(),
       tick: 0,
       config: { ...defaultConfig, ...channel.config },
       avatars: (saved?.avatars || []).map((a: Avatar) => ({
         ...a,
+        arrival: undefined,
+        spawnedAt: undefined,
         animation: "idle",
         target: null,
         message: "",
@@ -99,8 +107,10 @@ export class World extends EventEmitter {
       completed: false,
     }));
   }
-  async join(who: Record<string, any>) {
+  async join(who: Record<string, any>, entrance = false) {
     if (who.deleted) throw new GameError("DELETED", "Account is deleted", 403);
+    if (entrance && this.state.config.paused)
+      throw new GameError("WORLD_PAUSED", "This world is paused", 409);
     if (
       (
         await this.db.query(
@@ -116,6 +126,28 @@ export class World extends EventEmitter {
       avatar.color = who.color;
       avatar.cosmetic = who.cosmetic;
       avatar.equipment = who.equipment;
+      if (entrance && !avatar.arrival) {
+        if (Date.now() - (avatar.spawnedAt || 0) < 500)
+          throw new GameError(
+            "ARRIVAL_COOLDOWN",
+            "Give your character a moment before entering again.",
+            429,
+          );
+        const running = this.running.get(avatar.id);
+        if (running) this.finish(running, "interrupted");
+        avatar.spawnedAt = Date.now();
+        avatar.arrival = makeArrival(
+          this.state.avatars.indexOf(avatar),
+          avatar.spawnedAt,
+        );
+        [avatar.x, avatar.y] = [...PORTAL_FOOT];
+        avatar.target = null;
+        avatar.animation = "walk";
+        avatar.animationAt = avatar.spawnedAt;
+        avatar.lastActive = avatar.spawnedAt;
+        avatar.message = "Stepping through the rift";
+        this.event("avatar.arriving", avatar);
+      }
     }
     if (!avatar) {
       if (this.state.avatars.length >= this.state.config.maxPlayers)
@@ -126,13 +158,21 @@ export class World extends EventEmitter {
         color: who.color,
         cosmetic: who.cosmetic,
         equipment: who.equipment,
-        x: 0.17 + (this.state.avatars.length % 12) * 0.06,
-        y: 0.78 + (Math.floor(this.state.avatars.length / 12) % 4) * 0.035,
-        animation: "wave",
+        x: PORTAL_FOOT[0],
+        y: PORTAL_FOOT[1],
+        spawnedAt: Date.now(),
+        arrival: makeArrival(this.state.avatars.length, Date.now()),
+        animation: "walk",
         message: "Hello, world!",
         target: null,
         lastActive: Date.now(),
       };
+      if (this.state.config.paused) {
+        [avatar.x, avatar.y] = avatar.arrival!.to;
+        delete avatar.arrival;
+        delete avatar.spawnedAt;
+        avatar.animation = "idle";
+      }
       this.state.avatars.push(avatar);
       this.event("avatar.spawned", avatar);
     }
@@ -254,6 +294,7 @@ export class World extends EventEmitter {
     const old = this.running.get(a.id);
     if (old) this.finish(old, "interrupted");
     a.target = null;
+    delete a.arrival;
     const acceptedAt = Date.now();
     a.lastActive = acceptedAt;
     a.message = plan.message;
@@ -356,6 +397,7 @@ export class World extends EventEmitter {
     this.evidence.clear();
     for (const r of this.running.values()) this.finish(r, "scene_changed");
     for (const a of this.state.avatars) {
+      delete a.arrival;
       a.target = null;
       a.animation = "idle";
       a.message = "Scene changed — waiting nearby.";
@@ -371,6 +413,7 @@ export class World extends EventEmitter {
     this.state.props = [];
     this.state.raid = null;
     for (const a of this.state.avatars) {
+      delete a.arrival;
       a.animation = "idle";
       a.target = null;
     }
@@ -383,6 +426,7 @@ export class World extends EventEmitter {
     count: number,
     test = false,
   ) {
+    test ||= this.state.mode === "SIMULATOR";
     const row = await this.db.query(
       "INSERT INTO raids(id,source_id,destination_id,source_name,viewers,test) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING RETURNING id",
       [id, sourceId, this.channel.id, from, count, test],
@@ -395,6 +439,9 @@ export class World extends EventEmitter {
   }
   tick(now = Date.now(), dt = 0.05) {
     this.state.tick++;
+    this.state.structures = this.state.structures?.filter(
+      (s) => Date.parse(s.expiresAt) > now,
+    );
     this.duels.tick(
       new Set(this.state.avatars.map((a) => a.id)),
       this.state.config.paused,
@@ -412,6 +459,16 @@ export class World extends EventEmitter {
       this.state.raid = null;
     for (const a of this.state.avatars) {
       const r = this.running.get(a.id);
+      if (a.arrival && !r) {
+        [a.x, a.y] = arrivalPosition(a.arrival, now);
+        a.animation = "walk";
+        if (now >= a.arrival.startedAt + a.arrival.durationMs) {
+          delete a.arrival;
+          a.animation = "wave";
+          a.animationAt = now;
+        }
+        continue;
+      }
       if (!r) {
         if (a.animation !== "idle" && now - a.lastActive > 15000) {
           a.animation = "idle";
@@ -566,7 +623,14 @@ export class World extends EventEmitter {
     const state = {
       avatars: this.state.avatars
         .filter((a) => Date.now() - a.lastActive < 3600000)
-        .map((a) => ({ ...a, target: null, message: "", animation: "idle" })),
+        .map((a) => ({
+          ...a,
+          arrival: undefined,
+          spawnedAt: undefined,
+          target: null,
+          message: "",
+          animation: "idle",
+        })),
     };
     await this.db.query(
       `INSERT INTO world_saves(channel_id,state) SELECT $1,jsonb_build_object('avatars',COALESCE(jsonb_agg(items.value||jsonb_build_object('name',CASE WHEN a.privacy='anonymous' THEN 'Rift traveler' ELSE a.name END,'color',a.color,'cosmetic',a.cosmetic,'equipment',a.equipment)),'[]'::jsonb)) FROM jsonb_array_elements(($2::jsonb)->'avatars') AS items(value) JOIN accounts a ON a.id=items.value->>'id' LEFT JOIN avatar_presence p ON p.account_id=a.id WHERE a.deleted=false AND (p.channel_id IS NULL OR p.channel_id=$1) ON CONFLICT(channel_id) DO UPDATE SET state=EXCLUDED.state,updated_at=now()`,

@@ -20,8 +20,13 @@ test("two consenting browser players take turns in a friendly wizard duel", asyn
     await b.getByRole("button", { name: "Try creator simulator" }).click();
     await b.goto("http://127.0.0.1:3401/controller");
     await a.bringToFront();
-    await expect(a.locator("#party-target option")).toHaveCount(2);
-    await a.locator("#party-target").selectOption({ index: 1 });
+    const opponent = (
+      await (await b.request.get("http://127.0.0.1:3401/v1/me")).json()
+    ).user;
+    await expect(
+      a.locator(`#party-target option[value="${opponent.id}"]`),
+    ).toBeAttached();
+    await a.locator("#party-target").selectOption(opponent.id);
     await a.locator("#party-kind").selectOption("duel");
     await a
       .getByRole("button", { name: "Send invitation", exact: true })
@@ -79,7 +84,6 @@ test("two consenting browser players take turns in a friendly wizard duel", asyn
     await a.bringToFront();
     await expect(a.locator("#duel-panel")).toContainText("Duel cancelled");
   } finally {
-    await contextA.close();
-    await contextB.close();
+    await Promise.allSettled([contextA.close(), contextB.close()]);
   }
 });

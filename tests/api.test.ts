@@ -168,7 +168,7 @@ test("real HTTP contract: session, CSRF, actor ownership, config roles, privacy,
     await app.close();
   }
 });
-test("signed webhook challenge, duplicate delivery, durable inbox processing and two true chatter identities", async () => {
+test("signed webhook challenge, duplicate delivery, durable inbox processing and two stable numeric chatter identities", async () => {
   const old = process.env.TWITCH_EVENTSUB_WEBHOOK_SECRET;
   process.env.TWITCH_EVENTSUB_WEBHOOK_SECRET = "test-webhook-secret-123";
   const s = await createApp({
@@ -240,6 +240,10 @@ test("signed webhook challenge, duplicate delivery, durable inbox processing and
     await s.drain();
     const world = await s.world("123");
     assert.equal(world.state.avatars.length, 2);
+    assert.ok(
+      world.state.avatars.every((a) => a.arrival && a.animation === "walk"),
+      "Signed !join messages initiate visible portal arrivals",
+    );
     assert.notEqual(world.state.avatars[0].id, world.state.avatars[1].id);
     assert.equal(
       (await s.db.query("SELECT * FROM raid_participants")).rows.length,

@@ -31,7 +31,11 @@ export class Database implements SQL {
     return result;
   }
   async migrate() {
-    for (const migration of ["001_core.sql", "002_equipment.sql"]) {
+    for (const migration of [
+      "001_core.sql",
+      "002_equipment.sql",
+      "003_construction.sql",
+    ]) {
       const sql = await readFile(
         new URL(`../../migrations/${migration}`, import.meta.url),
         "utf8",

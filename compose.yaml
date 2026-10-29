@@ -22,6 +22,7 @@ services:
       DATABASE_URL: postgresql://raidrift:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@postgres:5432/raidrift
       PUBLIC_URL: ${PUBLIC_URL:?Set the HTTPS origin}
       APP_SECRET: ${APP_SECRET:?Set a random 32-byte base64url secret}
+      REWARD_IDENTITY_SECRET: ${REWARD_IDENTITY_SECRET:?Set the stable reward identity secret; preserve it on encryption key rotation}
       TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID:-}
       TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET:-}
       TWITCH_EVENTSUB_WEBHOOK_SECRET: ${TWITCH_EVENTSUB_WEBHOOK_SECRET:-}

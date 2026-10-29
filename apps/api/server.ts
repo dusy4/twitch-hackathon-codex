@@ -7,6 +7,7 @@ import { resolve } from "node:path";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { publicDocument } from "./ssr.js";
+import { installConstruction, loadStructures } from "./construction.js";
 import { profileCard } from "./cards.js";
 import { equipmentSlots } from "../../packages/shared/equipment.js";
 import { z } from "zod";
@@ -53,6 +54,16 @@ export async function createApp(
   )
     throw Error(
       "Production requires external DATABASE_URL and an owned HTTPS PUBLIC_URL",
+    );
+  if (
+    process.env.NODE_ENV === "production" &&
+    (!process.env.APP_SECRET ||
+      process.env.APP_SECRET.length < 43 ||
+      !process.env.REWARD_IDENTITY_SECRET ||
+      process.env.REWARD_IDENTITY_SECRET.length < 43)
+  )
+    throw Error(
+      "Production requires APP_SECRET and a stable REWARD_IDENTITY_SECRET, each at least 43 characters",
     );
   const db = options.db || (await Database.open(process.env.DATABASE_URL));
   await db.migrate();
@@ -196,8 +207,12 @@ export async function createApp(
   async function loadWorld(id: string) {
     let w = worlds.get(id);
     if (w) return w;
-    const channel = (await db.query("SELECT * FROM channels WHERE id=$1", [id]))
-      .rows[0];
+    const channel = (
+      await db.query(
+        "SELECT c.*,a.demo FROM channels c JOIN accounts a ON a.id=c.owner_id WHERE c.id=$1",
+        [id],
+      )
+    ).rows[0];
     if (!channel)
       throw new GameError("WORLD_NOT_FOUND", "This world does not exist", 404);
     const saved = (
@@ -205,6 +220,7 @@ export async function createApp(
     ).rows[0];
     w = new World(db, channel, saved?.state);
     await w.loadQuests();
+    w.state.structures = await loadStructures(db, id);
     await w.refreshIdentities();
     w.on("fault", () => {
       metrics.failures++;
@@ -545,10 +561,14 @@ export async function createApp(
   });
   app.post("/v1/worlds/:id/join", async (req) => {
     const who = auth(req),
+      data = body(
+        z.object({ entrance: z.boolean().default(false) }).strict(),
+        req.body || {},
+      ),
       w = await world((req.params as any).id);
     if (!w.state.config.public && who.id !== w.channel.owner_id)
       throw new GameError("PRIVATE", "This world is private", 403);
-    return w.join(who);
+    return w.join(who, data.entrance);
   });
   app.post("/v1/worlds/:id/actions", async (req) => {
     const who = auth(req),
@@ -816,6 +836,20 @@ export async function createApp(
         [who.id],
       );
       await tx.query("DELETE FROM sessions WHERE account_id=$1", [who.id]);
+      await tx.query("SELECT id FROM channels WHERE owner_id=$1 FOR UPDATE", [
+        who.id,
+      ]);
+      await tx.query(
+        "DELETE FROM structures WHERE owner_id=$1 OR channel_id IN (SELECT id FROM channels WHERE owner_id=$1)",
+        [who.id],
+      );
+      await tx.query(
+        "UPDATE structures SET blocks=(SELECT COALESCE(jsonb_agg(CASE WHEN b->>'ownerId'=$1 THEN b||jsonb_build_object('ownerId',NULL) ELSE b END),'[]'::jsonb) FROM jsonb_array_elements(blocks) b),revision=revision+1 WHERE blocks::text LIKE '%'||$1||'%'",
+        [who.id],
+      );
+      await tx.query("DELETE FROM construction_receipts WHERE account_id=$1", [
+        who.id,
+      ]);
       await tx.query(
         "UPDATE world_saves SET state=jsonb_set(state,'{avatars}',COALESCE((SELECT jsonb_agg(v) FROM jsonb_array_elements(state->'avatars') v WHERE v->>'id'<>$1),'[]'::jsonb))",
         [who.id],
@@ -828,6 +862,7 @@ export async function createApp(
     for (const w of worlds.values()) {
       w.state.avatars = w.state.avatars.filter((a) => a.id !== who.id);
       w.duels.cancelFor(who.id);
+      w.state.structures = await loadStructures(db, w.channel.id);
       if (w.channel.owner_id === who.id) {
         w.stop();
         w.state.config.vision = false;
@@ -877,6 +912,7 @@ export async function createApp(
     const slot = z.enum(equipmentSlots).parse((req.params as any).slot);
     return syncEquipment(await equip(db, auth(req).id, slot, null));
   });
+  installConstruction(app, db, auth, world);
   app.get("/v1/quests", async (req) => {
     const channelId = (req.query as any).channelId;
     return {
@@ -975,11 +1011,27 @@ export async function createApp(
         z.object({ count: z.number().int().min(1).max(10000) }).strict(),
         req.body,
       );
-    return {
-      created: await (
-        await world(c.id)
-      ).raid(`test-${randomUUID()}`, "test", "Test travelers", d.count, true),
-    };
+    const w = await world(c.id);
+    if (w.state.config.paused)
+      throw new GameError(
+        "WORLD_PAUSED",
+        "Resume the world before previewing an entrance.",
+        409,
+      );
+    const created = await w.raid(
+      `test-${randomUUID()}`,
+      "test",
+      "Test travelers",
+      d.count,
+      true,
+    );
+    // Preview the authenticated creator's own character, never invent named raiders from a viewer count.
+    if (
+      w.state.avatars.some((a) => a.id === auth(req).id) ||
+      w.state.avatars.length < w.state.config.maxPlayers
+    )
+      await w.join(auth(req));
+    return { created };
   });
   app.post("/v1/creator/emergency-stop", async (req) => {
     const c = await creator(req),
@@ -1480,19 +1532,22 @@ export async function createApp(
                 ])
               ).rows[0];
               if (c?.connected) {
+                const w = await world(event.broadcaster_user_id);
                 const who = await account(
                   db,
                   event.chatter_user_id,
                   event.chatter_user_name,
+                  w.state.mode === "SIMULATOR",
                 );
                 try {
-                  await (
-                    await world(event.broadcaster_user_id)
-                  ).action(
-                    who,
-                    event.message.text.slice(0, 500),
-                    `chat:${event.message_id}`,
-                  );
+                  if (/^!join\s*$/i.test(event.message.text))
+                    await w.join(who, true);
+                  else
+                    await w.action(
+                      who,
+                      event.message.text.slice(0, 500),
+                      `chat:${event.message_id}`,
+                    );
                 } catch (error) {
                   if (!(error instanceof GameError)) throw error;
                 }
@@ -1595,6 +1650,10 @@ export async function createApp(
       setInterval(() => {
         void db.query(`DELETE FROM oauth_states WHERE expires_at<now()`);
         void db.query("DELETE FROM sessions WHERE expires_at<now()");
+        void db.query(
+          "DELETE FROM construction_receipts WHERE created_at<now()-interval '24 hours'",
+        );
+        void db.query("DELETE FROM structures WHERE expires_at<now()");
         void db.query(
           "UPDATE inbox SET payload='{}'::jsonb WHERE created_at<now()-interval '1 day' AND status IN ('done','dead')",
         );

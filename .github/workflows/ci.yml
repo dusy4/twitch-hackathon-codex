@@ -15,7 +15,7 @@ jobs:
       - run: npm test
       - run: npm audit --audit-level=moderate
       - run: npx playwright install --with-deps chromium firefox webkit
-      - run: npx playwright test tests/e2e/product.spec.ts tests/e2e/media.spec.ts tests/e2e/commerce.spec.ts tests/e2e/duels.spec.ts tests/e2e/accessibility.spec.ts
+      - run: npx playwright test tests/e2e/product.spec.ts tests/e2e/character-arrivals.spec.ts tests/e2e/media.spec.ts tests/e2e/commerce.spec.ts tests/e2e/duels.spec.ts tests/e2e/accessibility.spec.ts
       - uses: actions/upload-artifact@v4
         if: always()
         with:

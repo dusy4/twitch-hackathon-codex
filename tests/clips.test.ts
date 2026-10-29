@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import { outputSize } from "../apps/web/composite.js";
 import assert from "node:assert/strict";
 import { drawSource } from "../apps/web/clips.js";
 import {
@@ -6,6 +7,29 @@ import {
   defaultConfig,
   type SourceGeometry,
 } from "../packages/shared/contracts.js";
+
+test("preview and clip sizing follows the output canvas, including portrait and rotated inputs", () => {
+  for (const [width, height] of [
+    [1920, 1080],
+    [1080, 1920],
+    [640, 480],
+    [8192, 8192],
+  ]) {
+    const [w, h] = outputSize({
+      ...defaultConfig.geometry,
+      width,
+      height,
+      rotation: "90",
+    });
+    assert.ok(w <= 1280 && h <= 720);
+    assert.equal(w % 2, 0);
+    assert.equal(h % 2, 0);
+    assert.ok(
+      Math.abs(w / h - width / height) < 0.005,
+      "Output aspect follows the OBS canvas rather than the raw video",
+    );
+  }
+});
 
 test("clip canvas source transforms align with authoritative anchors across crop, mirror, rotation and viewport", () => {
   for (const rotation of ["0", "90", "180", "270"] as const)

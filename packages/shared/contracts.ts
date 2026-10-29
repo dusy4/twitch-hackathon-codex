@@ -95,30 +95,9 @@ export const Geometry = z
     "Output viewport must fit inside the canvas",
   );
 export type SourceGeometry = z.infer<typeof Geometry>;
-export function transformPoint(x: number, y: number, g: SourceGeometry) {
-  const [l, t, r, b] = g.crop;
-  x = (x - l) / (1 - l - r);
-  y = (y - t) / (1 - t - b);
-  if (g.mirror) x = 1 - x;
-  let u = x,
-    v = y;
-  switch (g.rotation) {
-    case "90":
-      u = 1 - y;
-      v = x;
-      break;
-    case "180":
-      u = 1 - x;
-      v = 1 - y;
-      break;
-    case "270":
-      u = y;
-      v = 1 - x;
-  }
-  const [vx, vy, vw, vh] = g.viewport || [0, 0, 1, 1];
-  return [vx + u * vw, vy + v * vh];
-}
+export { transformPoint } from "./geometry.js";
 export const Config = z.object({
+  construction: z.boolean().default(false),
   title: z.string().min(1).max(80),
   public: z.boolean(),
   paused: z.boolean(),
@@ -133,6 +112,8 @@ export const Config = z.object({
 });
 export { defaultConfig } from "./settings.js";
 export type Avatar = {
+  spawnedAt?: number;
+  arrival?: import("./arrivals.js").AvatarArrival;
   id: string;
   name: string;
   color: string;
@@ -155,6 +136,7 @@ export type Prop = {
   expires: number;
 };
 export type WorldSnapshot = {
+  structures?: import("./construction.js").CommunityStructure[];
   duels?: import("./duels.js").DuelState[];
   roomId: string;
   mode: "SIMULATOR" | "LIVE TWITCH" | "OFFLINE";

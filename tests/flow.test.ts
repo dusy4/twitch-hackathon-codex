@@ -1,6 +1,51 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { trackFrame, replayTrackFrames } from "../packages/shared/flow.js";
+import {
+  trackFrame,
+  replayTrackFrames,
+  reconcileObservedTracks,
+} from "../packages/shared/flow.js";
+
+test("late or empty classifications preserve only genuinely observed tracks within the original class lifetime", () => {
+  const dog = {
+    id: "dog",
+    class: "dog",
+    attributes: [],
+    box: [0.2, 0.2, 0.3, 0.4] as [number, number, number, number],
+    confidence: 0.8,
+    seenAt: 1500,
+    classifiedAt: 0,
+  };
+  assert.deepEqual(reconcileObservedTracks([dog], [], 1550), [dog]);
+  assert.deepEqual(
+    reconcileObservedTracks([dog], [], 1800),
+    [],
+    "No observed frame means no retained position",
+  );
+  assert.deepEqual(
+    reconcileObservedTracks([{ ...dog, seenAt: 2050 }], [], 2100),
+    [],
+    "Observed motion cannot extend classification TTL",
+  );
+  const horse = { ...dog, id: "horse", class: "horse", classifiedAt: 1300 };
+  assert.deepEqual(reconcileObservedTracks([dog], [horse], 1550), [horse, dog]);
+  assert.equal(
+    reconcileObservedTracks([dog], [horse], 1550)[1].classifiedAt,
+    0,
+    "Another class does not refresh the dog claim",
+  );
+  const newer = {
+    ...dog,
+    seenAt: 1540,
+    box: [0.3, 0.2, 0.3, 0.4] as typeof dog.box,
+  };
+  const reclassified = { ...dog, classifiedAt: 1000 };
+  assert.deepEqual(
+    reconcileObservedTracks([newer], [reclassified], 1550),
+    [{ ...newer, classifiedAt: 1000 }],
+    "A late classifier cannot rewind a newer observed position",
+  );
+});
 test("local patch tracking follows image motion and drops dissimilar/occluded image patches", () => {
   const width = 100,
     height = 100;
@@ -25,6 +70,11 @@ test("local patch tracking follows image motion and drops dissimilar/occluded im
   assert.equal(moved.length, 1);
   assert.ok(Math.abs(moved[0].box[0] - 0.33) < 0.001);
   assert.equal(moved[0].id, t.id);
+  assert.equal(
+    moved[0].confidence,
+    t.confidence,
+    "Observed motion retains the model score; freshness uses original class time",
+  );
   assert.equal(trackFrame(frame(), frame(0, true), [t], 150).length, 0);
   assert.equal(trackFrame(frame(), frame(3), [t], 1000).length, 0);
 });

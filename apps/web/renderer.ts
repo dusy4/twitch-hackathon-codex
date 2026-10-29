@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { buildingColors } from "../../packages/shared/construction.js";
+import { PORTAL_FOOT } from "../../packages/shared/arrivals.js";
 import { avatarColor, equipmentOf } from "../../packages/shared/equipment.js";
 import { samplePose } from "./pose.js";
 import type { Avatar, WorldSnapshot } from "../../packages/shared/contracts.js";
@@ -27,7 +29,13 @@ export class RiftRenderer {
   private observer: ResizeObserver;
   private glow: THREE.ShaderMaterial;
   private crowd: THREE.InstancedMesh;
+  private crowdHeads: THREE.InstancedMesh;
+  private crowdLimbs: THREE.InstancedMesh[] = [];
+  private serverOffset = 0;
+  private portalWasActive = false;
+  private portalOpenedAt = 0;
   private props = new Map<string, THREE.Group>();
+  private structures = new Map<string, THREE.Group>();
   private stars: THREE.Points;
   private destroyed = false;
   private contextLost = false;
@@ -47,6 +55,7 @@ export class RiftRenderer {
     private snapshot: () => WorldSnapshot | null,
     private overlay = false,
     private focus = false,
+    private viewerId: string | null = null,
   ) {
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -111,13 +120,32 @@ export class RiftRenderer {
     this.portal.position.set(-2, -0.1, 1);
     const crowdMat = new THREE.MeshLambertMaterial({ color: 0xa997cc });
     this.crowd = new THREE.InstancedMesh(
-      new THREE.BoxGeometry(0.1, 0.19, 0.1),
+      new THREE.BoxGeometry(0.15, 0.22, 0.12),
       crowdMat,
       120,
     );
     this.crowd.count = 0;
     this.crowd.frustumCulled = false;
     this.scene.add(this.crowd);
+    this.crowdHeads = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(0.16, 0.15, 0.14),
+      new THREE.MeshLambertMaterial({ color: 0xc4b6d7 }),
+      120,
+    );
+    this.crowdHeads.count = 0;
+    this.crowdHeads.frustumCulled = false;
+    this.scene.add(this.crowdHeads);
+    for (let i = 0; i < 4; i++) {
+      const limb = new THREE.InstancedMesh(
+        new THREE.BoxGeometry(i < 2 ? 0.055 : 0.05, i < 2 ? 0.14 : 0.18, 0.08),
+        crowdMat,
+        120,
+      );
+      limb.count = 0;
+      limb.frustumCulled = false;
+      this.crowdLimbs.push(limb);
+      this.scene.add(limb);
+    }
     const starPositions = new Float32Array(180 * 3);
     for (let i = 0; i < 180; i++) {
       starPositions[i * 3] = Math.sin(i * 127.1) * 9;
@@ -272,9 +300,12 @@ export class RiftRenderer {
     this.scene.add(shadow);
     const label = document.createElement("div");
     label.className = "avatar-label";
+    label.dataset.avatarId = a.id;
+    if (a.id === this.viewerId) label.classList.add("own-avatar");
     label.textContent = a.name;
     this.host.append(label);
     this.scene.add(group);
+    group.userData.firstSeenAt = performance.now();
     const puppet = {
       group,
       body,
@@ -367,13 +398,31 @@ export class RiftRenderer {
       s?.config.reducedMotion ||
       matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced && this.frame++ % 2) return;
+    const now = Date.now() + this.serverOffset;
     const raid = s?.raid;
-    const elapsed = raid ? (Date.now() - raid.started) / 1000 : 100;
-    this.portal.visible = (!this.overlay || !!raid) && !this.focus;
+    const elapsed = raid ? (now - raid.started) / 1000 : 100;
+    const newestArrival = Math.max(
+      0,
+      ...(s?.avatars.map((a) => a.spawnedAt || 0) || []),
+    );
+    const arrivalAge = now - newestArrival;
+    const arrivalActive = arrivalAge >= -200 && arrivalAge < 3000;
+    const portalActive = !s?.config.paused && (!!raid || arrivalActive);
+    if (portalActive && !this.portalWasActive) this.portalOpenedAt = now;
+    this.portalWasActive = portalActive;
+    this.portal.visible = (!this.overlay || portalActive) && !this.focus;
+    this.portal.position.set(
+      (PORTAL_FOOT[0] - 0.5) * (this.camera.right - this.camera.left),
+      (0.5 - PORTAL_FOOT[1]) * 9 + 1.9,
+      1,
+    );
     const opening = raid
       ? Math.min(1, elapsed / 1.4) *
         Math.min(1, Math.max(0, (18 - elapsed) / 2))
-      : 1;
+      : this.overlay && arrivalActive
+        ? Math.min(1, (now - this.portalOpenedAt) / 350) *
+          Math.min(1, Math.max(0, (3000 - arrivalAge) / 500))
+        : 1;
     this.portal.scale.setScalar(Math.max(0.01, opening));
     this.glow.uniforms.time.value = reduced ? 0 : t;
     this.glow.uniforms.strength.value = raid ? 1 : 0.6;
@@ -418,13 +467,21 @@ export class RiftRenderer {
       const active = !["idle", "sit", "stop"].includes(a.animation);
       const pose = samplePose(
         a.animation,
-        (Date.now() - (a.animationAt || a.lastActive)) / 1000,
+        (now - (a.animationAt || a.lastActive)) / 1000,
         t,
         reduced,
       );
       p.group.position.y += pose.offsetY;
       p.group.rotation.set(pose.rootPitch, pose.rootYaw, pose.rootRoll);
-      p.group.scale.setScalar((this.focus ? 2 : 1) * pose.rootScale);
+      const materialization = a.spawnedAt
+        ? Math.min(
+            1,
+            0.2 + (performance.now() - p.group.userData.firstSeenAt) / 400,
+          )
+        : 1;
+      p.group.scale.setScalar(
+        (this.focus ? 2 : 1) * pose.rootScale * materialization,
+      );
       p.body.position.y = pose.bodyY;
       p.body.scale.y = pose.bodyScaleY;
       p.head.position.y = pose.headY;
@@ -447,15 +504,25 @@ export class RiftRenderer {
         0.05,
         0.28 * (1 - pose.offsetY),
       );
-      p.label.textContent = a.message ? `${a.name} · ${a.message}` : a.name;
+      const own = a.id === this.viewerId;
+      (p.shadow.material as THREE.MeshBasicMaterial).color.set(
+        own ? 0x8be9be : 0x000000,
+      );
+      p.label.textContent = `${own ? "YOU · " : ""}${a.name}${a.message ? ` · ${a.message}` : ""}`;
       const projected = p.group.position
         .clone()
         .add(new THREE.Vector3(0, 0.95, 0))
         .project(this.camera);
       p.label.style.left = `${(projected.x * 0.5 + 0.5) * 100}%`;
       p.label.style.top = `${(-projected.y * 0.5 + 0.5) * 100}%`;
-      p.label.hidden = this.focus || (s!.avatars.length > 30 && !active);
+      p.label.hidden =
+        this.focus || (s!.avatars.length > 30 && !active && !own);
     }
+    this.host.dataset.avatarCount = String(s?.avatars.length || 0);
+    this.host.dataset.portalVisible = String(
+      this.portal.visible && opening > 0.1,
+    );
+    this.host.dataset.localAvatarId = this.viewerId || "";
     const matrix = new THREE.Object3D();
     this.crowd.count =
       raid && elapsed > 1.6
@@ -465,18 +532,41 @@ export class RiftRenderer {
       const delay = i * 0.075;
       const age = Math.max(0, elapsed - 1.6 - delay);
       const x =
-        -2 + Math.min(age, 4) * (i % 2 ? 1 : -1) * (0.3 + (i % 5) * 0.12);
-      const y = -1.8 - (i % 7) * 0.05;
-      matrix.position.set(
-        x,
-        y + (reduced ? 0 : Math.abs(Math.sin(t * 14 + i)) * 0.08),
-        0.4,
-      );
+        (PORTAL_FOOT[0] - 0.5) * (this.camera.right - this.camera.left) +
+        Math.min(age, 4) * (i % 2 ? 1 : -1) * (0.3 + (i % 5) * 0.12);
+      const foot = (0.5 - PORTAL_FOOT[1]) * 9 - (i % 7) * 0.05;
+      const bob = reduced ? 0 : Math.abs(Math.sin(t * 14 + i)) * 0.08;
+      const y = foot + 0.25;
+      matrix.rotation.set(0, 0, 0);
+      matrix.position.set(x, y + bob, 0.4);
       matrix.scale.setScalar(age > 0 ? 1 : 0);
       matrix.updateMatrix();
       this.crowd.setMatrixAt(i, matrix.matrix);
+      matrix.position.y = foot + 0.42 + bob;
+      matrix.updateMatrix();
+      this.crowdHeads.setMatrixAt(i, matrix.matrix);
+      for (const [index, limb] of this.crowdLimbs.entries()) {
+        const side = index % 2 ? 1 : -1;
+        matrix.position.set(
+          x + side * (index < 2 ? 0.045 : 0.11),
+          foot + (index < 2 ? 0.07 : 0.25) + bob,
+          0.4,
+        );
+        matrix.rotation.z = reduced
+          ? 0
+          : Math.sin(t * 10 + i) * side * (index < 2 ? 0.3 : -0.4);
+        matrix.updateMatrix();
+        limb.setMatrixAt(i, matrix.matrix);
+      }
     }
     this.crowd.instanceMatrix.needsUpdate = true;
+    this.crowdHeads.count = this.crowd.count;
+    this.crowdHeads.instanceMatrix.needsUpdate = true;
+    for (const limb of this.crowdLimbs) {
+      limb.count = this.crowd.count;
+      limb.instanceMatrix.needsUpdate = true;
+    }
+    this.host.dataset.anonymousCrowdCount = String(this.crowd.count);
     const propIds = new Set(s?.props.map((p) => p.id) || []);
     for (const [id, g] of this.props)
       if (!propIds.has(id)) {
@@ -509,12 +599,65 @@ export class RiftRenderer {
         if (prop.kind === "confetti") g.rotation.z = t;
       }
     }
+    const structures = s?.structures || [];
+    const buildingIds = new Set(structures.map((building) => building.id));
+    for (const [id, group] of this.structures) {
+      if (!buildingIds.has(id)) {
+        this.removeObject(group);
+        this.structures.delete(id);
+      }
+    }
+    for (const building of structures) {
+      let group = this.structures.get(building.id);
+      if (group && group.userData.revision !== building.revision) {
+        this.removeObject(group);
+        this.structures.delete(building.id);
+        group = undefined;
+      }
+      if (!group) {
+        group = new THREE.Group();
+        group.userData.revision = building.revision;
+        for (const block of building.blocks) {
+          const mesh = this.block(
+            0.155,
+            0.155,
+            0.155,
+            buildingColors[block.material],
+          );
+          mesh.position.set(
+            (block.x - 3.5) * 0.16,
+            block.y * 0.16 + 0.08,
+            (block.z - 3.5) * 0.16,
+          );
+          group.add(mesh);
+        }
+        group.rotation.set(0.32, -0.5, 0);
+        this.scene.add(group);
+        this.structures.set(building.id, group);
+      }
+      group.position.set(
+        (building.x - 0.5) * (this.camera.right - this.camera.left),
+        (0.5 - building.y) * 9,
+        1.5,
+      );
+    }
+    this.host.dataset.structureBlocks = String(
+      structures.reduce((total, building) => total + building.blocks.length, 0),
+    );
     this.renderer.render(this.scene, this.camera);
     this.host.dataset.rendered = "true";
   };
   unlockAudio() {
     this.audio ||= new AudioContext();
     void this.audio.resume();
+  }
+  setServerTime(time: number) {
+    if (Number.isFinite(time)) this.serverOffset = time - Date.now();
+  }
+  setViewerId(id: string | null) {
+    this.viewerId = id;
+    for (const [actorId, puppet] of this.puppets)
+      puppet.label.classList.toggle("own-avatar", actorId === id);
   }
   sound(kind: string, volume = 0.08) {
     if (!this.audio || this.audio.state !== "running" || volume === 0) return;

@@ -10,6 +10,23 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { GameError } from "./compiler.js";
 export const hash = (s: string) => createHash("sha256").update(s).digest("hex");
 export const secret = () => randomBytes(32).toString("base64url");
+/** Kept stable independently of encryption/signing key rotation, including deleted-account tombstones. */
+export function rewardIdentity(twitchId: string) {
+  const configured = process.env.REWARD_IDENTITY_SECRET;
+  if (
+    process.env.NODE_ENV === "production" &&
+    (!configured || configured.length < 43)
+  )
+    throw Error(
+      "Production requires a stable REWARD_IDENTITY_SECRET of at least 43 characters",
+    );
+  // Preserve existing local fixture identities. Production never uses this fallback.
+  const key =
+    configured ||
+    process.env.APP_SECRET ||
+    "raidrift-local-simulator-reward-guard";
+  return createHmac("sha256", key).update(twitchId).digest("hex");
+}
 export class Security {
   constructor(private key: Buffer) {}
   static async load() {

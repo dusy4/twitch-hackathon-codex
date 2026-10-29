@@ -63,3 +63,7 @@ A raid with count `247` yields `raid.reportedViewers = 247`, `raid.authenticated
 `GET /v1/me` and public player profiles include `equipment: { skin?: string, hat?: string, pet?: string }`. `POST /v1/me/cosmetics/:id/equip` requires inventory ownership and changes only the catalog item's slot. `DELETE /v1/me/equipment/:slot` removes a skin, hat or pet without destroying ownership or altering wallet/earned totals. Both mutations require session, same-origin and CSRF checks. Per-account row locking serializes simultaneous equipment updates. Unknown catalog IDs/slots fail validation.
 
 The old `cosmetic` field is retained for compatibility and reflects the selected skin after equipment changes; new clients use `equipment`. An explicitly empty map takes precedence over that legacy field. Base profile color remains independent of skin color. Accounts, world saves, transferred avatars, 3D profile previews and consented share-card art use the canonical loadout. Owned inventory survives removal.
+
+## Implemented community construction
+
+`POST /v1/worlds/:id/construction` performs creator-enabled, revision-checked `create`, `place`, `remove` and `delete` operations with a UUID `requestId`. Authoritative world snapshots include active `structures`. Strict bodies, lease/budget rules, idempotent replay semantics and moderation permissions are described in `CONSTRUCTION.md`. No wallet endpoint is called by construction.

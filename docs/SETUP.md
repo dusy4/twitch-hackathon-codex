@@ -62,13 +62,13 @@ After owner authorization set `OPENAI_API_KEY` server-side and `ALLOW_PAID_AI=tr
 
 ## Production topology
 
-`compose.yaml` describes a **single durable app process** plus external PostgreSQL. Set `POSTGRES_PASSWORD`, `APP_SECRET` (random ≥43 characters) and an owned HTTPS `PUBLIC_URL`, then run `docker compose up --build` on an authorized host. A TLS reverse proxy must forward WebSocket upgrade headers and omit/redact token-bearing request query strings from access logs. Do not cache authenticated API responses. Demo identities must be disabled in production.
+`compose.yaml` describes a **single durable app process** plus external PostgreSQL. Set `POSTGRES_PASSWORD`, `APP_SECRET` and `REWARD_IDENTITY_SECRET` (each random ≥43 characters) and an owned HTTPS `PUBLIC_URL`, then run `docker compose up --build` on an authorized host. A TLS reverse proxy must forward WebSocket upgrade headers and omit/redact token-bearing request query strings from access logs. Do not cache authenticated API responses. Demo identities must be disabled in production.
 
 No Docker engine exists on the current workstation; container build and Compose deployment remain untested. Native external PostgreSQL was downloaded from the official EDB distributor and passed isolated concurrency/rollback tests through independent pg connections. CI descriptors are written but not run on a hosted provider. Redis room sharding and multi-replica ownership are not implemented: **do not scale app replicas**. The local 1000-spectator test is not a production throughput guarantee. Media relay supports one publisher and one receiver per room in LAN direct ICE mode; internet TURN, native codec support and native audio are not complete.
 
 ## Database and recovery
 
-Startup applies `migrations/001_core.sql` and `002_equipment.sql` in explicit order. Both are idempotent; the equipment backfill changes only null loadouts so an intentionally empty loadout stays empty on restart. This is still an explicit bootstrap/upgrade list, not a general schema-version migration runner. Never downgrade by dropping ledger rows. Back up PostgreSQL with `pg_dump` and the encryption secret through your secrets manager. Restore into a separate database, run the ledger audit, then verify tokens and snapshots before switching traffic. Local PGlite backups require a stopped app and a copy of `.data`.
+Startup applies `migrations/001_core.sql`, `002_equipment.sql` and `003_construction.sql` in explicit order. These are idempotent; the equipment backfill changes only null loadouts so an intentionally empty loadout stays empty on restart. This is still an explicit bootstrap/upgrade list, not a general schema-version migration runner. Never downgrade by dropping ledger rows. Back up PostgreSQL with `pg_dump` and the encryption secret through your secrets manager. Restore into a separate database, run the ledger audit, then verify tokens and snapshots before switching traffic. Local PGlite backups require a stopped app and a copy of `.data`.
 
 Wallets are append-only-ledger derived. `scripts/audit-ledger.ts` checks wallet reconciliation and nonnegative balances. Operator reversal appends a compensating transaction and corrects the original scoring period; insufficient unspent balance requires manual review. Operator access uses the exact configured Twitch IDs in `ADMIN_TWITCH_IDS`. A failed ledger invariant is an incident: pause rewards and investigate original logical keys; never directly edit historical ledger entries.
 
@@ -94,3 +94,15 @@ Playwright automatically starts a separate in-memory PostgreSQL QA app on port 3
 `node scripts/download-postgres.mjs` retrieves the official EDB Windows archive. Extract it to `.tools/postgres`, then `node scripts/test-postgres.mjs` initializes an isolated SCRAM-protected loopback database, runs native concurrency/equipment tests plus the isolated dump/restore drill, then shuts it down. See `OPERATIONS.md` for recovery scope and evidence. This does not install a Windows service.
 
 Implemented route inventory and shared schemas: `/v1/openapi.json`. Some uncommon request/response schemas are generic objects and explicitly documented as such. Rankings refresh every five seconds while the page is visible; camera reward probabilities remain uncalibrated and payouts disabled.
+
+Community construction is disabled by default. Its creator controls, 24-hour lease, support rules, moderation and limits are documented in `CONSTRUCTION.md`. The workshop route is linked from the viewer controller.
+
+Before upgrading an existing ledger, preserve its reward-identity HMAC key as described in `OPERATIONS.md`. The stable reward key must not follow encryption/signing key rotations. Existing ciphertext still needs a controlled re-encryption procedure before changing `APP_SECRET`.
+
+## Character arrival and official CLI smoke
+
+See `CHARACTERS.md` for the local viewer/creator flow and actual recordings. Browser characters do not require vision weights. The explicit `!join` chat command claims/enters the corresponding numeric chatter identity; anonymous reported raid counts do not produce accounts.
+
+For the separate protocol smoke, manually install the official [Twitch CLI release](https://github.com/twitchdev/twitch-cli/releases/tag/v1.1.24), verify the official `checksums.txt`, and preserve its Apache-2.0 notices. Current Windows binary location is `.tools/twitch-cli/twitch-cli_1.1.24_Windows_x86_64/twitch.exe`; another platform can set `TWITCH_CLI_PATH`. Run `node --import tsx scripts/twitch-cli-smoke.ts`. It uses a disposable database and loopback port 3402, disables provider credentials in its own process, and closes its app/browser afterward. It does not modify the durable app database. Fixture video, if installed, is served only for the local composite screenshot.
+
+The CLI generates a synthetic signed raid. Chat events are our separately signed fixtures because this CLI version lacks that generator. This proves the local protocol-to-character/rendering path; actual Twitch users, OAuth, public webhook delivery and OBS still need their live integration checks. Official reference: [testing webhook events](https://dev.twitch.tv/docs/cli/event-command/).

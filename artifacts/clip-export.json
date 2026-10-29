@@ -1,9 +1,9 @@
 {
-  "runAt": "2026-10-28T17:41:58.109Z",
+  "runAt": "2026-10-28T18:24:24.431Z",
   "fixture": "tests/fixtures/dog-tail.webm",
   "output": "dog-composite-qa.webm",
-  "sha256": "e81bd094b28cb9b3e82982a683aaa4107ff95d623afcd3574f5514cf67f3d91b",
-  "bytes": 140284,
+  "sha256": "2815a329aa6b03d099f5c38ef3f8c2eafae2eefdbf5fa243ed2b7a221bb622de",
+  "bytes": 140859,
   "width": 1280,
   "height": 720,
   "sourceLicense": "CC-BY-SA-4.0",

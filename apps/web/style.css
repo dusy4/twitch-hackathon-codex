@@ -1023,3 +1023,17 @@ footer {
 .capture-world{position:absolute;pointer-events:none;overflow:hidden}.capture-world canvas{position:absolute;inset:0;width:100%;height:100%}
 
 h1,h2,h3{overflow-wrap:anywhere}.profile-header strong,.world-status strong{overflow-wrap:anywhere}
+
+.capture-wrap { background: #080a10; border-radius: 8px; overflow: hidden; }
+.capture-wrap #capture-video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.capture-wrap #capture-boxes { position: relative; inset: auto; display: block; width: 100%; height: auto; }
+.capture-world { inset: 0; }
+
+.columns > *, .form-grid > * { min-width: 0; }
+.form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#building-details table { min-width: 0; font-size: 12px; }
+#building-details th, #building-details td { padding: 10px 8px; }
+#building-details th:first-child, #building-details td:first-child { white-space: nowrap; }
+@media (max-width: 540px) { .form-grid { grid-template-columns: 1fr; } }
+
+.avatar-label.own-avatar { color: #e2ffec; background: #17362e; border: 1px solid #98e4bb; font-weight: 700; z-index: 3; }

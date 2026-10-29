@@ -11,41 +11,8 @@ type Session = {
   timeout: ReturnType<typeof setTimeout> | null;
 };
 
-/** Draw the same normalized crop -> mirror -> rotation -> output viewport used by target mapping. */
-export function drawSource(
-  ctx: CanvasRenderingContext2D,
-  source: CanvasImageSource,
-  sourceWidth: number,
-  sourceHeight: number,
-  g: SourceGeometry,
-  width: number,
-  height: number,
-) {
-  const [l, t, r, b] = g.crop,
-    [vx, vy, vw, vh] = g.viewport;
-  ctx.save();
-  ctx.translate(vx * width, vy * height);
-  ctx.scale(vw * width, vh * height);
-  if (g.rotation === "90") ctx.transform(0, 1, -1, 0, 1, 0);
-  if (g.rotation === "180") ctx.transform(-1, 0, 0, -1, 1, 1);
-  if (g.rotation === "270") ctx.transform(0, -1, 1, 0, 0, 1);
-  if (g.mirror) {
-    ctx.translate(1, 0);
-    ctx.scale(-1, 1);
-  }
-  ctx.drawImage(
-    source,
-    l * sourceWidth,
-    t * sourceHeight,
-    (1 - l - r) * sourceWidth,
-    (1 - t - b) * sourceHeight,
-    0,
-    0,
-    1,
-    1,
-  );
-  ctx.restore();
-}
+export { drawSource } from "./composite.js";
+import { drawSource, outputSize } from "./composite.js";
 
 /** Explicit local-only, video-only capture; no upload or background rolling buffer. */
 export class LocalClipRecorder {
@@ -121,19 +88,7 @@ export class LocalClipRecorder {
       throw Error("No supported clip encoder is available in this browser.");
     this.clearSaved();
     const canvas = document.createElement("canvas");
-    const scale = Math.min(
-      1,
-      1280 / this.video.videoWidth,
-      720 / this.video.videoHeight,
-    );
-    canvas.width = Math.max(
-      2,
-      Math.floor((this.video.videoWidth * scale) / 2) * 2,
-    );
-    canvas.height = Math.max(
-      2,
-      Math.floor((this.video.videoHeight * scale) / 2) * 2,
-    );
+    [canvas.width, canvas.height] = outputSize(this.geometry());
     const ctx = canvas.getContext("2d")!;
     const stream = canvas.captureStream(30);
     let recorder: MediaRecorder;

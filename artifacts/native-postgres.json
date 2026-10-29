@@ -1,5 +1,5 @@
 {
-  "runAt": "2026-10-28T17:49:38.048Z",
+  "runAt": "2026-10-28T23:13:51.211Z",
   "result": "passed",
   "port": 55432,
   "scope": "Native local PostgreSQL; independent pg connections; 100 duplicate credits, concurrent spending/equipment, rollback; isolated synthetic dump/restore",

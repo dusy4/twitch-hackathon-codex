@@ -5,6 +5,7 @@ import type {
   QuestState,
 } from "../../packages/shared/contracts.js";
 import { emoteNames as allEmotes } from "../../packages/shared/animations.js";
+import { buildingMaterials } from "../../packages/shared/construction.js";
 import { defaultConfig } from "../../packages/shared/settings.js";
 import type { DuelState } from "../../packages/shared/duels.js";
 const emoteNames = allEmotes.filter(
@@ -60,6 +61,7 @@ async function api(
 }
 async function refreshMe() {
   me = await api("/v1/me");
+  renderer?.setViewerId(me.user?.id || null);
 }
 function bind(
   selector: string,
@@ -142,6 +144,7 @@ function startWorld(id: string, token?: string) {
     socket.onmessage = (e) => {
       if (closed || socket !== connection) return;
       const event = JSON.parse(e.data);
+      renderer?.setServerTime(Date.parse(event.serverTime));
       if (typeof event.sequence === "number") {
         if (event.sequence < lastSequence) return;
         lastSequence = event.sequence;
@@ -152,6 +155,11 @@ function startWorld(id: string, token?: string) {
       } else {
         if (event.type === "duel.started" || event.type === "duel.changed")
           receiveDuel(event.payload);
+        if (
+          event.type === "avatar.arriving" &&
+          event.payload.id === me.user?.id
+        )
+          addFeed("Stepping through the portal");
         if (event.type === "raid.started") {
           renderer?.sound("raid", state?.config.audio);
           addFeed(
@@ -215,6 +223,8 @@ function startWorld(id: string, token?: string) {
       $("#stage"),
       () => state,
       location.pathname === "/overlay",
+      false,
+      me.user?.id || null,
     );
   } catch {
     const stage = $("#stage");
@@ -290,7 +300,11 @@ function updateWorldUI() {
       partySelect.dataset.key = key;
     }
   }
+  const portalEntry =
+    document.querySelector<HTMLButtonElement>("#portal-entry");
+  if (portalEntry) portalEntry.disabled = state.config.paused;
   updateDuelUI();
+  updateWorkshop();
   updateTargetSelect(state.tracks);
 }
 function updateTargetSelect(tracks: WorldSnapshot["tracks"]) {
@@ -364,7 +378,9 @@ async function home() {
         return;
       }
     }
-    await api(`/v1/worlds/${room}/join`, "POST", {});
+    await api(`/v1/worlds/${room}/join`, "POST", {
+      entrance: !state?.config.paused,
+    });
     navigate(`/controller?room=${encodeURIComponent(room)}`);
   });
   bind("#preview-raid", async () => {
@@ -510,6 +526,24 @@ async function controller() {
   });
   bind("#refresh-invites", () => refreshInvitations());
   void refreshInvitations();
+  const workshopLink = document.createElement("a");
+  workshopLink.className = "small muted";
+  workshopLink.style.cssText = "display:block;margin-top:12px";
+  workshopLink.href = `/workshop?room=${encodeURIComponent(room)}`;
+  workshopLink.dataset.nav = "";
+  workshopLink.textContent = "Community workshop ↗";
+  $("#dragon").after(workshopLink);
+  const portalEntry = document.createElement("button");
+  portalEntry.id = "portal-entry";
+  portalEntry.className = "primary full";
+  portalEntry.textContent = "Step through the portal";
+  $("#dragon").before(portalEntry);
+  bind("#portal-entry", async () => {
+    await api(`/v1/worlds/${encodeURIComponent(room)}/join`, "POST", {
+      entrance: true,
+    });
+    toast("Your character is entering through the portal.");
+  });
   bind("#dragon", () => command("summon a tiny dragon and ride it"));
   bind(
     "#world-select",
@@ -639,6 +673,7 @@ async function dashboard() {
         "vision",
         "Consent to processing selected camera source for ephemeral object anchors",
       ],
+      ["construction", "Allow community structures to persist for 24 hours"],
       ["paused", "Pause all world activity"],
     ]
       .map(
@@ -647,7 +682,7 @@ async function dashboard() {
       )
       .join(
         "",
-      )}</div><div class="form-grid"><label>Source width<input name="width" type="number" value="${config.geometry.width}"></label><label>Source height<input name="height" type="number" value="${config.geometry.height}"></label><label class="check"><input name="mirror" type="checkbox" ${config.geometry.mirror ? "checked" : ""}>Mirror source</label><label>Rotation<select name="rotation">${["0", "90", "180", "270"].map((r) => `<option ${r === config.geometry.rotation ? "selected" : ""}>${r}</option>`).join("")}</select></label>${["Left", "Top", "Right", "Bottom"].map((label, i) => `<label>Crop ${label.toLowerCase()} (0–0.95)<input name="crop${i}" type="number" min="0" max="0.95" step="0.01" value="${config.geometry.crop[i]}"></label>`).join("")}${["Output left", "Output top", "Output width", "Output height"].map((label, i) => `<label>${label} (normalized)<input name="viewport${i}" type="number" min="0" max="1" step="0.01" value="${(config.geometry.viewport || [0, 0, 1, 1])[i]}"></label>`).join("")}</div><button class="primary">Save world settings</button></form><div class="panel"><div class="eyebrow">03 / A SHARED ADVENTURE</div><h2>Create a verified quest</h2><form id="quest-form"><div class="form-grid"><label>Quest title<input name="title" maxlength="80" value="Dance at the edge of the universe" required></label><label>Action<select name="action"><option>dance</option><option>wave</option><option>sit</option><option>cheer</option></select></label><label>Distinct players<input name="minPlayers" type="number" min="1" max="20" value="3"></label><label>Reward per hero<input name="reward" type="number" min="1" max="100" value="40"></label></div><button>Create virtual quest</button></form><div class="notice">Virtual quests are verified by server state. Camera and hybrid rewards remain experimental and are disabled by default pending calibration.</div></div><div class="panel"><h3>Moderation</h3><form id="ban-form"><div class="field-row"><input id="ban-account" placeholder="Player account ID" aria-label="Account ID to ban" required><button class="danger">Ban from this world</button></div></form></div></div><aside class="stack"><div class="panel"><div class="eyebrow">YOUR CONTROL ROOM</div><div class="badge ${me.user.demo ? "orange" : "mint"}">${me.user.demo ? "SIMULATOR" : "TWITCH CONNECTED"}</div><div class="stat-grid"><div><strong id="players-count">0</strong><span>CLAIMED HEROES</span></div><div><strong id="raid-count">—</strong><span>REPORTED RAID</span></div></div><label>Test raid size<input id="raid-size" type="number" value="247" min="1" max="10000"></label><button id="test-raid" class="full">◈ Run a labelled test raid</button><button id="stop" class="full danger">■ Emergency stop</button><a class="button full" href="/capture" data-nav>Open camera companion ↗</a><a class="button full" href="/controller?room=${encodeURIComponent(data.channelId)}" data-nav>Enter your world ↗</a><button id="mobile-pair" class="full">Pair native AR + share composed video</button><div id="mobile-pairing" class="code" hidden></div><button id="subscriptions" class="full">Reconcile Twitch subscriptions</button><button id="disconnect" class="full danger">Disconnect Twitch</button></div><div class="panel"><h3>Integration health</h3><div id="health"></div></div><div class="notice warning">Native AR is a separate mobile capture mode. This browser overlay uses explicitly labelled screen-space positioning.</div></aside></div>`,
+      )}</div><div class="form-grid"><label>OBS canvas width<input name="width" type="number" value="${config.geometry.width}"></label><label>OBS canvas height<input name="height" type="number" value="${config.geometry.height}"></label><label class="check"><input name="mirror" type="checkbox" ${config.geometry.mirror ? "checked" : ""}>Mirror source</label><label>Rotation<select name="rotation">${["0", "90", "180", "270"].map((r) => `<option ${r === config.geometry.rotation ? "selected" : ""}>${r}</option>`).join("")}</select></label>${["Left", "Top", "Right", "Bottom"].map((label, i) => `<label>Crop ${label.toLowerCase()} (0–0.95)<input name="crop${i}" type="number" min="0" max="0.95" step="0.01" value="${config.geometry.crop[i]}"></label>`).join("")}${["Output left", "Output top", "Output width", "Output height"].map((label, i) => `<label>${label} (normalized)<input name="viewport${i}" type="number" min="0" max="1" step="0.01" value="${(config.geometry.viewport || [0, 0, 1, 1])[i]}"></label>`).join("")}</div><button class="primary">Save world settings</button></form><div class="panel"><div class="eyebrow">03 / A SHARED ADVENTURE</div><h2>Create a verified quest</h2><form id="quest-form"><div class="form-grid"><label>Quest title<input name="title" maxlength="80" value="Dance at the edge of the universe" required></label><label>Action<select name="action"><option>dance</option><option>wave</option><option>sit</option><option>cheer</option></select></label><label>Distinct players<input name="minPlayers" type="number" min="1" max="20" value="3"></label><label>Reward per hero<input name="reward" type="number" min="1" max="100" value="40"></label></div><button>Create virtual quest</button></form><div class="notice">Virtual quests are verified by server state. Camera and hybrid rewards remain experimental and are disabled by default pending calibration.</div></div><div class="panel"><h3>Moderation</h3><form id="ban-form"><div class="field-row"><input id="ban-account" placeholder="Player account ID" aria-label="Account ID to ban" required><button class="danger">Ban from this world</button></div></form></div></div><aside class="stack"><div class="panel"><div class="eyebrow">YOUR CONTROL ROOM</div><div class="badge ${me.user.demo ? "orange" : "mint"}">${me.user.demo ? "SIMULATOR" : "TWITCH CONNECTED"}</div><div class="stat-grid"><div><strong id="players-count">0</strong><span>CLAIMED HEROES</span></div><div><strong id="raid-count">—</strong><span>REPORTED RAID</span></div></div><label>Test raid size<input id="raid-size" type="number" value="247" min="1" max="10000"></label><button id="test-raid" class="full">◈ Run a labelled test raid</button><button id="stop" class="full danger">■ Emergency stop</button><a class="button full" href="/capture" data-nav>Open camera companion ↗</a><a class="button full" href="/controller?room=${encodeURIComponent(data.channelId)}" data-nav>Enter your world ↗</a><button id="mobile-pair" class="full">Pair native AR + share composed video</button><div id="mobile-pairing" class="code" hidden></div><button id="subscriptions" class="full">Reconcile Twitch subscriptions</button><button id="disconnect" class="full danger">Disconnect Twitch</button></div><div class="panel"><h3>Integration health</h3><div id="health"></div></div><div class="notice warning">Native AR is a separate mobile capture mode. This browser overlay uses explicitly labelled screen-space positioning.</div></aside></div>`,
   );
   let overlayUrl = "";
   bind("#overlay-token", async () => {
@@ -686,7 +721,14 @@ async function dashboard() {
           rotation: String(f.get("rotation")),
         },
       };
-      for (const key of ["public", "reducedMotion", "ai", "vision", "paused"])
+      for (const key of [
+        "public",
+        "reducedMotion",
+        "ai",
+        "vision",
+        "paused",
+        "construction",
+      ])
         next[key] = f.has(key);
       await api("/v1/creator/config", "PATCH", next);
       toast("World settings saved");
@@ -827,6 +869,133 @@ async function quests() {
   shell(
     `${intro("THE QUEST JOURNAL", "Good things happen<br><em>together.</em>", "Small challenges make shared stories. Every reward is verified and recorded by the server.")}<div class="features">${data.quests.map((q: any) => `<article class="panel"><span class="badge ${q.active ? "mint" : ""}">${q.active ? "ACTIVE" : "COMPLETED"} · ${esc(q.definition.type)}</span><h3 style="margin:20px 0 10px">${esc(q.definition.title)}</h3><p class="muted small">${q.definition.minPlayers} distinct hero${q.definition.minPlayers === 1 ? "" : "es"} · ${esc(q.definition.action)} for ${q.definition.sustainMs / 1000} seconds.</p><div class="shards" style="margin:20px 0">◆ +${q.definition.reward} Shards per eligible player</div><a class="button" href="/controller?room=${encodeURIComponent(q.channel_id)}" data-nav>Visit world ↗</a></article>`).join("") || '<div class="empty">No quests yet. A creator can start the next adventure.</div>'}</div>`,
   );
+}
+function updateWorkshop() {
+  const select = document.querySelector<HTMLSelectElement>("#structure-select");
+  if (!select || !state) return;
+  const structures = state.structures || [];
+  const key = structures.map((s) => `${s.id}:${s.revision}`).join(",");
+  if (select.dataset.key !== key) {
+    const selected = select.value;
+    select.innerHTML = structures
+      .map((s) => `<option value="${esc(s.id)}">${esc(s.title)}</option>`)
+      .join("");
+    if (structures.some((s) => s.id === selected)) select.value = selected;
+    select.dataset.key = key;
+  }
+  const structure = structures.find((s) => s.id === select.value);
+  const details = document.querySelector<HTMLElement>("#building-details")!;
+  const detailKey = `${key}:${select.value}`;
+  if (details.dataset.key !== detailKey) {
+    details.innerHTML = structure
+      ? `<h3>${esc(structure.title)}</h3><p class="small muted">Revision ${structure.revision} · ${structure.blocks.length}/64 blocks · lease ends ${esc(new Date(structure.expiresAt).toLocaleString())}</p><div tabindex="0" role="region" aria-label="Shared block coordinates" style="max-height:240px;overflow:auto"><table><caption class="small">Shared block coordinates</caption><thead><tr><th scope="col">X / Y / Z</th><th scope="col">Material</th><th scope="col">Contribution</th></tr></thead><tbody>${structure.blocks.map((b) => `<tr><td>${b.x} / ${b.y} / ${b.z}</td><td>${esc(b.material)}</td><td>${b.ownerId === me.user.id ? "Yours" : "Community"}</td></tr>`).join("")}</tbody></table></div>`
+      : '<p class="muted">No structures yet. Lay a foundation to begin.</p>';
+    details.dataset.key = detailKey;
+  }
+  const enabled = state.config.construction && !state.config.paused;
+  $("#building-status").textContent = enabled
+    ? "Community construction is enabled. Work together; remove only your own blocks."
+    : "The creator must enable community construction and resume the world before you can build.";
+  $("#workshop-create")
+    .querySelectorAll<HTMLButtonElement>("button")
+    .forEach((button) => (button.disabled = !enabled));
+  $("#workshop-edit")
+    .querySelectorAll<HTMLButtonElement>("button")
+    .forEach((button) => (button.disabled = !enabled || !structure));
+  $<HTMLButtonElement>("#structure-delete").disabled = !enabled || !structure;
+}
+async function workshop() {
+  const currentGeneration = generation;
+  if (
+    requireAccount(
+      "Enter a world and help build an original shared voxel structure.",
+    )
+  )
+    return;
+  const id = new URLSearchParams(location.search).get("room") || room;
+  await api(`/v1/worlds/${encodeURIComponent(id)}/join`, "POST", {});
+  const snapshot = await api(`/v1/worlds/${encodeURIComponent(id)}`);
+  if (currentGeneration !== generation) return;
+  room = id;
+  state = snapshot;
+  shell(
+    `${intro("THE COMMUNITY WORKSHOP", "Small blocks.<br><em>Shared stories.</em>", "Build an original voxel landmark together. These virtual stage structures survive restarts for a 24-hour lease when the creator enables construction.")}<div class="columns"><div class="stack">${stageMarkup()}<div class="panel"><h2>Lay a foundation</h2><form id="workshop-create"><label>Structure name<input name="title" maxlength="40" required placeholder="Our little watchtower"></label><div class="form-grid"><label>Stage X (0.1–0.9)<input name="x" type="number" min="0.1" max="0.9" step="0.01" value="0.65" required></label><label>Stage Y (0.55–0.9)<input name="y" type="number" min="0.55" max="0.9" step="0.01" value="0.78" required></label></div><button class="primary">Create community structure</button></form><p class="small muted">One foundation per founder, eight per world. Each starts at block 3 / 0 / 3. No Shards are spent or awarded.</p></div></div><aside class="stack"><div class="notice" id="building-status" role="status"></div><div class="panel"><label>Shared structure<select id="structure-select" aria-label="Shared structure"></select></label><div id="building-details"></div></div><div class="panel"><h2>Add your piece</h2><form id="workshop-edit"><div class="form-grid">${["x", "y", "z"].map((axis) => `<label>Block ${axis.toUpperCase()}<input name="${axis}" type="number" min="0" max="${axis === "y" ? 5 : 7}" value="${axis === "y" ? 1 : 3}" required></label>`).join("")}<label>Material<select name="material">${buildingMaterials.map((material) => `<option>${material}</option>`).join("")}</select></label></div><div class="command-buttons"><button class="primary" name="operation" value="place">Place block</button><button name="operation" value="remove">Remove my block</button></div></form><p class="small muted">Stack on an existing block; remove from the top down. Up to 16 blocks per contributor and 64 per structure. The creator can remove any block.</p><button id="structure-delete" class="danger">Remove entire structure</button><p class="small muted">Only the founder or creator can remove a whole structure.</p></div><a class="button" href="/controller?room=${encodeURIComponent(room)}" data-nav>Back to your hero ↗</a></aside></div>`,
+  );
+  startWorld(id);
+  const mutate = async (operation: Record<string, unknown>) => {
+    try {
+      const result = await api(
+        `/v1/worlds/${encodeURIComponent(id)}/construction`,
+        "POST",
+        { requestId: crypto.randomUUID(), ...operation },
+      );
+      if (generation !== currentGeneration) return;
+      if (result.structure)
+        $<HTMLSelectElement>("#structure-select").value = result.structure.id;
+      toast("Community structure saved.");
+    } finally {
+      if (generation === currentGeneration) {
+        state = await api(`/v1/worlds/${encodeURIComponent(id)}`);
+        updateWorldUI();
+      }
+    }
+  };
+  bind(
+    "#workshop-create",
+    async (e) => {
+      e.preventDefault();
+      const data = new FormData(e.currentTarget as HTMLFormElement);
+      await mutate({
+        kind: "create",
+        title: String(data.get("title")),
+        x: Number(data.get("x")),
+        y: Number(data.get("y")),
+      });
+    },
+    "submit",
+  );
+  bind(
+    "#workshop-edit",
+    async (e) => {
+      e.preventDefault();
+      const data = new FormData(e.currentTarget as HTMLFormElement),
+        kind = (e as SubmitEvent).submitter?.getAttribute("value") || "place";
+      const selected = state?.structures?.find(
+        (s) => s.id === $<HTMLSelectElement>("#structure-select").value,
+      );
+      if (!selected) throw Error("Choose a community structure first.");
+      await mutate({
+        kind,
+        structureId: selected.id,
+        revision: selected.revision,
+        x: Number(data.get("x")),
+        y: Number(data.get("y")),
+        z: Number(data.get("z")),
+        ...(kind === "place" ? { material: String(data.get("material")) } : {}),
+      });
+    },
+    "submit",
+  );
+  bind("#structure-delete", async () => {
+    const selected = state?.structures?.find(
+      (s) => s.id === $<HTMLSelectElement>("#structure-select").value,
+    );
+    if (selected)
+      await mutate({
+        kind: "delete",
+        structureId: selected.id,
+        revision: selected.revision,
+      });
+  });
+  bind(
+    "#structure-select",
+    () => {
+      $("#building-details").dataset.key = "";
+      updateWorkshop();
+    },
+    "change",
+  );
+  updateWorkshop();
 }
 async function factions() {
   const data = await api("/v1/factions");
@@ -975,7 +1144,7 @@ async function capture() {
   const data = await api("/v1/creator/config");
   if (captureGeneration !== generation) return;
   shell(
-    `${intro("REALITYQUEST / DESKTOP COMPANION", "The scene becomes<br><em>a playground.</em>", "Select a camera or an OBS source projector. Detection stays on this device; ephemeral object anchors go to your world.")}<div class="columns"><div class="panel"><div class="capture-wrap"><video id="capture-video" autoplay playsinline muted></video><canvas id="capture-boxes"></canvas><div id="capture-world" class="capture-world" hidden></div></div><div class="command-buttons"><button id="camera-start" class="primary">Select camera</button><button id="display-start">Select OBS source projector</button><button id="capture-stop" class="danger">Stop capture</button></div><div class="notice" id="capture-status">${data.config.vision ? "Camera processing consent is enabled. Select a source to begin." : "Enable camera processing in Creator Studio before starting."}</div><label class="check" style="margin:16px 0"><input id="silhouette-enabled" type="checkbox">Experimental local silhouette anchoring (animals and furniture)</label><label>Use a permitted test video (local only)<input id="video-file" type="file" accept="video/*"></label><form id="capture-command-form"><label style="margin-top:20px">Direct your own virtual hero<div class="field-row"><input id="capture-command" maxlength="500" placeholder="sprint towards the dog and sit on it" required><button class="primary">Send action</button></div></label></form><p class="small muted" style="margin-top:15px">Screen-space composite preview. Test video is not live quest evidence.</p><a class="button" href="/dashboard" data-nav style="margin-top:20px">Source geometry & consent settings ↗</a></div><aside class="stack"><div class="panel"><h3>Screen-space mode</h3><p class="muted small" style="margin-top:15px">Choose OBS’s source projector rather than the finished composite to avoid detecting overlay graphics. Match crop, rotation and mirror in Creator Studio.</p><p class="muted small" style="margin-top:15px">This detector recognizes COCO object classes. Red-hat referring expressions and native 3D locks remain validation gaps. Optional animal/furniture silhouette anchors are experimental. Local patch tracking bridges detector observations and stops on low image agreement.</p></div><div class="panel"><h3>Capture diagnostics</h3><div id="capture-metrics" class="feed"></div></div></aside></div>`,
+    `${intro("REALITYQUEST / DESKTOP COMPANION", "The scene becomes<br><em>a playground.</em>", "Select a camera or an OBS source projector. Detection stays on this device; ephemeral object anchors go to your world.")}<div class="columns"><div class="panel"><div class="capture-wrap"><video id="capture-video" autoplay playsinline muted aria-hidden="true"></video><canvas id="capture-boxes" aria-label="Transformed source and tracking diagnostics"></canvas><div id="capture-world" class="capture-world" hidden></div></div><div class="command-buttons"><button id="camera-start" class="primary">Select camera</button><button id="display-start">Select OBS source projector</button><button id="capture-stop" class="danger">Stop capture</button></div><div class="notice" id="capture-status">${data.config.vision ? "Camera processing consent is enabled. Select a source to begin." : "Enable camera processing in Creator Studio before starting."}</div><label class="check" style="margin:16px 0"><input id="silhouette-enabled" type="checkbox">Experimental local silhouette anchoring (animals and furniture)</label><label>Use a permitted test video (local only)<input id="video-file" type="file" accept="video/*"></label><form id="capture-command-form"><label style="margin-top:20px">Direct your own virtual hero<div class="field-row"><input id="capture-command" maxlength="500" placeholder="sprint towards the dog and sit on it" required><button class="primary">Send action</button></div></label></form><p class="small muted" style="margin-top:15px">Screen-space composite preview. Test video is not live quest evidence.</p><a class="button" href="/dashboard" data-nav style="margin-top:20px">Source geometry & consent settings ↗</a></div><aside class="stack"><div class="panel"><h3>Screen-space mode</h3><p class="muted small" style="margin-top:15px">Choose OBS’s source projector rather than the finished composite to avoid detecting overlay graphics. Match crop, rotation and mirror in Creator Studio.</p><p class="muted small" style="margin-top:15px">This detector recognizes COCO object classes. Red-hat referring expressions and native 3D locks remain validation gaps. Optional animal/furniture silhouette anchors are experimental. Local patch tracking bridges detector observations and stops on low image agreement.</p></div><div class="panel"><h3>Capture diagnostics</h3><div id="capture-metrics" class="feed"></div></div></aside></div>`,
   );
   const targetLabel = document.createElement("label");
   targetLabel.style.marginTop = "15px";
@@ -995,6 +1164,7 @@ async function capture() {
   );
   previewSocket.onmessage = (event) => {
     const value = JSON.parse(event.data);
+    preview?.setServerTime(Date.parse(value.serverTime));
     if (value.type === "world.snapshot") {
       captureSnapshot = value.payload;
       if (captureSnapshot) updateTargetSelect(captureSnapshot.tracks);
@@ -1009,6 +1179,8 @@ async function capture() {
       $("#capture-world"),
       () => captureSnapshot,
       true,
+      false,
+      me.user?.id || null,
     );
   } catch {}
   bind(
@@ -1096,7 +1268,7 @@ async function capture() {
     async (tracks, signal) => {
       const cover = $("#capture-world");
       cover.hidden = false;
-      cover.style.cssText = $("#capture-boxes").style.cssText;
+
       await api(
         "/v1/creator/vision/tracks",
         "POST",
@@ -1112,6 +1284,7 @@ async function capture() {
       if (message.startsWith("Capture stopped"))
         clip.abort("Capture source stopped");
     },
+    () => captureSnapshot?.config.geometry || data.config.geometry,
   );
   cancelCapture = () => {
     clip.abort();
@@ -1245,6 +1418,9 @@ async function render() {
         break;
       case "/live":
         await live();
+        break;
+      case "/workshop":
+        await workshop();
         break;
       case "/factions":
         await factions();

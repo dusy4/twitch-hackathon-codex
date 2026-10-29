@@ -1,0 +1,25 @@
+{
+  "runAt": "2026-10-28T18:33:15.953Z",
+  "scope": "Two actual browser sessions, HTTP persistence and WebSocket updates; synthetic world",
+  "structures": [
+    {
+      "id": "5b1f1ae5-a22e-479a-b53d-e612a16b18a8",
+      "ownerId": "bd029aae-876b-40ae-b1f7-8f37152d5794",
+      "title": "Our shared watchtower",
+      "x": 0.65,
+      "y": 0.78,
+      "revision": 5,
+      "expiresAt": "2026-10-29T18:32:51.567Z",
+      "blocks": [
+        {
+          "x": 3,
+          "y": 0,
+          "z": 3,
+          "ownerId": "bd029aae-876b-40ae-b1f7-8f37152d5794",
+          "material": "riftstone"
+        }
+      ]
+    }
+  ],
+  "accessibilityViolations": []
+}

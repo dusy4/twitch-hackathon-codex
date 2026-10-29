@@ -1,6 +1,8 @@
 # RaidRift — implementation workspace
 
-Run `npm ci`, `npm run setup:vision`, `npm run build`, then `npm start` from this directory. Open **http://127.0.0.1:3400**.
+Run `npm ci`, `npm run build`, then `npm start` from this directory. Open **http://127.0.0.1:3400**.
+
+For the character demo, click **Try a portal event** or **Enter the world**. The controller's **Step through the portal** button visibly re-enters your own character. See [character implementation and actual recordings](docs/CHARACTERS.md). Camera perception is optional and requires `npm run setup:vision`.
 
 This repository now contains a persistent server, original 3D overlay, browser website/controller/creator tools, Twitch/OpenAI adapters, local camera detector, transactional Shards economy, social duels/factions/share cards, native AR source, tests and deployment descriptors. **It is not release-ready.** Live Twitch/OpenAI, native AR hardware, model redistribution, container deployment and other acceptance gaps remain explicit. Native PostgreSQL concurrency tests pass locally.
 

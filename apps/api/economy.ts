@@ -1,5 +1,6 @@
 import { GameError } from "./compiler.js";
-import { randomUUID, createHmac } from "node:crypto";
+import { randomUUID } from "node:crypto";
+import { rewardIdentity } from "./security.js";
 import { catalog } from "../../packages/shared/contracts.js";
 import type { Database, SQL } from "./db.js";
 import type { EquipmentSlot } from "../../packages/shared/equipment.js";
@@ -61,12 +62,7 @@ export async function account(
         twitchId,
         name.slice(0, 50),
         demo,
-        createHmac(
-          "sha256",
-          process.env.APP_SECRET || "raidrift-local-simulator-reward-guard",
-        )
-          .update(twitchId)
-          .digest("hex"),
+        rewardIdentity(twitchId),
       ],
     )
   ).rows[0];

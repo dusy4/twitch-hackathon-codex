@@ -1,12 +1,12 @@
 {
-  "runAt": "2026-10-28T17:42:12.896Z",
-  "tick": 438,
+  "runAt": "2026-10-28T18:33:35.272Z",
+  "tick": 250,
   "duels": [
     {
-      "id": "26cbfc9f-7bca-4c5d-bdd6-642d4a8f9bf5",
+      "id": "775a68ee-a709-4572-babe-15d2f9a84abd",
       "players": [
-        "850abadf-b254-4b17-97be-0eb0f9e88716",
-        "923a09d9-c5ac-45cd-bcc2-efba6d9c7c88"
+        "095387b0-bacd-422f-8ed4-d0f226af8662",
+        "bd029aae-876b-40ae-b1f7-8f37152d5794"
       ],
       "health": [
         3,
@@ -20,16 +20,17 @@
         false,
         false
       ],
-      "turn": "850abadf-b254-4b17-97be-0eb0f9e88716",
+      "turn": "095387b0-bacd-422f-8ed4-d0f226af8662",
       "revision": 0,
-      "expires": 1793209391561,
+      "expires": 1793212475061,
       "status": "active",
       "winner": null,
       "message": "The challenger opens. Each turn has 60 seconds. No Shards are at stake."
     }
   ],
   "avatarIds": [
-    "850abadf-b254-4b17-97be-0eb0f9e88716",
-    "923a09d9-c5ac-45cd-bcc2-efba6d9c7c88"
+    "bd029aae-876b-40ae-b1f7-8f37152d5794",
+    "7a517406-49ae-4c1b-9d0e-c128a47779c1",
+    "095387b0-bacd-422f-8ed4-d0f226af8662"
   ]
 }

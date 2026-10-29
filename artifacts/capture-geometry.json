@@ -1,0 +1,54 @@
+{
+  "runAt": "2026-10-28T18:24:09.974Z",
+  "fixture": "Synthetic four-color camera stream; no real camera or model quality claim",
+  "geometry": {
+    "width": 640,
+    "height": 480,
+    "crop": [
+      0.1,
+      0.1,
+      0.1,
+      0.1
+    ],
+    "mirror": true,
+    "rotation": "90",
+    "viewport": [
+      0.1,
+      0.2,
+      0.8,
+      0.6
+    ]
+  },
+  "rendered": {
+    "width": 640,
+    "height": 480,
+    "pixels": [
+      [
+        255,
+        0,
+        0
+      ],
+      [
+        0,
+        255,
+        0
+      ],
+      [
+        0,
+        0,
+        255
+      ],
+      [
+        255,
+        255,
+        0
+      ],
+      [
+        8,
+        10,
+        16
+      ]
+    ]
+  },
+  "maximumOverlayMisalignmentPx": 0
+}

@@ -1,5 +1,6 @@
 import type { WorldSnapshot } from "./contracts.js";
 export const defaultConfig: WorldSnapshot["config"] = {
+  construction: false,
   title: "The Violet Frontier",
   public: true,
   paused: false,

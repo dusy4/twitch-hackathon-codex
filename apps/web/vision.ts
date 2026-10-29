@@ -1,10 +1,14 @@
 import {
   trackFrame,
   replayTrackFrames,
+  reconcileObservedTracks,
   type GrayFrame,
   type TimedGrayFrame,
 } from "../../packages/shared/flow.js";
 import { Tracker, type Detection } from "../../packages/shared/tracker.js";
+import { drawSource, outputSize } from "./composite.js";
+import { transformPoint } from "../../packages/shared/geometry.js";
+import type { SourceGeometry } from "../../packages/shared/contracts.js";
 import type { SceneTrack } from "../../packages/shared/contracts.js";
 export class CaptureCompanion {
   epoch = 0;
@@ -33,7 +37,6 @@ export class CaptureCompanion {
   private outgoingTracks: SceneTrack[] | null = null;
   private sendController: AbortController | null = null;
   private detectorLatency = 0;
-  private detectorConfirmed = 0;
   private samplingCanvas = document.createElement("canvas");
   private silhouetteWorker: Worker | null = null;
   private silhouetteReady = false;
@@ -58,6 +61,7 @@ export class CaptureCompanion {
       signal?: AbortSignal,
     ) => Promise<void>,
     private report: (message: string) => void,
+    private geometry: () => SourceGeometry,
   ) {}
   setSilhouette(enabled: boolean) {
     this.silhouetteEnabled = enabled;
@@ -141,7 +145,7 @@ export class CaptureCompanion {
           this.surfaces.set(data.id, {
             x: (data.anchor[0] - data.box[0]) / data.box[2],
             y: (data.anchor[1] - data.box[1]) / data.box[3],
-            at: Date.now(),
+            at: data.sourceTime,
           });
           metrics?.setAttribute("data-silhouette-status", "current");
         } else if (data.epoch === this.epoch) {
@@ -216,6 +220,7 @@ export class CaptureCompanion {
             Date.now() - data.sourceTime >= 2000
           )
             return;
+          const observed = this.tracker.tracks;
           const detected = this.tracker
             .update(data.detections as Detection[], data.sourceTime)
             .map((track) => ({ ...track, classifiedAt: data.sourceTime }));
@@ -225,10 +230,13 @@ export class CaptureCompanion {
             detected,
             Date.now(),
           );
-          this.tracker.tracks = replay?.tracks || [];
+          this.tracker.tracks = reconcileObservedTracks(
+            observed,
+            replay?.tracks || [],
+            Date.now(),
+          );
           this.freshDetections = !!replay;
-          this.previous = replay?.latest.frame || null;
-          this.detectorConfirmed = data.sourceTime;
+          if (replay) this.previous = replay.latest.frame;
         }
       };
       worker.postMessage({ type: "init" });
@@ -399,15 +407,18 @@ export class CaptureCompanion {
               if (this.detectorFrame === pending) this.detectorFrame = null;
             });
         }
-        let tracks =
-          this.previous && Date.now() - this.detectorConfirmed < 2000
-            ? trackFrame(
-                this.previous,
-                current,
-                this.tracker.tracks,
-                observedAt,
-              )
-            : [];
+        let tracks = this.previous
+          ? trackFrame(
+              this.previous,
+              current,
+              this.tracker.tracks.filter(
+                (track) =>
+                  track.classifiedAt !== undefined &&
+                  observedAt - track.classifiedAt < 2000,
+              ),
+              observedAt,
+            )
+          : [];
         if (this.freshDetections) {
           const flowById = new Map(tracks.map((track) => [track.id, track]));
           tracks = this.tracker.tracks.map(
@@ -484,38 +495,49 @@ export class CaptureCompanion {
               });
           }
         }
-        this.canvas.width = w;
-        this.canvas.height = h;
-        const rect = this.video.getBoundingClientRect();
-        const fit = Math.min(rect.width / w, rect.height / h);
-        this.canvas.style.width = `${w * fit}px`;
-        this.canvas.style.height = `${h * fit}px`;
-        this.canvas.style.left = `${(rect.width - w * fit) / 2}px`;
-        this.canvas.style.top = `${(rect.height - h * fit) / 2}px`;
+        const geometry = this.geometry();
+        [this.canvas.width, this.canvas.height] = outputSize(geometry);
+        const width = this.canvas.width,
+          height = this.canvas.height;
         const ctx = this.canvas.getContext("2d")!;
-        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = "#080a10";
+        ctx.fillRect(0, 0, width, height);
+        drawSource(ctx, this.video, w, h, geometry, width, height);
+        ctx.save();
+        const [vx, vy, vw, vh] = geometry.viewport;
+        ctx.beginPath();
+        ctx.rect(vx * width, vy * height, vw * width, vh * height);
+        ctx.clip();
         ctx.strokeStyle = "#b9edc7";
         ctx.lineWidth = 3;
         ctx.font = "18px sans-serif";
         ctx.fillStyle = "#b9edc7";
-        for (const t of tracks) {
-          if (t.anchor) {
+        for (const track of tracks) {
+          const point = (x: number, y: number) => {
+            const [u, v] = transformPoint(x, y, geometry);
+            return [u * width, v * height] as const;
+          };
+          if (track.anchor) {
             ctx.beginPath();
-            ctx.arc(t.anchor[0] * w, t.anchor[1] * h, 7, 0, Math.PI * 2);
+            ctx.arc(...point(...track.anchor), 7, 0, Math.PI * 2);
             ctx.fill();
           }
-          ctx.strokeRect(
-            t.box[0] * w,
-            t.box[1] * h,
-            t.box[2] * w,
-            t.box[3] * h,
-          );
+          const [x, y, bw, bh] = track.box;
+          ctx.beginPath();
+          ctx.moveTo(...point(x, y));
+          ctx.lineTo(...point(x + bw, y));
+          ctx.lineTo(...point(x + bw, y + bh));
+          ctx.lineTo(...point(x, y + bh));
+          ctx.closePath();
+          ctx.stroke();
+          const [tx, ty] = point(x, y);
           ctx.fillText(
-            `${t.class} ${Math.round(t.confidence * 100)}%`,
-            t.box[0] * w,
-            t.box[1] * h - 8,
+            `${track.class} ${Math.round(track.confidence * 100)}%`,
+            tx,
+            ty - 8,
           );
         }
+        ctx.restore();
         this.outgoingTracks = tracks;
         this.flushTracks();
         const metrics = document.querySelector("#capture-metrics");

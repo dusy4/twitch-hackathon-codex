@@ -8,6 +8,8 @@ import { Database } from "../apps/api/db.js";
 import { account, buy, credit, equip } from "../apps/api/economy.js";
 import { Security } from "../apps/api/security.js";
 import { World } from "../apps/api/world.js";
+import { rotateEncryptedTokens } from "../apps/api/key-rotation.js";
+import { loadStructures } from "../apps/api/construction.js";
 import { defaultConfig } from "../packages/shared/contracts.js";
 
 // Deliberately restricted to the disposable native test cluster. Never targets a live database.
@@ -72,6 +74,8 @@ const tables = [
   "world_saves",
   "avatar_presence",
   "twitch_connections",
+  "structures",
+  "construction_receipts",
 ];
 const snapshot = async (db: Database): Promise<Record<string, unknown[]>> =>
   Object.fromEntries(
@@ -119,6 +123,10 @@ try {
     "INSERT INTO twitch_connections(account_id,tokens) VALUES($1,$2)",
     [who.id, security.seal(fixtureTokens)],
   );
+  await source.query("UPDATE channels SET tokens=$2 WHERE id=$1", [
+    channel.id,
+    security.seal(fixtureTokens),
+  ]);
   await source.transaction((tx) =>
     credit(
       tx,
@@ -154,6 +162,23 @@ try {
     ],
   });
   await world.save();
+  const structureId = randomUUID();
+  await source.query(
+    "INSERT INTO structures(id,channel_id,owner_id,title,x,y,blocks) VALUES($1,$2,$3,'Recovery tower',0.6,0.8,$4)",
+    [
+      structureId,
+      channel.id,
+      who.id,
+      JSON.stringify([
+        { x: 3, y: 0, z: 3, material: "riftstone", ownerId: who.id },
+        { x: 3, y: 1, z: 3, material: "moss", ownerId: who.id },
+      ]),
+    ],
+  );
+  await source.query(
+    "INSERT INTO construction_receipts(account_id,request_id,fingerprint,result) VALUES($1,$2,'synthetic-recovery',$3)",
+    [who.id, randomUUID(), JSON.stringify({ structureId, deletedId: null })],
+  );
   const expected = await snapshot(source);
   const backupBegan = performance.now();
   await tool("pg_dump", names[0], [
@@ -235,6 +260,56 @@ try {
     hat: "star-crown",
     pet: "pocket-dragon",
   });
+  recovered.state.structures = await loadStructures(target, channel.id);
+  assert.equal(recovered.state.structures[0].id, structureId);
+  assert.equal(recovered.state.structures[0].blocks.length, 2);
+  const replacementKey = new Security(randomBytes(32));
+  await target.query(
+    "UPDATE channels SET tokens='corrupt-rotation-fixture' WHERE id=$1",
+    [channel.id],
+  );
+  await assert.rejects(
+    rotateEncryptedTokens(target, security, replacementKey, true),
+  );
+  assert.equal(
+    (
+      await target.query(
+        "SELECT tokens FROM twitch_connections WHERE account_id=$1",
+        [who.id],
+      )
+    ).rows[0].tokens,
+    sealed,
+    "Native PostgreSQL rolls back earlier token changes when another ciphertext fails",
+  );
+  await target.query("UPDATE channels SET tokens=$2 WHERE id=$1", [
+    channel.id,
+    security.seal(fixtureTokens),
+  ]);
+  const rotation = await rotateEncryptedTokens(
+    target,
+    security,
+    replacementKey,
+    true,
+    "synthetic-native-drill",
+  );
+  assert.equal(rotation.connections, 1);
+  assert.equal(rotation.channels, 1);
+  const rotated = (
+    await target.query(
+      "SELECT tokens FROM twitch_connections WHERE account_id=$1",
+      [who.id],
+    )
+  ).rows[0].tokens;
+  assert.deepEqual(replacementKey.open(rotated), fixtureTokens);
+  assert.throws(() => security.open(rotated));
+  assert.equal(
+    (
+      await target.query("SELECT reward_identity FROM accounts WHERE id=$1", [
+        who.id,
+      ])
+    ).rows[0].reward_identity,
+    who.reward_identity,
+  );
   const bytes = await readFile(dump);
   await writeFile(
     "artifacts/restore-drill.json",
@@ -249,15 +324,16 @@ try {
         backupMs,
         restoreMs,
         verified: [
-          "exact records across eight tables",
+          "exact records across ten tables",
           "startup migration preservation",
           "wallet/ledger reconciliation",
           "append-only trigger",
           "inventory and combined equipment",
-          "saved world recovery",
+          "saved world and community construction recovery",
           "synthetic token decryption with original key",
           "wrong key rejection",
           "post-backup source changes excluded",
+          "native offline key rotation and corrupt-input rollback",
         ],
         rowCounts: Object.fromEntries(
           Object.entries(expected).map(([table, rows]) => [table, rows.length]),

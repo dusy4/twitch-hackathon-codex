@@ -1,6 +1,33 @@
 import type { SceneTrack } from "./contracts.js";
 export type GrayFrame = { width: number; height: number; pixels: Float32Array };
 export type TimedGrayFrame = { at: number; frame: GrayFrame };
+/** A late classifier cannot erase newer image observations or extend an old class claim. */
+export function reconcileObservedTracks(
+  observed: SceneTrack[],
+  classified: SceneTrack[],
+  now: number,
+) {
+  const fresh = (track: SceneTrack) =>
+    now >= track.seenAt &&
+    now - track.seenAt <= 250 &&
+    track.classifiedAt !== undefined &&
+    now >= track.classifiedAt &&
+    now - track.classifiedAt < 2000;
+  const updates = new Map(
+    classified.filter(fresh).map((track) => [track.id, track]),
+  );
+  for (const track of observed.filter(fresh)) {
+    const update = updates.get(track.id);
+    if (!update) updates.set(track.id, track);
+    else if (track.seenAt > update.seenAt)
+      updates.set(track.id, {
+        ...track,
+        confidence: update.confidence,
+        classifiedAt: update.classifiedAt,
+      });
+  }
+  return [...updates.values()];
+}
 /** Reconcile a delayed classification through observed motion; gaps/occlusion never get invented timestamps. */
 export function replayTrackFrames(
   origin: TimedGrayFrame,
@@ -91,7 +118,9 @@ export function trackFrame(
       {
         ...track,
         box: [nx, ny, bw, bh],
-        confidence: Math.max(0, track.confidence - 0.008),
+        // This is the classifier's score. Sampling more often must not lower it;
+        // freshness is bounded by classifiedAt, and image agreement gates motion above.
+        confidence: track.confidence,
         anchor: track.anchor
           ? [track.anchor[0] + bx / w, track.anchor[1] + by / h]
           : undefined,

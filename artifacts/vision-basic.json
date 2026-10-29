@@ -1,5 +1,5 @@
 {
-  "runAt": "2026-10-28T17:36:48.154Z",
+  "runAt": "2026-10-28T17:58:36.648Z",
   "mode": "Bounding-box mode; no silhouette-contact claim",
   "tracks": [
     {
@@ -7,29 +7,30 @@
       "class": "dog",
       "attributes": [],
       "box": [
-        0.20703125,
-        0.11944444444444445,
+        0.203125,
+        0.0986111111111111,
         0.4921875,
-        0.6861111111111111
+        0.7111111111111111
       ],
-      "confidence": 0.7434687499999999,
-      "seenAt": 1793209008072,
-      "classifiedAt": 1793209007174
+      "confidence": 0.83203125,
+      "seenAt": 1793210316556,
+      "classifiedAt": 1793210316022
     }
   ],
   "actor": {
-    "id": "1468511b-3c59-4811-94e7-5787c64eac73",
+    "id": "5c92b6a4-33df-4fbc-bc82-461a3d87a3ba",
     "name": "Juniper",
     "color": "#ae80ff",
     "cosmetic": "",
-    "x": 0.453125,
-    "y": 0.11944444444444445,
+    "equipment": {},
+    "x": 0.44921875,
+    "y": 0.0986111111111111,
     "animation": "sit",
     "message": "Found the dog. Let's go!",
     "target": "track-2",
-    "lastActive": 1793209004838,
-    "animationAt": 1793209007587
+    "lastActive": 1793210313384,
+    "animationAt": 1793210316157
   },
-  "metrics": "1 visible objects · 8 ms sample · detector 385 ms · metadata queue ≤ 1 · epoch 1793209000567",
-  "workerLatencyMs": "385"
+  "metrics": "1 visible objects · 5 ms sample · detector 318 ms · metadata queue ≤ 1 · epoch 1793210309175",
+  "workerLatencyMs": "318"
 }
