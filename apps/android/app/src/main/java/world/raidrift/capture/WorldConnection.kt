@@ -22,7 +22,7 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 data class Hero(val id: String, val name: String, val x: Float, val y: Float, val animation: String)
-data class Raid(val id: String, val started: Long, val count: Int)
+data class Raid(val id: String, val started: Long, val count: Int, val from: String = "")
 data class NativeWorld(val roomId: String, val mode: String, val paused: Boolean, val reducedMotion: Boolean, val heroes: List<Hero>, val raid: Raid?) {
     companion object {
         fun parse(raw: String): NativeWorld {
@@ -39,7 +39,7 @@ data class NativeWorld(val roomId: String, val mode: String, val paused: Boolean
                 Hero(id, hero.getString("name").take(40), x.toFloat(), y.toFloat(), hero.optString("animation", "idle").take(40))
             }
             require(heroes.map { it.id }.toSet().size == heroes.size) { "Duplicate character identity" }
-            val raid = json.optJSONObject("raid")?.let { Raid(it.getString("id"), it.getLong("started"), it.optInt("count").coerceIn(0, 1_000_000)) }
+            val raid = json.optJSONObject("raid")?.let { Raid(it.getString("id"), it.getLong("started"), it.optInt("count").coerceIn(0, 1_000_000), it.optString("from", "").take(50)) }
             return NativeWorld(json.getString("roomId"), json.optString("mode", "OFFLINE").take(64), config.optBoolean("paused"), config.optBoolean("reducedMotion"), heroes, raid)
         }
     }
@@ -59,7 +59,8 @@ object ServerAddress {
     }
 }
 
-data class ConnectionState(val world: NativeWorld? = null, val message: String = "Local 3D preview · not connected", val authorized: Boolean = false, val pairingRequested: Boolean = false)
+/** [revoked] is set only when the server rejects the pairing; transient network loss keeps the last world. */
+data class ConnectionState(val world: NativeWorld? = null, val message: String = "Local 3D preview · not connected", val authorized: Boolean = false, val pairingRequested: Boolean = false, val revoked: Boolean = false)
 
 internal class ExpiredPairing : IOException()
 internal fun nativeWorldRequest(server: HttpUrl, token: String): Request = Request.Builder()
@@ -108,8 +109,9 @@ class WorldConnection : ViewModel() {
                     mutable.value = ConnectionState(world, "${world.mode} · ${world.heroes.size} connected characters", true, true)
                     delay(150)
                 } catch (cancel: CancellationException) { throw cancel }
-                catch (_: ExpiredPairing) { credentials = null; mutable.value = ConnectionState(message = "Pairing expired or revoked. Re-pair in Creator Studio.", pairingRequested = true); break }
-                catch (_: Exception) { mutable.value = ConnectionState(message = "World connection lost · reconnecting", pairingRequested = true); delay(1200) }
+                catch (_: ExpiredPairing) { credentials = null; mutable.value = ConnectionState(message = "Pairing expired or revoked. Re-pair in Creator Studio.", pairingRequested = true, revoked = true); break }
+                // A cellular blip must not end a live stream: keep the last world and retry.
+                catch (_: Exception) { mutable.value = mutable.value.copy(message = "World connection lost · reconnecting", pairingRequested = true); delay(1200) }
             }
         }
     }

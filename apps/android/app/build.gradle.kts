@@ -10,8 +10,8 @@ android {
         applicationId = "world.raidrift.capture.android"
         minSdk = 24
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.3.0-lan-test"
+        versionCode = 5
+        versionName = "0.4.0-follow-me"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

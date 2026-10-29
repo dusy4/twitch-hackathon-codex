@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.KeyboardType
@@ -57,6 +58,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/** Follow-me: re-anchor once the streamer is this far from the anchor. */
+private const val REANCHOR_METRES = 6f
+/** Follow-me: an actor this far behind its goal re-enters at the goal. */
+private const val RECALL_METRES = 5f
+
 private class ContactFrame(var timestamp: Long = 0, var pose: Pose? = null)
 private class ArFrameDiagnostics(var timestamp: Long = 0, var frames: Int = 0, var since: Long = 0)
 
@@ -71,6 +77,9 @@ private fun CaptureApp(connection: WorldConnection) {
     var reviewClip by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var ar by remember { mutableStateOf(false) }
+    var followMe by remember { mutableStateOf(true) }
+    var viewSize by remember { mutableStateOf(0 to 0) }
+    var lastAutoPlace by remember { mutableLongStateOf(0) }
     var anchor by remember { mutableStateOf<Anchor?>(null) }
     var pendingTap by remember { mutableStateOf<Pair<Float, Float>?>(null) }
     var tracking by remember { mutableStateOf("Camera is off · orbit the 3D preview with one finger") }
@@ -138,12 +147,14 @@ private fun CaptureApp(connection: WorldConnection) {
     LaunchedEffect(ar) { if (!ar) { anchor = null; pendingTap = null; clip.stop(); output.stop(); relay.stop() } }
     LaunchedEffect(clip.recording) { if (clip.recording) { delay(20_000); clip.stop() } }
     val visibleWorld = state.world?.takeIf { state.authorized && !it.paused }
-    LaunchedEffect(visibleWorld == null, paired) { if (paired && visibleWorld == null) { clip.stop(); output.stop(); relay.stop(); ar = false } }
+    // Only a rejected/revoked pairing stops output. A paused world or a network
+    // blip hides characters but keeps the streamer's camera live.
+    LaunchedEffect(state.revoked) { if (state.revoked) { clip.stop(); output.stop(); relay.stop(); ar = false } }
     val preview = NativeWorld("local", "LOCAL PREVIEW", false, false,
         listOf(Hero("preview-knight", "3D preview", 0.5f, 0.5f, "idle")), null)
     val world = if (paired) visibleWorld else preview
 
-    Box(Modifier.fillMaxSize().background(Color(0xff10121c))) {
+    Box(Modifier.fillMaxSize().background(Color(0xff10121c)).onSizeChanged { viewSize = it.width to it.height }) {
         if (ar) {
             ARSceneView(
                 modifier = Modifier.fillMaxSize(), engine = engine, modelLoader = modelLoader,
@@ -165,29 +176,43 @@ private fun CaptureApp(connection: WorldConnection) {
                     if (frame.timestamp != arDiagnostics.timestamp) { arDiagnostics.timestamp = frame.timestamp; arDiagnostics.frames++ }
                     val tracked = frame.camera.trackingState == TrackingState.TRACKING
                     val anchorTracked = anchor == null || anchor?.trackingState == TrackingState.TRACKING
-                    if (!tracked || !anchorTracked) {
-                        clip.stop()
-                        if (output.active) output.stop("Tracking lost · sharing stopped")
-                        if (relay.active) relay.stop("Tracking lost · relay output stopped")
-                    }
+                    // Tracking loss only hides the characters (feet are cleared below).
+                    // The camera keeps recording/broadcasting: a live IRL stream must not drop.
                     tracking = if (!tracked) {
                         val reason = frame.camera.trackingFailureReason.name.lowercase().replace('_', ' ')
                         if (reason == "none") "Camera tracking paused · move slowly" else "Camera tracking paused · $reason · move slowly"
                     } else if (!anchorTracked) {
                         if (anchor?.trackingState == TrackingState.STOPPED) "Room anchor lost · reset placement" else "Room anchor tracking paused · move slowly to relocalize"
                     } else if (anchor == null) {
-                        if (surfaces == 0) "Tracking ready · move slowly to detect a desk or floor" else "$surfaces surfaces detected · tap a desk or floor"
-                    } else "Room anchor placed · tap another surface to move"
+                        if (followMe) "Looking for the ground ahead · point the camera at the floor"
+                        else if (surfaces == 0) "Tracking ready · move slowly to detect a desk or floor" else "$surfaces surfaces detected · tap a desk or floor"
+                    } else if (followMe) "Characters follow you · tap a surface to re-place"
+                    else "Room anchor placed · tap another surface to move"
+                    fun floorHit(x: Float, y: Float) = frame.hitTest(x, y).firstOrNull { hit ->
+                        val plane = hit.trackable as? Plane
+                        plane != null && plane.trackingState == TrackingState.TRACKING && plane.subsumedBy == null && plane.type == Plane.Type.HORIZONTAL_UPWARD_FACING && plane.isPoseInPolygon(hit.hitPose)
+                    }
                     pendingTap?.let { point ->
                         pendingTap = null
                         if (tracked) {
-                            val hit = frame.hitTest(point.first, point.second).firstOrNull { hit ->
-                                val plane = hit.trackable as? Plane
-                                plane != null && plane.trackingState == TrackingState.TRACKING && plane.subsumedBy == null && plane.type == Plane.Type.HORIZONTAL_UPWARD_FACING && plane.isPoseInPolygon(hit.hitPose)
-                            }
+                            val hit = floorHit(point.first, point.second)
                             if (BuildConfig.DEBUG) android.util.Log.d("RaidRiftAR", "surfaceTap planes=$surfaces hit=${hit != null}")
                             if (hit == null) error = "No detected floor or desk at that point. Keep scanning, then tap a detected surface."
                             else runCatching { hit.createAnchor() }.onSuccess { anchor = it; error = "" }.onFailure { error = "Surface could not be anchored. Try again." }
+                        }
+                    }
+                    // Follow-me: no tap needed. Anchor on the ground ahead, and re-anchor
+                    // when the streamer walks away from it or ARCore drops it.
+                    if (followMe && tracked && viewSize.first > 0 && SystemClock.elapsedRealtime() - lastAutoPlace > 500) {
+                        val camPose = frame.camera.pose
+                        val current = anchor
+                        val needsAnchor = current == null || current.trackingState == TrackingState.STOPPED ||
+                            kotlin.math.hypot(current.pose.tx() - camPose.tx(), current.pose.tz() - camPose.tz()) > REANCHOR_METRES
+                        if (needsAnchor) {
+                            lastAutoPlace = SystemClock.elapsedRealtime()
+                            floorHit(viewSize.first / 2f, viewSize.second * 0.8f)?.let { hit ->
+                                runCatching { hit.createAnchor() }.onSuccess { anchor = it; error = "" }
+                            }
                         }
                     }
                     if (SystemClock.elapsedRealtime() - lastDepthCheck > 1000) {
@@ -232,9 +257,19 @@ private fun CaptureApp(connection: WorldConnection) {
                         }
                         contactFrame.pose = origin
                         motor.retain(world.heroes.take(12).map { it.id }.toSet())
+                        val camPose = frame.camera.pose
+                        val camZ = camPose.zAxis
+                        val camFoot = FootPosition(camPose.tx(), camPose.ty(), camPose.tz())
                         feet = world.heroes.take(12).mapNotNull { hero ->
-                            val goal = origin.transformPoint(floatArrayOf((hero.x - 0.5f) * 1.4f, 0f, (hero.y - 0.5f)))
-                            val foot = motor.updateWithWalls(hero.id, FootPosition(goal[0], goal[1], goal[2]), elapsed, { from, to -> walls.any { it.blocks(from, to) } }) { query ->
+                            val goal = if (followMe) {
+                                // Probe just below the phone so any ground/desk under the goal is found.
+                                Formation.goal(camFoot, -camZ[0], -camZ[2], hero.x, hero.y, camPose.ty() - 0.3f)
+                                    .also { motor.recall(hero.id, it, RECALL_METRES) }
+                            } else {
+                                val g = origin.transformPoint(floatArrayOf((hero.x - 0.5f) * 1.4f, 0f, (hero.y - 0.5f)))
+                                FootPosition(g[0], g[1], g[2])
+                            }
+                            val foot = motor.updateWithWalls(hero.id, goal, elapsed, { from, to -> walls.any { it.blocks(from, to) } }) { query ->
                                 val measured = planes.mapNotNull { plane ->
                                     val height = plane.centerPose.ty()
                                     val sample = com.google.ar.core.Pose.makeTranslation(query.x, height, query.z)
@@ -306,12 +341,14 @@ private fun CaptureApp(connection: WorldConnection) {
                 Text(world.heroes.take(3).joinToString(" · ") { "${it.name}: ${it.animation} x=${"%.2f".format(java.util.Locale.ROOT, it.x)}" }, style = MaterialTheme.typography.labelSmall)
             }
             if (state.world?.paused == true) Text("Streamer paused the world · characters hidden")
+            visibleWorld?.raid?.let { raid -> Text("RAID${if (raid.from.isNotBlank()) " from ${raid.from}" else ""} · ${raid.count} viewers", color = Color(0xffbca6ff), style = MaterialTheme.typography.titleSmall) }
             if (ar) { Text(tracking, style = MaterialTheme.typography.bodySmall); Text(depth, style = MaterialTheme.typography.bodySmall) }
             if (error.isNotEmpty()) Text(error, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(enabled = ar || !paired || visibleWorld != null, onClick = { clip.stop(); output.stop(); relay.stop(); ar = !ar; error = "" }) { Text(if (ar) "Exit AR" else "Start room AR") }
                 OutlinedButton(onClick = { pairingPanel = true }) { Text("Pair room") }
-                if (anchor != null) TextButton(onClick = { clip.stop(); output.stop(); relay.stop(); anchor = null }) { Text("Reset") }
+                if (ar) TextButton(onClick = { followMe = !followMe; anchor = null; error = "" }) { Text(if (followMe) "Follow me ✓" else "Follow me") }
+                if (anchor != null) TextButton(onClick = { anchor = null }) { Text("Reset") }
             }
         }
         Column(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().fillMaxWidth()
@@ -422,7 +459,7 @@ private fun SceneScope.CharacterWorld(world: NativeWorld, feet: Map<String, Posi
     SideEffect {
         if (BuildConfig.DEBUG && world.mode == "SIMULATOR") android.util.Log.d("RaidRiftScene", world.heroes.take(3).joinToString { "${it.id.take(8)}:${it.x}:${it.animation}" })
     }
-    TextNode(text = "RAIDRIFT · ${world.mode}", position = Position(0f, 0.55f, 0f), widthMeters = 0.9f, heightMeters = 0.1f, cameraPositionProvider = cameraPosition)
+    TextNode(text = world.raid?.let { "RAID${if (it.from.isNotBlank()) " FROM ${it.from.uppercase()}" else ""} · ${it.count}" } ?: "RAIDRIFT · ${world.mode}", position = Position(0f, 0.55f, 0f), widthMeters = 0.9f, heightMeters = 0.1f, cameraPositionProvider = cameraPosition)
     world.heroes.take(12).forEach { hero -> key(hero.id) {
         val models = listOf("Knight", "Mage", "Rogue", "Barbarian")
         val index = hero.id.fold(0u) { hash, char -> hash * 31u + char.code.toUInt() }.rem(4u).toInt()

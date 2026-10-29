@@ -124,7 +124,7 @@ export async function buy(
   key: string,
 ) {
   const item = catalog.find((i) => i.id === itemId);
-  if (!item) throw Error("Unknown cosmetic");
+  if (!item) throw new GameError("UNKNOWN_COSMETIC", "Unknown cosmetic", 404);
   return db.transaction(async (tx) => {
     await tx.query(
       "SELECT account_id FROM wallets WHERE account_id=$1 FOR UPDATE",
@@ -137,7 +137,11 @@ export async function buy(
     ).rows[0];
     if (previous) {
       if (previous.reason !== itemId)
-        throw Error("Idempotency key already used");
+        throw new GameError(
+          "IDEMPOTENCY_CONFLICT",
+          "Idempotency key already used",
+          409,
+        );
       return previous;
     }
     const owns = await tx.query(

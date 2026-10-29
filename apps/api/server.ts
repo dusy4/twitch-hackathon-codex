@@ -35,6 +35,8 @@ declare module "fastify" {
   }
 }
 const body = <T>(schema: z.ZodType<T>, v: unknown) => schema.parse(v);
+const OVERLAY_TOKEN_MS = 365 * 86400000;
+const CAPTURE_TOKEN_MS = 24 * 3600000;
 const idSchema = z.string().min(1).max(100);
 export async function createApp(
   options: {
@@ -863,9 +865,15 @@ export async function createApp(
         [who.id],
       );
     });
+    // Remove the avatar from every world before awaiting anything, so the
+    // periodic save cannot write it back into world_saves.
     for (const w of worlds.values()) {
+      const running = w.running.get(who.id);
+      if (running) w.finish(running, "deleted");
       w.state.avatars = w.state.avatars.filter((a) => a.id !== who.id);
       w.duels.cancelFor(who.id);
+    }
+    for (const w of worlds.values()) {
       w.state.structures = await loadStructures(db, w.channel.id);
       if (w.channel.owner_id === who.id) {
         w.stop();
@@ -998,15 +1006,17 @@ export async function createApp(
         [c.id],
       )
     ).rows[0];
+    // OBS keeps this URL for months; rotation (token_version) is the revocation path.
+    const exp = Date.now() + OVERLAY_TOKEN_MS;
     const token = security.sign({
       room: c.id,
       role: "overlay",
       version: updated.token_version,
-      exp: Date.now() + 86400000,
+      exp,
     });
     return {
       url: `${origin}/overlay?room=${encodeURIComponent(c.id)}#token=${token}`,
-      expiresAt: new Date(Date.now() + 86400000),
+      expiresAt: new Date(exp),
     };
   });
   app.post("/v1/creator/test-raid", async (req) => {
@@ -1119,10 +1129,23 @@ export async function createApp(
         "Five new quests per day are allowed",
         429,
       );
-    if (data.type === "virtual" && data.targetClass)
+    // Avatar-on-object quests are verified from authoritative world state
+    // (avatar animation + proximity to the tracked target), not camera AI.
+    if (data.action === "build_voxel" && !data.targetClass)
       throw new GameError(
-        "HYBRID_REQUIRED",
-        "Camera targets require hybrid verification",
+        "TARGET_REQUIRED",
+        "Building needs a visible target object.",
+      );
+    // A sustain longer than the action's animation can never complete.
+    const actionMs = data.targetClass
+      ? 8000
+      : data.action === "dance"
+        ? 6000
+        : 2000;
+    if (data.sustainMs >= actionMs)
+      throw new GameError(
+        "SUSTAIN_TOO_LONG",
+        `“${data.action}” lasts ${actionMs / 1000}s; choose a shorter hold.`,
       );
     const id = randomUUID();
     await db.query(
@@ -1441,6 +1464,7 @@ export async function createApp(
   async function drain() {
     if (draining) return;
     draining = true;
+    const chatRuns: Promise<unknown>[] = [];
     try {
       const pending = (
         await db.query(
@@ -1450,7 +1474,15 @@ export async function createApp(
       for (const row of pending) {
         try {
           const e = row.payload.event || {};
+          const revokedStatus = row.payload.subscription?.status;
           if (
+            row.type === "revocation" &&
+            !["authorization_revoked", "user_removed"].includes(revokedStatus)
+          ) {
+            // e.g. notification_failures_exceeded: our delivery failed, the
+            // creator did not revoke anything. Keep them connected; the
+            // dashboard's reconcile action recreates the subscription.
+          } else if (
             row.type === "revocation" ||
             row.type === "user.authorization.revoke"
           ) {
@@ -1543,18 +1575,21 @@ export async function createApp(
                   event.chatter_user_name,
                   w.state.mode === "SIMULATOR",
                 );
-                try {
-                  if (/^!join\s*$/i.test(event.message.text))
-                    await w.join(who, true);
-                  else
-                    await w.action(
+                // Run concurrently: an AI-planned action can take seconds and
+                // must not serialize the rest of the batch (raids, other
+                // channels). Actions are idempotent per chat message id.
+                const run = /^!join\s*$/i.test(event.message.text)
+                  ? w.join(who, true)
+                  : w.action(
                       who,
                       event.message.text.slice(0, 500),
                       `chat:${event.message_id}`,
                     );
-                } catch (error) {
-                  if (!(error instanceof GameError)) throw error;
-                }
+                chatRuns.push(
+                  run.catch((error) => {
+                    if (!(error instanceof GameError)) metrics.failures++;
+                  }),
+                );
               }
             }
           }
@@ -1572,6 +1607,7 @@ export async function createApp(
           );
         }
       }
+      await Promise.all(chatRuns);
     } finally {
       draining = false;
     }
@@ -1580,17 +1616,18 @@ export async function createApp(
   app.post("/v1/creator/mobile-token", async (req) => {
     const c = await creator(req);
     body(z.object({ consent: z.literal(true) }).strict(), req.body);
+    // Long enough for a multi-hour IRL stream; rotation revokes it.
     const token = security.sign({
       room: c.id,
       role: "capture",
       version: c.token_version,
-      exp: Date.now() + 3600000,
+      exp: Date.now() + CAPTURE_TOKEN_MS,
     });
     const receiver = security.sign({
       room: c.id,
       role: "overlay",
       version: c.token_version,
-      exp: Date.now() + 3600000,
+      exp: Date.now() + CAPTURE_TOKEN_MS,
     });
     return {
       server: origin,

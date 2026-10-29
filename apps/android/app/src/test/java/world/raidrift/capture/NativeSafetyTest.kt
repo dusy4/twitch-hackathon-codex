@@ -88,4 +88,30 @@ class NativeSafetyTest {
         assertThrows(IllegalArgumentException::class.java) { motor.rebase { FootPosition(Float.NaN, 0f, 0f) } }
         assertEquals(corrected, motor.update("viewer", corrected, 0f) { 1f })
     }
+    @Test fun followFormationStaysAheadOfTheCameraWhicheverWayItFaces() {
+        val camera = FootPosition(10f, 1.4f, 5f)
+        // Facing -Z: centre actor lands 1.6 m ahead, left/right actors spread across X.
+        val centre = Formation.goal(camera, 0f, -1f, .5f, .5f, 1.1f)
+        assertEquals(10f, centre.x, .001f); assertEquals(1.1f, centre.y, .001f); assertEquals(3.4f, centre.z, .001f)
+        assertEquals(9.3f, Formation.goal(camera, 0f, -1f, 0f, .5f, 1.1f).x, .001f)
+        assertEquals(10.7f, Formation.goal(camera, 0f, -1f, 1f, .5f, 1.1f).x, .001f)
+        // Turning to face +X moves the formation with the camera.
+        assertEquals(11.6f, Formation.goal(camera, 1f, 0f, .5f, .5f, 1.1f).x, .001f)
+        // Looking straight down has no heading; the result is still finite.
+        val down = Formation.goal(camera, 0f, 0f, .5f, .5f, 1.1f)
+        assertTrue(listOf(down.x, down.y, down.z).all { it.isFinite() })
+    }
+    @Test fun actorsLeftFarBehindAreRecalledToTheirGoal() {
+        val motor = SurfaceMotor()
+        motor.update("viewer", FootPosition(0f, 0f, 0f), 0f) { 0f }
+        assertFalse(motor.recall("viewer", FootPosition(3f, 0f, 0f), 5f))
+        assertTrue(motor.recall("viewer", FootPosition(8f, 0f, 0f), 5f))
+        // Re-enters at the new goal on the next update.
+        assertEquals(FootPosition(8f, 0f, 0f), motor.update("viewer", FootPosition(8f, 0f, 0f), 0f) { 0f })
+        assertFalse(motor.recall("absent", FootPosition(0f, 0f, 0f), 5f))
+    }
+    @Test fun raidSourceNameIsParsed() {
+        val raw = """{"roomId":"r","mode":"LIVE","config":{"paused":false},"avatars":[],"raid":{"id":"x","started":1,"count":42,"from":"Speed"}}"""
+        assertEquals("Speed", NativeWorld.parse(raw).raid!!.from)
+    }
 }

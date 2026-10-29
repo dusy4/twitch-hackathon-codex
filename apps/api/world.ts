@@ -585,11 +585,9 @@ export class World extends EventEmitter {
         if (q.progress >= 1) {
           await this.db.transaction(async (tx) => {
             for (const a of qualifying) {
-              const added = await tx.query(
-                "INSERT INTO quest_awards VALUES($1,$2) ON CONFLICT DO NOTHING RETURNING account_id",
-                [q.id, a.id],
-              );
-              if (added.rows.length)
+              // credit() is idempotent per logical key. A player at the daily
+              // cap is skipped instead of rolling back everyone's award.
+              try {
                 await credit(
                   tx,
                   a.id,
@@ -598,6 +596,18 @@ export class World extends EventEmitter {
                   `quest:${q.id}:${a.id}`,
                   q.title,
                 );
+              } catch (error) {
+                if (
+                  error instanceof GameError &&
+                  error.code === "DAILY_REWARD_CAP"
+                )
+                  continue;
+                throw error;
+              }
+              await tx.query(
+                "INSERT INTO quest_awards VALUES($1,$2) ON CONFLICT DO NOTHING",
+                [q.id, a.id],
+              );
             }
             await tx.query("UPDATE quests SET active=false WHERE id=$1", [
               q.id,
