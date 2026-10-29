@@ -20,6 +20,7 @@ export class CaptureCompanion {
     epoch: number;
     sourceTime: number;
     gray: GrayFrame;
+    tracks: SceneTrack[];
   } | null = null;
   private frameId = 0;
   private lifecycle = 0;
@@ -217,13 +218,17 @@ export class CaptureCompanion {
           if (
             this.stopped ||
             data.epoch !== this.epoch ||
-            Date.now() - data.sourceTime >= 2000
+            Date.now() - pending.sourceTime >= 2000
           )
             return;
           const observed = this.tracker.tracks;
           const detected = this.tracker
-            .update(data.detections as Detection[], data.sourceTime)
-            .map((track) => ({ ...track, classifiedAt: data.sourceTime }));
+            .update(
+              data.detections as Detection[],
+              pending.sourceTime,
+              pending.tracks,
+            )
+            .map((track) => ({ ...track, classifiedAt: pending.sourceTime }));
           const replay = replayTrackFrames(
             { at: pending.sourceTime, frame: pending.gray },
             this.frameHistory,
@@ -362,6 +367,27 @@ export class CaptureCompanion {
           ),
           { at: observedAt, frame: current },
         ].slice(-40);
+        let tracks = this.previous
+          ? trackFrame(
+              this.previous,
+              current,
+              this.tracker.tracks.filter(
+                (track) =>
+                  track.classifiedAt !== undefined &&
+                  observedAt - track.classifiedAt < 2000,
+              ),
+              observedAt,
+            )
+          : [];
+        if (this.freshDetections) {
+          const flowById = new Map(tracks.map((track) => [track.id, track]));
+          tracks = this.tracker.tracks.map(
+            (track) => flowById.get(track.id) || track,
+          );
+          this.freshDetections = false;
+        }
+        this.tracker.tracks = tracks;
+        this.previous = current;
         if (!this.detectorFrame && timestamp - this.lastDetect > 350) {
           this.lastDetect = timestamp;
           const pending = {
@@ -369,6 +395,16 @@ export class CaptureCompanion {
             epoch: this.epoch,
             sourceTime: observedAt,
             gray: current,
+            tracks: tracks
+              .filter((track) => track.seenAt === observedAt)
+              .map((track) => ({
+                ...track,
+                box: [...track.box] as SceneTrack["box"],
+                attributes: [...track.attributes],
+                anchor: track.anchor
+                  ? ([...track.anchor] as [number, number])
+                  : undefined,
+              })),
           };
           this.detectorFrame = pending;
           const worker = this.detectorWorker;
@@ -407,27 +443,6 @@ export class CaptureCompanion {
               if (this.detectorFrame === pending) this.detectorFrame = null;
             });
         }
-        let tracks = this.previous
-          ? trackFrame(
-              this.previous,
-              current,
-              this.tracker.tracks.filter(
-                (track) =>
-                  track.classifiedAt !== undefined &&
-                  observedAt - track.classifiedAt < 2000,
-              ),
-              observedAt,
-            )
-          : [];
-        if (this.freshDetections) {
-          const flowById = new Map(tracks.map((track) => [track.id, track]));
-          tracks = this.tracker.tracks.map(
-            (track) => flowById.get(track.id) || track,
-          );
-          this.freshDetections = false;
-        }
-        this.tracker.tracks = tracks;
-        this.previous = current;
         for (const [id, surface] of this.surfaces)
           if (Date.now() - surface.at >= 1500) this.surfaces.delete(id);
         while (this.surfaces.size > 32)

@@ -24,11 +24,27 @@ export class Tracker {
     this.nextId = 0;
     this.history.clear();
   }
-  update(detections: Detection[], time: number) {
-    for (const track of this.tracks) this.history.set(track.id, track);
+  private remember(track: SceneTrack) {
+    const previous = this.history.get(track.id);
+    if (!previous || track.seenAt >= previous.seenAt)
+      this.history.set(track.id, track);
+  }
+  update(detections: Detection[], time: number, sourceTracks?: SceneTrack[]) {
+    for (const track of this.tracks) this.remember(track);
     for (const [id, track] of this.history)
       if (time - track.seenAt >= TRACK_TTL_MS) this.history.delete(id);
-    const recent = [...this.history.values()];
+    // A delayed result belongs to its source frame, not the object's position when inference finishes.
+    const reference = new Map(
+      [...this.history.values()]
+        .filter(
+          (track) => track.seenAt <= time && time - track.seenAt < TRACK_TTL_MS,
+        )
+        .map((track) => [track.id, track]),
+    );
+    for (const track of sourceTracks || [])
+      if (track.seenAt <= time && time - track.seenAt < TRACK_TTL_MS)
+        reference.set(track.id, track);
+    const recent = [...reference.values()];
     const available = new Set(recent.map((t) => t.id));
     const tracks: SceneTrack[] = [];
     for (const detection of detections) {
@@ -49,7 +65,7 @@ export class Tracker {
       });
     }
     this.tracks = tracks;
-    for (const track of tracks) this.history.set(track.id, track);
+    for (const track of tracks) this.remember(track);
     return tracks;
   }
 }
