@@ -1,0 +1,127 @@
+{
+  "verifiedAtUtc": "2026-10-30T22:20:29.425755+00:00",
+  "version": "0.10.0-rift-trail",
+  "versionCode": 15,
+  "package": "world.raidrift.capture.android",
+  "buildType": "private debug development APK",
+  "apk": {
+    "bytes": 122092479,
+    "sha256": "bd6aaf3b5c5b42a5419e816c60cf7254cd01b55539e0490ff4def8ff37148852",
+    "signatureV2Verified": true,
+    "alignment16KiBVerified": true,
+    "sameInstalledApkVerified": true,
+    "providerKeyAbsent": true,
+    "audioManifestHashesVerified": true
+  },
+  "tests": {
+    "androidJvm": {
+      "tests": 110,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lint": {
+      "errors": 0,
+      "warnings": 12
+    },
+    "compileAssemblePassed": true,
+    "focusedBackendOwnershipRegression": "1 pass, including live-room rejection of native simulator impersonation; backend runtime source unchanged"
+  },
+  "nativeUi": {
+    "source": "Actual native Android UI; explicitly simulated camera-off trail, not physical AR",
+    "completed": true,
+    "discoveries": 4,
+    "pickups": 3,
+    "restores": 1,
+    "completions": 1,
+    "previewWalkSteps": 22,
+    "eachStepMetres": 0.35,
+    "crashesObserved": false,
+    "evidence": "final/native-trail-ui.json"
+  },
+  "nativeRelay": {
+    "source": "Exact APK, camera-off native scene; isolated private MediaMTX receiver on PC",
+    "seconds": 240.017,
+    "video": "H264 1280x720",
+    "decodedVideoFrames": 2003,
+    "effectiveEncodedFpsInSoftwareEmulator": 8.35,
+    "audio": "AAC 48000 Hz mono",
+    "microphonePermissionGranted": false,
+    "gameAudioPeakDbfs": -12.79,
+    "audibleOneSecondWindows": 36,
+    "clippedSamples": 0,
+    "mutePreviewPeakPcm16": 0,
+    "enabledPreviewPeakPcm16": 3991,
+    "appHudExcluded": true,
+    "portraitSourceLetterboxedInLandscapeOutput": true,
+    "physicalPerformanceOrAVSyncPass": false,
+    "evidence": "final/native-trail-relay.mkv"
+  },
+  "controls": {
+    "actualMuteAndEnableOutputVerified": true,
+    "reducedMotionRetainedAfterActivityRestart": true,
+    "preferencesEvidence": "final/immersion-preferences.xml"
+  },
+  "nativeArGate": {
+    "source": "Android emulator virtual scene, not physical room",
+    "cameraFramesRendered": true,
+    "tracking": "PAUSED",
+    "measuredPlanes": 0,
+    "questProgress": 0,
+    "phantomDiscovery": false,
+    "newNativeAnchorGeometryPass": false,
+    "evidence": "final/ar-camera-gate.txt"
+  },
+  "soundProvenance": {
+    "provider": "ElevenLabs",
+    "model": "eleven_text_to_sound_v2",
+    "authorizedActivePaidTier": "starter",
+    "creditsUsed": 79,
+    "accountUpgradeOrOverage": false,
+    "privateMediaUploaded": false,
+    "manifest": "apps/android/app/src/main/assets/audio/manifest.json"
+  },
+  "consultation": {
+    "provider": "an independent reviewer CLI",
+    "model": "independent review",
+    "effort": "high",
+    "readOnly": true,
+    "subagentsSpawned": false,
+    "reviews": [
+      "review-notes.txt",
+      "review-notes.txt"
+    ],
+    "resolutions": "review-resolutions.md"
+  },
+  "scope": {
+    "nativeAppPriority": true,
+    "irlProDeferred": true,
+    "localQuestOnly": true,
+    "shardsLedgerModified": false,
+    "sourceFramesOrGPSUploadedByTrail": false,
+    "nativeMicAndServerRuntimeUnchangedExceptAudioMixing": true,
+    "localMp4AndExperimentalWebRtcRemainSilent": true
+  },
+  "remainingGates": [
+    "Physical S25 walking, anchors, depth/occlusion and long-walk recovery",
+    "Physical AR-camera + real microphone relay A/V synchronization, framing, latency and thermals",
+    "Real Twitch two-account raid/chat rehearsal",
+    "Server-attested native exploration rewards and broader affordances",
+    "IRL Pro/other streaming setups deliberately deferred"
+  ],
+  "delivery": {
+    "file": "RaidRift-0.10.0.apk",
+    "copiesSha256Match": true,
+    "privateDownload": "https://raidrift-pc.tail7252b4.ts.net/apk/RaidRift-0.10.0.apk?build=bd6aaf3b",
+    "headStatus": 200,
+    "headContentLength": 122092479
+  },
+  "cleanup": {
+    "qaVm": "bx_ccwu3ay5",
+    "deletionOperation": "bdop_8692ca7aecba476aa74e603e40a3ac13",
+    "deletionCompleted": true,
+    "isolatedReceiverStopped": true,
+    "qaSshForwardClosed": true,
+    "ownerReceiverAndApkServerPreserved": true
+  }
+}

@@ -1,0 +1,18 @@
+RaidRift original generated sound effects — 2026-10-30
+
+Five short sound effects were generated from original text prompts using the
+owner-authorized ElevenLabs active paid Starter allowance. No uploaded voice,
+recording, third-party game audio or private camera media was used.
+
+ElevenLabs Terms of Use (checked 2026-10-30):
+https://elevenlabs.io/terms-of-use
+Paid subscription output use is subject to those terms and the provider's
+Prohibited Use Policy. The owner retains output rights as between the parties.
+This notice records provenance; it does not relicense ElevenLabs' models.
+
+Exact prompts, model, generation date, credit use, output format, hashes and
+commercial-use basis are shipped in assets/audio/manifest.json. No model
+weights, generation API key or runtime ElevenLabs SDK is bundled.
+
+Crystal/shrine effects and synthesized footstep/landing ticks are original
+procedural RaidRift code. Existing KayKit and dependency notices remain separate.

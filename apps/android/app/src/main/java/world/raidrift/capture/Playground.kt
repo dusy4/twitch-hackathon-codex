@@ -44,6 +44,20 @@ class LocalPlayground {
     private var messageSerial = 0L
     private val queued = mutableMapOf<String, Pair<Long, List<String>>>()
     private var actionSerial = 0L
+    private var trailChat = listOf<Pair<Long, StubChatEvent>>()
+    fun clearTrailChat() { trailChat=emptyList() }
+
+    /** Canned incoming messages triggered by quest events; they still go through send/ownership. */
+    fun reactToTrail(kind: TrailEventKind, now: Long) {
+        if(world.raid==null) return
+        val lines=when(kind) {
+            TrailEventKind.DISCOVERED -> listOf(StubChatEvent(1200,"stub-alice","A crystal! Keep it in view ✨"))
+            TrailEventKind.COLLECTED -> listOf(StubChatEvent(900,"stub-bob","Another fragment for our party!"))
+            TrailEventKind.RESTORED -> listOf(StubChatEvent(1300,"stub-alice","wave"),StubChatEvent(2500,"stub-bob","dance"),StubChatEvent(3700,"stub-charlie","стрибни"))
+            else -> emptyList()
+        }
+        trailChat=(trailChat+lines.map { now+it.atMs to it }).takeLast(12)
+    }
 
     private fun log(speaker: String, text: String, system: Boolean = false, ok: Boolean = true) {
         messages = (messages + TestChatLine(++messageSerial, speaker, text, system, ok)).takeLast(80)
@@ -135,6 +149,7 @@ class LocalPlayground {
         val gap = previous?.let { (now-it).coerceAtLeast(0) } ?: 0L
         val pausedGap = gap - if (ready) gap.coerceAtMost(250) else 0L
         if (pausedGap > 0) {
+            trailChat=trailChat.map { (at,event) -> at+pausedGap to event }
             expires.replaceAll { _, at -> at + pausedGap }
             bubbleExpires.replaceAll { _, at -> at + pausedGap }
             queued.replaceAll { _, pending -> (pending.first + pausedGap) to pending.second }
@@ -160,6 +175,11 @@ class LocalPlayground {
                 else queued.remove(viewerId)
             }
         }
+        if(ready) {
+            val due=trailChat.filter { it.first<=now }
+            trailChat=trailChat.filter { it.first>now }
+            due.forEach { (_,event) -> send(event.viewerId,event.text,null,tracks,now) }
+        }
         val done = expires.filterValues { now >= it }.keys.toSet()
         if (done.isNotEmpty()) {
             world = world.copy(heroes = world.heroes.map { if (it.id in done) it.copy(animation = "idle") else it })
@@ -177,7 +197,7 @@ class LocalPlayground {
 
     /** A count-only raid event, followed by canned chatter events. No extra streamer characters. */
     fun raid(now: Long) {
-        serial++; queued.clear(); expires.clear(); bubbleExpires.clear(); delivered = 0; elapsedMs = 0; lastTick = now; running = true
+        serial++; queued.clear(); trailChat=emptyList(); expires.clear(); bubbleExpires.clear(); delivered = 0; elapsedMs = 0; lastTick = now; running = true
         world = world.copy(heroes = emptyList(), raid = Raid("test-$serial", now, viewers.size, "TEST VIEWERS", true))
         messages = emptyList()
         log("Test raid", "3 viewers raided. Waiting for their !join messages…", true)

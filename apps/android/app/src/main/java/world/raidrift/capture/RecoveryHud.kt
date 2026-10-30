@@ -35,6 +35,9 @@ fun RecoveryHud(
     onCommand: (String) -> Unit, onRaid: () -> Unit, onChat: () -> Unit, onCapture: () -> Unit,
     testChat: List<TestChatLine>? = null, testRunning: Boolean = false, testDelivered: Int = 0,
     testTotal: Int = 0, testHasRaid: Boolean = false, onStopTest: () -> Unit = {},
+    trail: TrailState = TrailState(), trailPaused: Boolean = false, trailPreview: Boolean = false,
+    trailGuidance: String = "",
+    onQuests: () -> Unit = {}, onTrailStep: () -> Unit = {},
 ) {
     var expanded by remember { mutableStateOf(false) }
     var chatVisible by remember { mutableStateOf(true) }
@@ -45,8 +48,8 @@ fun RecoveryHud(
             Row(Modifier.fillMaxWidth().background(RiftInk, RoundedCornerShape(22.dp)).padding(start = 16.dp, end = 6.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Column(Modifier.weight(1f).padding(vertical = 10.dp)) {
-                    Text("RAIDRIFT", color = Color.White, fontWeight = FontWeight.Black, fontSize = 18.sp, letterSpacing = 2.sp)
-                    Text(mode, color = RiftViolet, fontSize = 10.sp, letterSpacing = 1.sp)
+                    Text("RAIDRIFT", color = Color.White, fontWeight = FontWeight.Black, fontSize = 18.sp, lineHeight=22.sp, letterSpacing = 2.sp)
+                    Text(mode, color = RiftViolet, fontSize = 10.sp, lineHeight=12.sp, letterSpacing = 1.sp, maxLines=1,overflow=TextOverflow.Ellipsis)
                 }
                 if (recording || relay) Text(if (relay && relayLive) "● ON AIR" else if (relay) "◌ WAIT" else "● REC", color = Color(0xffff9caa), fontSize = 11.sp)
                 TextButton(onClick = onCamera, contentPadding = PaddingValues(horizontal = 10.dp)) { Text(if (ar) "Camera off" else "Start AR", fontSize = 12.sp) }
@@ -58,8 +61,9 @@ fun RecoveryHud(
                 Text(when { placing -> "Tap a surface to move the stage"; selecting -> "Tap an object or the surface you want to use"; else -> status },
                     color = Color(0xffe6e1f0), fontSize = 12.sp, modifier = Modifier.weight(1f), maxLines = 2)
             }
+            TrailCard(trail,trailPaused,trailPreview,trailGuidance,onQuests,onTrailStep)
         }
-        if (!ar && !testHasRaid) Column(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 108.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        if (!ar && !testHasRaid && !trail.active) Column(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 108.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Your chat. In your world.", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 23.sp)
             Text("Start AR → scan a floor or table → wait for Landing ready.", color = Color(0xffc6bfd6), fontSize = 12.sp, modifier = Modifier.padding(top = 5.dp))
         }
@@ -111,6 +115,7 @@ fun RecoveryHud(
                     if (testChat != null && testHasRaid) TextButton(onClick = onRaid, enabled = !ar || placed, contentPadding = PaddingValues(horizontal = 5.dp)) { Text("Replay raid", fontSize = 12.sp) }
                     TextButton(onClick = if (ar && placed) onSelect else onCamera, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(if (ar && placed) "Target" else "Camera", fontSize = 12.sp) }
                     TextButton(onClick = onChat, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("Chat", fontSize = 12.sp) }
+                    TextButton(onClick = onQuests, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("Explore", fontSize = 12.sp) }
                     TextButton(onClick = onCapture, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("Capture", fontSize = 12.sp) }
                 }
             }

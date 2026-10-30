@@ -1,0 +1,65 @@
+{
+  "provider": "ElevenLabs",
+  "model": "eleven_text_to_sound_v2",
+  "terms": "https://elevenlabs.io/terms-of-use",
+  "commercialBasis": "Generated under owner-authorized active paid starter subscription; no plan upgrade or overage.",
+  "sourcePolicy": "Only original text prompts; no uploaded recordings, voices, copyrighted references or private media.",
+  "format": "48000 Hz mono signed little-endian PCM16; normalized -22 LUFS, -3 dBTP before mixing.",
+  "assets": [
+    {
+      "id": "portal_open",
+      "file": "portal_open.pcm",
+      "prompt": "Original cozy fantasy game dimensional portal opening: a soft stone click, rising airy violet energy whoosh, warm deep magical resonance and a delicate shimmering finish. Single isolated sound effect, restrained, no music, no speech, no horror, no explosive bang.",
+      "requestedSeconds": 2.4,
+      "seconds": 2.4,
+      "bytes": 230400,
+      "sha256": "243ed03074170f18340ef0bdc5aeee6f66817a743463690e61a7d27dbae9fae0",
+      "characterCost": "24",
+      "generatedAt": "2026-10-30T21:21:13.596605+00:00"
+    },
+    {
+      "id": "discovery",
+      "file": "discovery.pcm",
+      "prompt": "Original whimsical fantasy adventure game discovery sound: three delicate ascending glass bell notes over a soft airy sparkle. Warm inviting magical crystal discovered nearby. Isolated short sound effect, no speech, no background music, no harsh high frequencies.",
+      "requestedSeconds": 1.3,
+      "seconds": 1.28,
+      "bytes": 122880,
+      "sha256": "ac07979545be349bed61514298c84bff9c8f8236fd6ae46f3a09c9eefbe885a9",
+      "characterCost": "13",
+      "generatedAt": "2026-10-30T21:21:16.070832+00:00"
+    },
+    {
+      "id": "pickup",
+      "file": "pickup.pcm",
+      "prompt": "Original satisfying tiny magical crystal pickup for a cozy fantasy game. A soft glass plink rises into a bright rounded sparkle with a very short tail. One isolated clean sound, no speech, no music, no harsh treble.",
+      "requestedSeconds": 0.7,
+      "seconds": 0.68025,
+      "bytes": 65304,
+      "sha256": "0fbc8bc73fff2499514db1a40afa3242cba1a5bb163944a9a4ff26e4bc87c4dc",
+      "characterCost": "7",
+      "generatedAt": "2026-10-30T21:21:17.817852+00:00"
+    },
+    {
+      "id": "quest_complete",
+      "file": "quest_complete.pcm",
+      "prompt": "Original cozy fantasy adventure quest completion sound effect: warm ascending celesta arpeggio, gentle rounded chime chord and tiny sparkling tail. Satisfying and celebratory but restrained. No orchestra, no background music, no speech, no drums.",
+      "requestedSeconds": 2.3,
+      "seconds": 2.28,
+      "bytes": 218880,
+      "sha256": "face62cdab132fddfb3e2840f0c6855ccf1f7e48ff7c44ed13f5b639b0bdc323",
+      "characterCost": "23",
+      "generatedAt": "2026-10-30T21:21:20.440169+00:00"
+    },
+    {
+      "id": "portal_close",
+      "file": "portal_close.pcm",
+      "prompt": "Original small magical portal closing sound for a cozy fantasy game: airy reverse shimmer contracts into a soft low rounded pop, with a brief warm crystalline tail. Isolated clean effect, no speech, no music, no scary sounds.",
+      "requestedSeconds": 1.2,
+      "seconds": 1.2,
+      "bytes": 115200,
+      "sha256": "97d649c1d9e11bd60c2e7b6a72f0e3648676ebd4be74eaebf350a5590dd42a8f",
+      "characterCost": "12",
+      "generatedAt": "2026-10-30T21:21:22.132036+00:00"
+    }
+  ]
+}

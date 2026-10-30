@@ -1,8 +1,10 @@
 # RaidRift — implementation workspace
 
-**Latest native internal build: 0.9.0-auto-landing.** Start AR, scan a clear floor/table and wait for **Landing ready**; the app now prepares a measured stage automatically. Three stub viewers still use the same per-viewer natural-language grammar and animations. Broadcast can start while scanning, before any stage is placed. The private receiver has been restored and native camera-off relay output checked. Physical S25 auto-placement, AR camera/audio/OBS and live Twitch remain open. [Instructions and relay status](docs/AUTO_LANDING.md), [design](docs/ADR-008-auto-landing.md).
+**Native immersion update: 0.10.0-rift-trail.** See the [current feature inventory and open gates](docs/CURRENT_STATE.md), [Rift Trail instructions](docs/IMMERSION.md) and [design/review decisions](docs/ADR-009-expedition-immersion.md). Native AR remains the priority; IRL Pro compatibility is deferred. The update adds measured walking/collecting/shrine quests, a fresh party-emote finale, original ElevenLabs effects mixed into native relay AAC, portal/arrival/pickup visuals, persistent audio/reduced-motion controls and labelled camera-off exploration preview. Trail progress is local and grants no Shards. Exact APK/test/runtime results are in `artifacts/immersion/verification.json` once final verification completes; physical S25 walking/depth/audio remains a separate gate. Local MP4 clips and experimental WebRTC remain silent.
 
-**Android phone + laptop test:** [LAN setup and phone checklist](docs/ANDROID_LAN_TEST.md). Run `npm ci`, then `npm run lan:test` on your laptop. The Android development APK is attached to the [Android LAN test prerelease](https://github.com/dusy4/twitch-hackathon-codex/releases/tag/android-lan-test-2026-10-29). Tracked AR character visibility remains an open test; this is not a production release.
+**Previous native build: 0.9.0-auto-landing.** Start AR, scan a clear floor/table and wait for **Landing ready**; the app now prepares a measured stage automatically. Three stub viewers still use the same per-viewer natural-language grammar and animations. Broadcast can start while scanning, before any stage is placed. The private receiver has been restored and native camera-off relay output checked. Physical S25 auto-placement, AR camera/audio/OBS and live Twitch remain open. [Instructions and relay status](docs/AUTO_LANDING.md), [design](docs/ADR-008-auto-landing.md).
+
+**Older LAN test instructions (not the current APK):** [LAN setup and phone checklist](docs/ANDROID_LAN_TEST.md). Run `npm ci`, then `npm run lan:test` on your laptop. The Android development APK is attached to the [Android LAN test prerelease](https://github.com/dusy4/twitch-hackathon-codex/releases/tag/android-lan-test-2026-10-29). Tracked AR character visibility remains an open test; this is not a production release.
 
 Run `npm ci`, `npm run build`, then `npm start` from this directory. Open **http://127.0.0.1:3400**.
 
@@ -18,7 +20,7 @@ This repository now contains a persistent server, original 3D overlay, browser w
 - [Release scorecard](docs/RELEASE_SCORECARD.md)
 - [Social play and consent](docs/SOCIAL.md)
 
-`npm test` runs domain and HTTP/WebSocket integration tests. `npm run test:e2e` automatically launches an isolated QA server on port 3401. See setup for licensed video/model fixtures. Simulator identities and scores are always labelled; no paid calls or public deployment were performed.
+`npm test` runs domain and HTTP/WebSocket integration tests. `npm run test:e2e` automatically launches an isolated QA server on port 3401. See setup for licensed video/model fixtures. Simulator identities and scores are always labelled. Version 0.10 used owner-authorized ElevenLabs allowance for five assets and an independent reviewer consultation; no public deployment or plan upgrade was performed.
 
 ---
 

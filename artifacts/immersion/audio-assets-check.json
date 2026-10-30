@@ -1,0 +1,40 @@
+{
+  "creditsUsed": 79,
+  "assets": [
+    {
+      "id": "portal_open",
+      "hashMatches": true,
+      "durationSeconds": 2.4,
+      "peakDbfs": -6.78312104841903,
+      "rmsDbfs": -26.047121167465654
+    },
+    {
+      "id": "discovery",
+      "hashMatches": true,
+      "durationSeconds": 1.28,
+      "peakDbfs": -8.408402766225326,
+      "rmsDbfs": -25.372030659402903
+    },
+    {
+      "id": "pickup",
+      "hashMatches": true,
+      "durationSeconds": 0.68025,
+      "peakDbfs": -14.444369758063939,
+      "rmsDbfs": -28.298207784296526
+    },
+    {
+      "id": "quest_complete",
+      "hashMatches": true,
+      "durationSeconds": 2.28,
+      "peakDbfs": -6.56761327458589,
+      "rmsDbfs": -26.046505082102165
+    },
+    {
+      "id": "portal_close",
+      "hashMatches": true,
+      "durationSeconds": 1.2,
+      "peakDbfs": -13.722923242573861,
+      "rmsDbfs": -29.96667365176694
+    }
+  ]
+}

@@ -294,7 +294,7 @@ private val CONFETTI_COLORS = listOf(Color(0xffff5a5a), Color(0xffffd23f), Color
 
 /** World-space portal ring + banner and confetti. Cheap primitives only. */
 @Composable
-internal fun SceneScope.NorthstarProps(portal: PortalWorld?, bursts: List<ConfettiBurst>, clock: Long, cameraPosition: () -> Position) {
+internal fun SceneScope.NorthstarProps(portal: PortalWorld?, bursts: List<ConfettiBurst>, clock: Long, reducedMotion: Boolean = false, cameraPosition: () -> Position) {
     val ringMaterial = remember(materialLoader) { materialLoader.createColorInstance(Color(0xffb38cff), metallic = 0f, roughness = 0.2f, reflectance = 0.9f) }
     val innerMaterial = remember(materialLoader) { materialLoader.createColorInstance(Color(0x9966e0ff)) }
     val obsidian = remember(materialLoader) { materialLoader.createColorInstance(Color(0xff24122f), metallic = .35f, roughness = .5f) }
@@ -302,25 +302,41 @@ internal fun SceneScope.NorthstarProps(portal: PortalWorld?, bursts: List<Confet
     val confetti = remember(materialLoader) { CONFETTI_COLORS.map { materialLoader.createColorInstance(it) } }
     portal?.let { p ->
         val age = (clock - p.createdAt).coerceAtLeast(0L) / 1000f
-        val grow = (age / 0.6f).coerceIn(0.05f, 1f)
-        val pulse = 1f + 0.06f * sin(age * 6f)
+        val opening = (age / .75f).coerceIn(0f,1f)
+        val closing = ((10f-age)/1.2f).coerceIn(0f,1f)
+        val grow = if(reducedMotion)1f else (opening*opening*(3f-2f*opening)*closing*closing*(3f-2f*closing)).coerceAtLeast(.001f)
+        val pulse = if(reducedMotion)1f else 1f + 0.025f * sin(age * 2.5f)
         key(p.raidId) {
             Node(position = Position(p.center.x, p.center.y, p.center.z), rotation = Rotation(0f, p.yaw, 0f)) {
                 Node(scale = io.github.sceneview.math.Scale(grow)) {
                     for (side in listOf(-1f,1f)) repeat(7) { i ->
-                        CubeNode(size = Size(.15f,.14f,.18f), materialInstance = obsidian, position = Position(side*.42f,-.42f+i*.14f,0f))
+                        val settle=if(reducedMotion)0f else (1f-((age-i*.035f)/.5f).coerceIn(0f,1f))*.18f
+                        CubeNode(size = Size(.15f,.14f,.18f), materialInstance = obsidian, position = Position(side*.42f,-.42f+i*.14f+settle,0f))
                         CubeNode(size = Size(.025f,.085f,.19f), materialInstance = ringMaterial, position = Position(side*.34f,-.42f+i*.14f,0f))
                     }
                     for (side in listOf(-1f,1f)) repeat(5) { i -> CubeNode(size = Size(.14f,.15f,.18f), materialInstance = obsidian, position = Position(-.28f+i*.14f,side*.49f,0f)) }
                     CubeNode(size = Size(.67f,.88f,.015f), materialInstance = membrane, position = Position(0f,0f,-.025f))
+                    if(!reducedMotion) repeat(5) { i ->
+                        val slide=((age*.18f+i*.19f)%1f-.5f)*.85f
+                        CubeNode(size=Size(.56f,.014f,.018f),materialInstance=innerMaterial,position=Position(0f,slide,-.012f),rotation=Rotation(0f,0f,8f*sin(age+i)))
+                    }
                 }
                 TorusNode(majorRadius = 0.3f, minorRadius = 0.02f, majorSegments = 32, minorSegments = 8, materialInstance = innerMaterial,
-                    rotation = Rotation(90f, age * 120f, 0f), scale = io.github.sceneview.math.Scale(grow))
+                    rotation = Rotation(90f, if(reducedMotion)0f else age * 35f, 0f), scale = io.github.sceneview.math.Scale(grow*pulse))
+                TorusNode(majorRadius=.35f,minorRadius=.008f,majorSegments=28,minorSegments=6,materialInstance=ringMaterial,
+                    position=Position(0f,-.485f,0f),scale=io.github.sceneview.math.Scale(grow))
+                if(!reducedMotion) repeat(18) { i ->
+                    val angle=age*1.2f+i*.349066f
+                    val radius=.44f+.045f*sin(age*1.4f+i)
+                    CubeNode(size=Size(.018f),materialInstance=if(i%3==0)innerMaterial else ringMaterial,
+                        position=Position(cos(angle)*radius,sin(angle)*radius*.95f,.055f+.04f*sin(angle*2)),
+                        rotation=Rotation(0f,age*35f+i*20f,45f),scale=io.github.sceneview.math.Scale(grow))
+                }
                 TextNode(text = p.banner, position = Position(0f, 0.65f, 0f), widthMeters = 1.1f, heightMeters = 0.13f, cameraPositionProvider = cameraPosition)
             }
         }
     }
-    bursts.forEach { burst -> key(burst.id) {
+    if(!reducedMotion) bursts.takeLast(4).forEach { burst -> key(burst.id) {
         val t = ((clock - burst.startedAt).coerceAtLeast(0L)) / 1000f
         if (t <= 2f) repeat(24) { i ->
             val angle = i * 2.3999f

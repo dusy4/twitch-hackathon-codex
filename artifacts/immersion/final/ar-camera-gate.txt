@@ -1,0 +1,13 @@
+--------- beginning of main
+--------- beginning of system
+10-30 22:17:32.682 18172 18172 D RaidRiftAR: config planes=HORIZONTAL_AND_VERTICAL light=AMBIENT_INTENSITY update=LATEST_CAMERA_IMAGE cpu=1280x720
+10-30 22:17:33.791 18172 18172 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Detector not started
+10-30 22:17:34.798 18172 18172 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.9891197 anchor=null previousFeet=0 detector=Detector ready
+10-30 22:17:35.898 18172 18172 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+--------- beginning of kernel
+10-30 22:17:36.899 18172 18172 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=1 objects · 1027ms
+10-30 22:17:37.916 18172 18172 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=1 objects · 1027ms
+10-30 22:17:38.933 18172 18172 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=1 objects · 1027ms
+10-30 22:17:39.949 18172 18172 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=1 objects · 1027ms
+10-30 22:17:40.965 18172 18172 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=1 objects · 1027ms
+10-30 22:17:41.966 18172 18172 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=1 objects · 1027ms

@@ -80,6 +80,11 @@ private const val KAYKIT_BODY_HEIGHT_UNITS = 2.19f
 
 private class ContactFrame(var pose: Pose? = null) { val clock = PresentationClock() }
 private class ArFrameDiagnostics(var timestamp: Long = 0, var frames: Int = 0, var since: Long = 0)
+private class SoundListener(var foot: FootPosition? = null, var right: FootPosition? = null) {
+    val heard=linkedSetOf<String>()
+    val landed=mutableMapOf<String,Long>()
+    fun once(id: String): Boolean { if(heard.size>256) heard.clear();return heard.add(id) }
+}
 
 @Composable
 private fun CaptureApp(connection: WorldConnection) {
@@ -163,7 +168,7 @@ private fun CaptureApp(connection: WorldConnection) {
     var shadowPlanes by remember { mutableStateOf<List<Plane>>(emptyList()) }
     var trackingOk by remember { mutableStateOf(false) }
     var feedActive by remember { mutableStateOf(true) }
-    val feedReady by rememberUpdatedState({ !paired && feedActive && (!ar || trackingOk && anchor?.trackingState == TrackingState.TRACKING && (!autoStage || landingReady)) })
+    val feedReady by rememberUpdatedState({ !paired && feedActive && (!ar || trackingOk && anchor?.trackingState == TrackingState.TRACKING && (!autoStage || landingReady || playground.world.heroes.isNotEmpty())) })
     val feedTracks by rememberUpdatedState(liveTracks.filter { rt.space[it.id] != null } + rt.manualTargets.values.mapNotNull { t ->
         rt.space[t.id]?.let { TrackView(t.id, t.label, TrackBox(0f, 0f, 1f, 1f), 1f, "tap") }
     })
@@ -217,9 +222,28 @@ private fun CaptureApp(connection: WorldConnection) {
     val arCamera = rememberARCameraNode(engine)
     val mirror = rememberSurfaceMirrorer()
     val context = LocalContext.current
+    val immersionPrefs=remember(context) { context.getSharedPreferences("immersion",android.content.Context.MODE_PRIVATE) }
+    var gameSound by remember { mutableStateOf(immersionPrefs.getBoolean("sound",true)) }
+    var soundVolume by remember { mutableFloatStateOf(immersionPrefs.getFloat("volume",.7f).coerceIn(0f,1f)) }
+    var phoneSound by remember { mutableStateOf(immersionPrefs.getBoolean("monitor",true)) }
+    var reducedMotion by remember { mutableStateOf(immersionPrefs.getBoolean("reduced",runCatching {
+        android.provider.Settings.Global.getFloat(context.contentResolver,android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,1f)==0f
+    }.getOrDefault(false))) }
+    val audio=remember(context) { RiftAudio(context.applicationContext) }
+    val soundListener=remember { SoundListener() }
+    val trail=remember { TrailRuntime() }
+    var trailPanel by remember { mutableStateOf(false) }
+    var magicBursts by remember { mutableStateOf<List<MagicBurst>>(emptyList()) }
+    LaunchedEffect(gameSound,soundVolume,phoneSound,reducedMotion) {
+        audio.enabled=gameSound;audio.mixer.muted=!gameSound;audio.mixer.volume=soundVolume;audio.monitor=phoneSound
+        if(!gameSound) audio.mixer.clear()
+        immersionPrefs.edit().putBoolean("sound",gameSound).putFloat("volume",soundVolume).putBoolean("monitor",phoneSound).putBoolean("reduced",reducedMotion).apply()
+    }
+    LaunchedEffect(Unit) { while(true) { delay(300);val now=SystemClock.elapsedRealtime();magicBursts=magicBursts.filter { now-it.at<1800 } } }
+    DisposableEffect(audio,trail) { onDispose { trail.close();audio.close() } }
     val clip = remember(mirror) { LocalClip(context, mirror) }
     val output = remember(mirror) { CompositeOutput(context, mirror) }
-    val relay = remember(mirror) { RelayOutput(context, mirror) }
+    val relay = remember(mirror) { RelayOutput(context, mirror, audio) }
     val detector = remember { DetectorWorker(context.applicationContext) }
     DisposableEffect(detector) { onDispose { detector.close() } }
     var relayPanel by remember { mutableStateOf(false) }
@@ -238,27 +262,46 @@ private fun CaptureApp(connection: WorldConnection) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
                 feedActive = false
+                audio.foreground(false);trail.suspendObservation()
                 clip.stop(); output.stop(); relay.stop(); connection.pause(); reviewClip = false
                 detector.invalidate(); rt.generation++; rt.frames.clear(); contactFrame.clock.reset()
                 pendingTap = null; pendingTargetTap = null
                 relayConsent = false; includeMicrophone = false; microphoneMuted = false
-            } else if (event == Lifecycle.Event.ON_START) { feedActive = true; connection.resume() }
+            } else if (event == Lifecycle.Event.ON_START) { feedActive = true;audio.foreground(true);connection.resume() }
         }
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer); clip.stop(); output.dispose(); relay.stop() }
     }
     DisposableEffect(anchor) { val current = anchor; onDispose { runCatching { current?.detach() } } }
     DisposableEffect(rt) { onDispose { rt.reset() } }
+    LaunchedEffect(ar) { if(!ar && !trail.preview) { playground.clearTrailChat();trail.stop();magicBursts=emptyList();orbitRevision++ } }
     LaunchedEffect(ar) { detector.invalidate(); if (!ar) { autoStage=false; landingReady=false; landingArea=null; landingStability.clear(); raidArrivalGate.clear(); anchor = null; pendingTap = null; pendingTargetTap = null; selectedTarget = null; clip.stop(); output.stop(); relay.stop(); rt.reset(); motor.clear(); feet = emptyMap(); contactFrame.clock.reset(); contactFrame.pose = null; liveTracks = emptyList(); portal = null; bursts = emptyList() } }
     LaunchedEffect(clip.recording) { if (clip.recording) { delay(20_000); clip.stop() } }
     val visibleWorld = state.world?.takeIf { state.authorized && !it.paused }
     // Only a rejected/revoked pairing stops output. A paused world or a network
     // blip hides characters but keeps the streamer's camera live.
     LaunchedEffect(state.revoked, paired) { if (paired && state.revoked) { clip.stop(); output.stop(); relay.stop(); ar = false } }
-    val world = if (paired) visibleWorld else localWorld
+    val sourceWorld = if (paired) visibleWorld else localWorld
+    val world = sourceWorld?.let { if(reducedMotion) it.copy(reducedMotion=true) else it }
     LaunchedEffect(paired, world?.roomId) { raidArrivalGate.clear() }
     LaunchedEffect(ar, world?.raid?.id) {
         if (!ar && world?.raid != null) repeat(300) { sceneClock = SystemClock.elapsedRealtime(); delay(33) }
+    }
+    fun trailEvents(events: List<TrailEvent>) {
+        events.forEach { event ->
+            val cue=when(event.kind) {
+                TrailEventKind.DISCOVERED -> RiftCue.DISCOVERY
+                TrailEventKind.COLLECTED -> RiftCue.PICKUP
+                TrailEventKind.RESTORED,TrailEventKind.COMPLETED -> RiftCue.COMPLETE
+                TrailEventKind.CHEER -> RiftCue.PICKUP
+                TrailEventKind.LOST -> null
+            }
+            if(cue!=null) audio.play(cue,event.foot,soundListener.foot,soundListener.right)
+            if(event.kind!=TrailEventKind.LOST && event.foot!=null) magicBursts=(magicBursts+MagicBurst("trail-${SystemClock.elapsedRealtime()}-${event.id}",event.foot,SystemClock.elapsedRealtime(),event.kind in setOf(TrailEventKind.RESTORED,TrailEventKind.COMPLETED))).takeLast(4)
+            toast=event.text to (event.kind!=TrailEventKind.LOST)
+            if(!paired) playground.reactToTrail(event.kind,System.currentTimeMillis())
+            if(BuildConfig.DEBUG) android.util.Log.d("RaidRiftTrail","${event.kind}: ${event.text}")
+        }
     }
     fun sendCommand(text: String) {
         if (paired) {
@@ -304,6 +347,7 @@ private fun CaptureApp(connection: WorldConnection) {
                 // depth material (writes real-world depth, drawn first) and uploads acquireDepthImage16Bits each frame.
                 sceneUnderstanding = SceneUnderstanding(occlusion = depthSupported && occlusionOn, lighting = true, planeVisualization = anchor == null && !relay.active && !clip.recording && !output.active),
                 onSessionCreated = { session ->
+                    if(!trail.preview) trail.stop()
                     rt.reset(); detector.invalidate(); anchor = null; motor.clear(); feet = emptyMap(); autoStage = false; landingReady = false; landingArea = null; landingStability.clear(); raidArrivalGate.clear(); landingClock[0] = 0
                     contactFrame.clock.reset(); contactFrame.pose = null
                     if (BuildConfig.DEBUG) android.util.Log.d("RaidRiftAR", "config planes=${session.config.planeFindingMode} light=${session.config.lightEstimationMode} update=${session.config.updateMode} cpu=${session.cameraConfig.imageSize}")
@@ -365,6 +409,10 @@ private fun CaptureApp(connection: WorldConnection) {
                     val nowElapsed = SystemClock.elapsedRealtime()
                     val nowEpoch = System.currentTimeMillis()
                     val observed = allPlanes.filter { it.trackingState == TrackingState.TRACKING && it.subsumedBy == null }.take(64)
+                    soundListener.foot=frame.camera.pose.foot()
+                    soundListener.right=frame.camera.pose.xAxis.let { FootPosition(it[0],it[1],it[2]) }
+                    if(feedActive && world!=null && !world.paused) trailEvents(trail.update(session,frame,observed,depthSupported,world.trailParticipants()))
+                    else trail.suspendObservation()
                     if (world != null) raidArrivalGate.observe(world.raid,nowEpoch,nowElapsed,if(!paired)consumedTestRaid else null)
                     if (!tracked || autoStage && anchor?.trackingState != TrackingState.TRACKING) {
                         landingStability.clear()
@@ -622,6 +670,7 @@ private fun CaptureApp(connection: WorldConnection) {
                             runCatching { rt.portalAnchor?.detach() }
                             rt.portalAnchor = rt.portal?.let { p -> runCatching { session.createAnchor(Pose.makeTranslation(p.foot.x,p.foot.y,p.foot.z)) }.getOrNull() }
                             rt.portalStage = anchor
+                            if(soundListener.once("portal-open-${raid.id}")) audio.play(RiftCue.PORTAL_OPEN,rt.portal?.foot,soundListener.foot,soundListener.right)
                             if (!paired) consumedTestRaid = raid.id
                         }
                         if (raid != null && rt.portal != null && rt.portalStage !== anchor && raid.id == rt.portal?.raidId) openPortal(raid, rt.portal!!.createdAt)
@@ -649,6 +698,7 @@ private fun CaptureApp(connection: WorldConnection) {
                         // Local stub joins pause with tracking, so the entrance uses the same active
                         // clock. Real incoming Twitch raids keep their ordinary real-time lifetime.
                         val age = if (!paired && p.raidId == playground.world.raid?.id) playground.elapsedMs else nowElapsed - p.createdAt
+                        if(age>=8800 && soundListener.once("portal-close-${p.raidId}")) audio.play(RiftCue.PORTAL_CLOSE,p.foot,soundListener.foot,soundListener.right)
                         if (age > 10_000) { rt.portal = null; runCatching { rt.portalAnchor?.detach() }; rt.portalAnchor = null; rt.portalStage = null }
                         else {
                             val current = if (!paired) p.copy(createdAt = nowElapsed - age) else p
@@ -733,6 +783,8 @@ private fun CaptureApp(connection: WorldConnection) {
                             val spawnedAt = hero.spawnedAt
                             if (gate != null && gate.footKnown && spawnedAt != null && portalArrivalEligible(spawnedAt, gate.raidStarted, nowEpoch, nowElapsed-gate.createdAt) && hero.id !in rt.spawned && motor.place(hero.id, gate.foot)) {
                                 rt.spawned += hero.id
+                                magicBursts=(magicBursts+MagicBurst("arrival-${gate.raidId}-${hero.id}",gate.foot,nowElapsed)).takeLast(4)
+                                audio.step(RiftCue.LAND,gate.foot,soundListener.foot,soundListener.right)
                                 if (rt.spawned.size > 500) rt.spawned.clear()
                             }
                             // Fixed-stage actors walk to object goals. Only the explicit walking mode can recall them.
@@ -748,6 +800,7 @@ private fun CaptureApp(connection: WorldConnection) {
                             val previous = rt.previousFeet.put(hero.id, foot)
                             val observedSpeed = if (previous != null && elapsed > 0.001f) kotlin.math.hypot(foot.x - previous.x, foot.z - previous.z) / elapsed else 0f
                             val moving = observedSpeed > 0.08f
+                            if(moving) audio.step(foot=foot,listener=soundListener.foot,right=soundListener.right)
                             val toGoal = kotlin.math.hypot(goal.x - foot.x, goal.z - foot.z)
                             val wantLift = if (spot != null && resting && toGoal < 0.12f) targetLift else 0f
                             val lift = (rt.motorLift[hero.id] ?: 0f).let { it + (wantLift - it) * kotlin.math.min(1f, elapsed * 5f) }
@@ -756,12 +809,15 @@ private fun CaptureApp(connection: WorldConnection) {
                             val state = motion.sample(hero.id, hero.animation, hero.actionSerial,
                                 movingFacing?.let { TargetGoal.yaw(it[0],it[2]) }, elapsed)
                             val jumpLift = if (world.reducedMotion) 0f else state.lift
+                            if(state.jumping && state.phase>.90f && soundListener.landed[hero.id]!=hero.actionSerial) {
+                                soundListener.landed[hero.id]=hero.actionSerial;audio.step(RiftCue.LAND,foot,soundListener.foot,soundListener.right)
+                            }
                             val local = inverseOrigin.transformPoint(floatArrayOf(foot.x, foot.y + lift + jumpLift, foot.z))
                             // Contact shadow: at the feet when resting on an object, else on the measured support below.
                             val onObject = lift > 0.05f
                             val supportY = if (onObject) foot.y + lift else (support(foot) ?: foot.y).coerceAtMost(foot.y)
                             val shadowLocal = inverseOrigin.transformPoint(floatArrayOf(foot.x, supportY, foot.z))
-                            val clip = if (world.reducedMotion) "Idle" else if (state.jumping) "Jump_Full_Short" else if (hero.animation == "jump") "Idle" else presentedClip(if (followMe && speed > .35f) "run" else hero.animation, moving, spot != null, lift > 0.05f)
+                            val clip = if (state.jumping && !world.reducedMotion) "Jump_Full_Short" else if (hero.animation == "jump") "Idle" else presentedClip(if (followMe && speed > .35f) "run" else hero.animation, moving, spot != null, lift > 0.05f)
                             val yaw = state.yaw.also { rt.facing[hero.id] = it }
                             val rendered = if (clip == "Sit_Chair_Idle") SeatContact.root(FootPosition(local[0],local[1],local[2]),yaw) else FootPosition(local[0],local[1],local[2])
                             hero.id to HeroPose(Position(rendered.x, rendered.y, rendered.z), yaw, clip,
@@ -801,7 +857,15 @@ private fun CaptureApp(connection: WorldConnection) {
                     world?.let { CharacterWorld(it, feet, shadowMode.blob) { arCamera.worldPosition } }
                 } }
                 // Portal and props live in ARCore world space (top-level nodes), independent of the follow-me anchor.
-                if (world != null && (portal != null || bursts.isNotEmpty())) NorthstarProps(portal, bursts, sceneClock) { arCamera.worldPosition }
+                if (trackingOk && world != null) {
+                    if(portal != null || bursts.isNotEmpty()) NorthstarProps(portal, bursts, sceneClock, world.reducedMotion) { arCamera.worldPosition }
+                    trail.anchor?.let { objectiveAnchor -> AnchorNode(anchor=objectiveAnchor) {
+                        Node(isVisible=!trail.occluded) {
+                            TrailObjective(trail.state.copy(site=trail.state.site?.copy(foot=FootPosition(0f,0f,0f))),world.reducedMotion) { arCamera.worldPosition }
+                        }
+                    } }
+                    MagicBursts(magicBursts,world.reducedMotion)
+                }
             }
             // Compose overlays: never part of the SurfaceMirrorer broadcast/recording.
             if (anchor == null) ScanFloorOverlay(trackingOk, surfaces, followMe, Modifier.align(Alignment.Center), automaticLanding, landingStatus)
@@ -814,9 +878,24 @@ private fun CaptureApp(connection: WorldConnection) {
                 renderQuality = RenderQuality.Performance,
                 cameraManipulator = null, surfaceMirrorer = mirror,
                 onFrame = { nanos ->
+                    val now=SystemClock.elapsedRealtime()
+                    if(feedActive && currentWorld!=null) trailEvents(trail.stepPreview(now,currentWorld!!.trailParticipants()))
+                    if(trail.preview && trail.state.active) {
+                        camera.position=Position(0f,1.35f,-trail.previewWalk)
+                        // In the labelled preview, aim where a person collecting the objective
+                        // would look. Physical AR always keeps the real, unmodified camera pose.
+                        camera.lookAt(trail.state.site?.foot?.let { Position(it.x,it.y+.18f,it.z) }
+                            ?: Position(0f,0f,-trail.previewWalk-1.5f))
+                    }
+                    soundListener.foot=camera.position.let { FootPosition(it.x,it.y,it.z) }
+                    soundListener.right=FootPosition(1f,0f,0f)
                     val dt = if (previewTime[0] == 0L) 0f else ((nanos - previewTime[0]) / 1_000_000_000f).coerceIn(0f, 1f / 15f)
                     previewTime[0] = nanos
                     val current = currentWorld
+                    current?.raid?.takeIf { raidIsFresh(it.started,System.currentTimeMillis(),10_000) }?.let { raid ->
+                        if(soundListener.once("portal-open-${raid.id}")) audio.play(RiftCue.PORTAL_OPEN,FootPosition(0f,0f,-.25f),soundListener.foot,soundListener.right)
+                        if(System.currentTimeMillis()-raid.started>=8800 && soundListener.once("portal-close-${raid.id}")) audio.play(RiftCue.PORTAL_CLOSE)
+                    }
                     if (current != null && !current.paused && feedActive) {
                         val ids = current.heroes.map { it.id }.toSet()
                         previewMotor.retain(ids); previewMotion.retain(ids); previewPrevious.keys.retainAll(ids)
@@ -827,10 +906,14 @@ private fun CaptureApp(connection: WorldConnection) {
                             val foot = previewMotor.updateWithWalls(hero.id, goal, dt, { _, _ -> false }, MotionState.travelSpeed(hero.animation)) { 0f }!!
                             val previous = previewPrevious.put(hero.id, foot) ?: foot
                             val moving = kotlin.math.hypot(foot.x-previous.x, foot.z-previous.z) > .0001f
+                            if(moving) audio.step(foot=foot,listener=soundListener.foot,right=soundListener.right)
                             val desired = hero.facing ?: if (moving) TargetGoal.yaw(goal.x-foot.x, goal.z-foot.z) else null
                             val state = previewMotion.sample(hero.id, hero.animation, hero.actionSerial, desired, dt)
                             val lift = if (current.reducedMotion) 0f else state.lift
-                            val clip = if (current.reducedMotion) "Idle" else if (state.jumping) "Jump_Full_Short" else if (hero.animation == "jump") "Idle" else presentedClip(hero.animation, moving, false, false)
+                            val clip = if (state.jumping && !current.reducedMotion) "Jump_Full_Short" else if (hero.animation == "jump") "Idle" else presentedClip(hero.animation, moving, false, false)
+                            if(state.jumping && state.phase>.90f && soundListener.landed[hero.id]!=hero.actionSerial) {
+                                soundListener.landed[hero.id]=hero.actionSerial;audio.step(RiftCue.LAND,foot,soundListener.foot,soundListener.right)
+                            }
                             hero.id to HeroPose(Position(foot.x,foot.y+lift,foot.z), state.yaw, clip, Position(foot.x,0f,foot.z),lift, jumpPhase = if (clip == "Jump_Full_Short") state.phase else null)
                         }
                     }
@@ -858,12 +941,14 @@ private fun CaptureApp(connection: WorldConnection) {
                     true
                 }) {
                 val stageMaterial = remember(materialLoader) { materialLoader.createColorInstance(Color(0xff272238), roughness = .95f) }
-                CubeNode(size = Size(2.2f, .035f, 1.5f), materialInstance = stageMaterial, position = Position(0f,-.0175f,0f))
+                CubeNode(size = if(trail.preview && trail.state.active) Size(8f,.035f,30f) else Size(2.2f,.035f,1.5f), materialInstance = stageMaterial, position = Position(0f,-.0175f,if(trail.preview && trail.state.active)-12f else 0f))
                 world?.let { current ->
                     CharacterWorld(current, previewFeet) { camera.worldPosition }
+                    if(trail.preview) TrailObjective(trail.state,current.reducedMotion,preview=true) { camera.worldPosition }
+                    MagicBursts(magicBursts,current.reducedMotion)
                     current.raid?.takeIf { raidIsFresh(it.started,System.currentTimeMillis(),10_000) }?.let { raid ->
                         val started = remember(raid.id) { SystemClock.elapsedRealtime() }
-                        NorthstarProps(PortalWorld(raid.id,"TEST RAID · ${raid.count} ARRIVALS",FootPosition(0f,.5f,-.25f),FootPosition(0f,0f,-.25f),0f,started),emptyList(),sceneClock) { camera.worldPosition }
+                        NorthstarProps(PortalWorld(raid.id,"TEST RAID · ${raid.count} ARRIVALS",FootPosition(0f,.5f,-.25f),FootPosition(0f,0f,-.25f),0f,started),emptyList(),sceneClock,current.reducedMotion) { camera.worldPosition }
                     }
                 }
             }
@@ -881,7 +966,7 @@ private fun CaptureApp(connection: WorldConnection) {
             mode = if (!paired) "TEST RAID · 3 STUB VIEWERS" else if (world?.mode == "SIMULATOR") "TEST ROOM · ${world.heroes.size} PLAYERS" else if (state.authorized) "TWITCH ROOM" else "RECONNECTING",
             heroes = world?.heroes.orEmpty(), actor = selectedActor, target = selectedTarget, tracks = liveTracks,
             toast = toast ?: error.takeIf { it.isNotBlank() }?.let { it to false }, recording = clip.recording, relay = relay.active, relayLive = relay.live,
-            onCamera = { if (ar) { clip.stop(); output.stop(); relay.stop() }; ar = !ar; error = "" },
+            onCamera = { if (ar) { clip.stop(); output.stop(); relay.stop() }; playground.clearTrailChat();trail.stop();orbitRevision++;magicBursts=emptyList();ar = !ar; error = "" },
             onSetup = { settingsOpen = true },
             onPlace = { placementMode = !placementMode; selectMode = false },
             onSelect = { selectMode = !selectMode; placementMode = false },
@@ -895,12 +980,19 @@ private fun CaptureApp(connection: WorldConnection) {
             onChat = { controlsOpen = true }, onCapture = { outputPanel = false; capturePanel = true },
             testChat = testMessages.takeIf { !paired }, testRunning = testRunning, testDelivered = testDelivered,
             testTotal = playground.scenario.size, testHasRaid = localWorld.raid != null,
-            onStopTest = { playground.pauseReplay(); testRunning = false }
+            onStopTest = { playground.pauseReplay(); testRunning = false },
+            trail=trail.state,trailPaused=trail.paused,trailPreview=trail.preview,trailGuidance=trail.guidance,
+            onQuests={ trailPanel=true },onTrailStep={ trail.previewStep() }
         )
         if (debugOpen) DebugPanel(connection, localDebug, liveTracks, showBoxes, { showBoxes = it }, detectorOn, { detectorOn = it },
             { text, ok -> toast = text to ok }, Modifier.align(Alignment.CenterEnd).fillMaxWidth(.85f).fillMaxHeight(.55f),
             ArControls(occlusionOn, { occlusionOn = it }, lightMode, { lightMode = it }, shadowMode, { shadowMode = it }))
     }
+    if(trailPanel) TrailSheet(trail.state,trail.paused,ar,followMe,roomQuests=world?.quests.orEmpty().takeIf { paired }.orEmpty(),
+        onStart={ playground.clearTrailChat();trail.start(!ar);magicBursts=emptyList();trailPanel=false;toast=if(ar)"Rift Trail started · scan the open floor ahead" to true else "Trail preview · use Walk forward to explore the simulated room" to true },
+        onPause={ trail.togglePause();playground.clearTrailChat();if(!trail.paused && !paired && trail.state.phase==TrailPhase.PARTY) playground.reactToTrail(TrailEventKind.RESTORED,System.currentTimeMillis());trailPanel=false },
+        onStop={ playground.clearTrailChat();trail.stop();magicBursts=emptyList();orbitRevision++;trailPanel=false },
+        onFollow={ followMe=it;if(it){autoStage=false;landingReady=anchor!=null} },onDismiss={trailPanel=false})
     if (controlsOpen && !paired) TestChatSheet(playground.viewers, testMessages, testViewer,
         { id -> testViewer = id; selectedActor = playground.viewers.first { it.id == id }.characterId }, { controlsOpen = false },
         { viewerId, text ->
@@ -922,6 +1014,14 @@ private fun CaptureApp(connection: WorldConnection) {
             OutlinedButton(enabled = !ar || anchor != null, onClick = { settingsOpen = false; startTestRaid() }) { Text("Start 3-viewer test raid") }
             if (paired) TextButton(onClick = { connection.disconnect(); selectedActor = null; settingsOpen = false }) { Text("Switch to test raid / fake chat") }
             Row(verticalAlignment = Alignment.CenterVertically) { Switch(showBoxes, { showBoxes = it }); Spacer(Modifier.width(8.dp)); Text("Show detected objects") }
+            OutlinedButton(onClick={ settingsOpen=false;trailPanel=true },modifier=Modifier.fillMaxWidth()) { Text("Explore · Rift Trail quests") }
+            Row(verticalAlignment=Alignment.CenterVertically) { Switch(gameSound,{gameSound=it});Spacer(Modifier.width(8.dp));Text("Game sound effects") }
+            Text("SFX level · ${(soundVolume*100).toInt()}%",style=MaterialTheme.typography.bodySmall)
+            Slider(soundVolume,{soundVolume=it},enabled=gameSound)
+            Row(verticalAlignment=Alignment.CenterVertically) { Switch(phoneSound,{phoneSound=it});Spacer(Modifier.width(8.dp));Text("Hear effects on this phone") }
+            Text("Broadcast includes game effects. Phone playback pauses while broadcasting with the microphone to prevent echo. Local MP4 clips are still silent.",style=MaterialTheme.typography.bodySmall)
+            Row(verticalAlignment=Alignment.CenterVertically) { Switch(reducedMotion,{reducedMotion=it});Spacer(Modifier.width(8.dp));Text("Reduce motion and particles") }
+            OutlinedButton(onClick={audio.play(RiftCue.DISCOVERY)}) { Text("Preview discovery sound") }
             Row(verticalAlignment = Alignment.CenterVertically) { Switch(detectorOn, { detectorOn = it }); Spacer(Modifier.width(8.dp)); Text("Recognize objects on this phone") }
             Row(verticalAlignment = Alignment.CenterVertically) { Switch(automaticLanding, { automaticLanding=it; landingStability.clear(); if(!it) { autoStage=false; landingReady=anchor!=null } }); Spacer(Modifier.width(8.dp)); Text("Prepare raid landing automatically") }
             Text("Scans measured surfaces continuously. Existing characters stay put; new arrivals wait for a clear landing area.", style = MaterialTheme.typography.bodySmall)
@@ -990,6 +1090,7 @@ private fun CaptureApp(connection: WorldConnection) {
         text = { Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(if (ar) "Sends camera video now; scanning continues and raid characters appear when the landing area is ready." else "Camera is off. This broadcasts only the 3D preview for a private setup test.")
             Text("720p30 H.264 · SRT or RTMPS/RTMP · no SRTLA bonding. Plain SRT/RTMP are not automatically encrypted.", style = MaterialTheme.typography.bodySmall)
+            Text("Game effects are mixed directly into AAC audio, including with the microphone off. Adjust or mute them in Setup. Local clip recording is video-only.",style=MaterialTheme.typography.bodySmall)
             OutlinedTextField(relayUrl, { relayUrl = it.take(4096) }, label = { Text("Private ingest URL") },
                 visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
                 modifier = Modifier.fillMaxWidth(), singleLine = true)

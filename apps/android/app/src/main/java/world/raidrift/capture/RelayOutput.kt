@@ -18,6 +18,8 @@ import com.pedro.common.TimeUtils
 import com.pedro.encoder.audio.AudioEncoder
 import com.pedro.encoder.audio.GetAudioData
 import com.pedro.encoder.input.audio.MicrophoneManager
+import com.pedro.encoder.input.audio.GetMicrophoneData
+import com.pedro.encoder.Frame
 import com.pedro.encoder.video.FormatVideoEncoder
 import com.pedro.encoder.video.GetVideoData
 import com.pedro.encoder.video.VideoEncoder
@@ -73,7 +75,7 @@ internal data class RelayEndpoint(val url: String, val scheme: String) {
 }
 
 /** Encodes the actual Filament composition; does not open a second camera or screen-capture UI. */
-internal class RelayOutput(private val context: Context, private val mirror: SurfaceMirrorer) {
+internal class RelayOutput(private val context: Context, private val mirror: SurfaceMirrorer, private val effects: RiftAudio) {
     var active by mutableStateOf(false); private set
     var connected by mutableStateOf(false); private set
     var live by mutableStateOf(false); private set
@@ -87,6 +89,7 @@ internal class RelayOutput(private val context: Context, private val mirror: Sur
     private var video: VideoEncoder? = null
     private var audio: AudioEncoder? = null
     private var mic: MicrophoneManager? = null
+    private var effectsStream: AutoCloseable? = null
     private var surface: Surface? = null
     private var srt: SrtClient? = null
     private var rtmp: RtmpClient? = null
@@ -97,7 +100,7 @@ internal class RelayOutput(private val context: Context, private val mirror: Sur
         if (includeMicrophone) check(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) { "Microphone permission is required only when audio is enabled" }
         stop()
         val current = generation
-        val connectedStatus = "Relay connected · H.264${if (includeMicrophone) " + microphone AAC" else " · video only"}"
+        val connectedStatus = "Relay connected · H.264 + game SFX${if (includeMicrophone) " + microphone" else " · mic off"}"
         val diagnosticStart = android.os.SystemClock.elapsedRealtime()
         var diagnosticVideo = 0L
         var diagnosticAudio = 0L
@@ -145,9 +148,9 @@ internal class RelayOutput(private val context: Context, private val mirror: Sur
         }
         try {
             if (endpoint.scheme == "srt") srt = SrtClient(checker).also {
-                it.setOnlyVideo(!includeMicrophone); it.setAudioInfo(48_000, false); it.setReTries(3); it.setLogs(false)
+                it.setOnlyVideo(false); it.setAudioInfo(48_000, false); it.setReTries(3); it.setLogs(false)
             } else rtmp = RtmpClient(checker).also {
-                it.setOnlyVideo(!includeMicrophone); it.setAudioInfo(48_000, false); it.setReTries(3); it.setLogs(false)
+                it.setOnlyVideo(false); it.setAudioInfo(48_000, false); it.setReTries(3); it.setLogs(false)
             }
             val srtSession = srt; val rtmpSession = rtmp
             val encoder = VideoEncoder(object : GetVideoData {
@@ -172,7 +175,7 @@ internal class RelayOutput(private val context: Context, private val mirror: Sur
             video = encoder
             encoder.forceBt709Color(true)
             check(encoder.prepareVideoEncoder(1280, 720, 30, 2_500_000, 0, 2, FormatVideoEncoder.SURFACE)) { "H.264 encoder unavailable" }
-            if (includeMicrophone) {
+            run {
                 val audioEncoder = AudioEncoder(object : GetAudioData {
                     override fun getAudioData(audioBuffer: ByteBuffer, info: MediaCodec.BufferInfo) {
                         if (BuildConfig.DEBUG && android.os.SystemClock.elapsedRealtime() - diagnosticAudio > 5000) {
@@ -185,13 +188,20 @@ internal class RelayOutput(private val context: Context, private val mirror: Sur
                 })
                 audio = audioEncoder
                 check(audioEncoder.prepareAudioEncoder(96_000, 48_000, false)) { "AAC encoder unavailable" }
-                mic = MicrophoneManager(audioEncoder).also {
+                if (includeMicrophone) mic = MicrophoneManager(object : GetMicrophoneData {
+                    override fun inputPCMData(frame: Frame) {
+                        if(generation == current && active) audioEncoder.inputPCMData(effects.mixMicrophone(frame))
+                    }
+                }).also {
                     check(it.createMicrophone(48_000, false, true, true)) { "Microphone unavailable" }
                 }
             }
             val mediaOrigin = TimeUtils.getCurrentTimeMicro()
             encoder.start(mediaOrigin)
-            audio?.start(mediaOrigin); mic?.start()
+            audio?.start(mediaOrigin)
+            effects.microphonePublishing=includeMicrophone
+            if(includeMicrophone) mic?.start()
+            else effectsStream=effects.streamEffects { frame -> if(generation==current && active) audio?.inputPCMData(frame) }
             surface = encoder.inputSurface
             mirror.startMirroring(checkNotNull(surface), width = 1280, height = 720)
             awaitConnection("Relay connection timed out · restart when ready")
@@ -224,6 +234,7 @@ internal class RelayOutput(private val context: Context, private val mirror: Sur
 
     fun stop(message: String = "Relay output stopped") {
         generation++; active = false; connected = false; live = false; lastVideoAt=0; microphone = false; bitrate = 0
+        effectsStream?.close(); effectsStream=null; effects.microphonePublishing=false
         surface?.let { runCatching { mirror.stopMirroring(it) } }; surface = null
         runCatching { mic?.stop() }; mic = null
         runCatching { audio?.stop() }; audio = null

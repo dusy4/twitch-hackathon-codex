@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map>
+    <float name="volume" value="0.7" />
+    <boolean name="sound" value="true" />
+    <boolean name="reduced" value="true" />
+    <boolean name="monitor" value="true" />
+</map>
