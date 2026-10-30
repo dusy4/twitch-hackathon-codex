@@ -36,7 +36,7 @@ data class Located(val foot: FootPosition, val topY: Float?, val source: String)
  * A raid portal in ARCore world coordinates. [foot] is the ground point heroes walk out from;
  * when [footKnown] is false no plane/depth ground was measured and nobody spawns from it.
  */
-data class PortalWorld(val raidId: String, val banner: String, val center: FootPosition, val foot: FootPosition, val yaw: Float, val createdAt: Long, val footKnown: Boolean = true)
+data class PortalWorld(val raidId: String, val banner: String, val center: FootPosition, val foot: FootPosition, val yaw: Float, val createdAt: Long, val footKnown: Boolean = true, val raidStarted: Long = 0L)
 
 data class ConfettiBurst(val id: String, val origin: FootPosition, val startedAt: Long)
 data class ManualTarget(val id: String, var label: String, val anchor: Anchor, val lift: Float)
@@ -58,6 +58,7 @@ class NorthstarRuntime {
     val seenProps = mutableSetOf<String>()
     var bursts = listOf<ConfettiBurst>()
     var portal: PortalWorld? = null
+    var portalTick = 0L
     var portalAnchor: Anchor? = null
     var portalStage: Anchor? = null
     var lastDetectSubmit = 0L
@@ -86,7 +87,7 @@ class NorthstarRuntime {
 
     fun reset() {
         runCatching { portalAnchor?.detach() }; portalAnchor = null
-        generation++; lastCameraTimestamp = 0; lastPresentation = 0
+        generation++; lastCameraTimestamp = 0; lastPresentation = 0; portalTick = 0
         tracker.clear(); space.clear(); motorLift.clear(); previousFeet.clear(); sources.clear(); frames.clear()
         objectAnchors.values.forEach { runCatching { it.detach() } }; objectAnchors.clear()
         serverTracks.clear().forEach { runCatching { it.anchor.detach() } }; serverBoxes.clear()
@@ -106,7 +107,7 @@ internal fun stagePortal(stage: Pose, raid: Raid, now: Long, camera: Pose, suppo
     val p = floatArrayOf(foot.x, foot.y, foot.z)
     val yaw = TargetGoal.yaw(camera.tx()-p[0], camera.tz()-p[2])
     return PortalWorld(raid.id, "${if (raid.test) "TEST RAID" else "RAID"}${if (raid.from.isNotBlank()) " · ${raid.from.uppercase()}" else ""} · ${raid.count}",
-        FootPosition(p[0],p[1]+.5f,p[2]), foot, yaw, now, footKnown = measured != null)
+        FootPosition(p[0],p[1]+.5f,p[2]), foot, yaw, now, footKnown = measured != null, raidStarted = raid.started)
 }
 
 /** Lowest tracked upward plane height, used as the ground for fallbacks. */
@@ -270,6 +271,21 @@ internal fun captureFrameRecord(frame: Frame, frameId: String, now: Long, planes
     return FrameRecord(frameId, now, camera.pose.rigid(), camera.displayOrientedPose.rigid(), projection,
         Affine2.fromCorners(corners), intrinsics, depth, snapshots)
 }
+
+/** Copy bounded observed polygons for automatic landing; never store a Frame/Image past this callback. */
+internal fun landingSurfaces(planes: List<Plane>): List<Pair<LandingSurface, Plane>> = planes
+    .filter { it.trackingState == TrackingState.TRACKING && it.subsumedBy == null && it.type == Plane.Type.HORIZONTAL_UPWARD_FACING }
+    .take(24).mapNotNull { plane -> runCatching {
+        val polygon=plane.polygon.duplicate().also { it.rewind() }
+        if (polygon.remaining() !in 6..512 || polygon.remaining()%2!=0) return@runCatching null
+        val pose=plane.centerPose
+        val points=mutableListOf<PlanePoint>()
+        while (polygon.remaining()>=2) {
+            val p=pose.transformPoint(floatArrayOf(polygon.get(),0f,polygon.get()))
+            points += PlanePoint(p[0],p[2])
+        }
+        LandingSurface(plane.hashCode(),pose.ty(),points) to plane
+    }.getOrNull() }
 
 /** World foot point of an ARCore pose. */
 internal fun Pose.foot() = FootPosition(tx(), ty(), tz())

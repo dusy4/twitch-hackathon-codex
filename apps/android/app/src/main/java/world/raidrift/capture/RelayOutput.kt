@@ -76,6 +76,8 @@ internal data class RelayEndpoint(val url: String, val scheme: String) {
 internal class RelayOutput(private val context: Context, private val mirror: SurfaceMirrorer) {
     var active by mutableStateOf(false); private set
     var connected by mutableStateOf(false); private set
+    var live by mutableStateOf(false); private set
+    @Volatile private var lastVideoAt = 0L
     var microphone by mutableStateOf(false); private set
     var bitrate by mutableLongStateOf(0); private set
     var status by mutableStateOf("Relay output is off"); private set
@@ -95,6 +97,7 @@ internal class RelayOutput(private val context: Context, private val mirror: Sur
         if (includeMicrophone) check(ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) { "Microphone permission is required only when audio is enabled" }
         stop()
         val current = generation
+        val connectedStatus = "Relay connected · H.264${if (includeMicrophone) " + microphone AAC" else " · video only"}"
         val diagnosticStart = android.os.SystemClock.elapsedRealtime()
         var diagnosticVideo = 0L
         var diagnosticAudio = 0L
@@ -113,12 +116,13 @@ internal class RelayOutput(private val context: Context, private val mirror: Sur
                     connected = true
                     connectionAttempt++
                     video?.requestKeyframe()
-                    status = "Relay connected · H.264${if (includeMicrophone) " + microphone AAC" else " · video only"}"
+                    live = BroadcastHealth.live(active, connected, lastVideoAt, android.os.SystemClock.elapsedRealtime())
+                    status = if (live) connectedStatus else "Relay connected · waiting for camera video"
                 }
             } }
             override fun onConnectionFailed(reason: String) { main.post {
                 if (active && generation == current) {
-                    connected = false
+                    connected = false; live = false
                     bitrate = 0
                     awaitConnection("Relay reconnect timed out · restart when ready")
                     if (srt?.shouldRetry(reason) == true) {
@@ -155,7 +159,13 @@ internal class RelayOutput(private val context: Context, private val mirror: Sur
                         diagnosticVideo = android.os.SystemClock.elapsedRealtime()
                         android.util.Log.d("RaidRiftTiming", "video elapsedMs=${diagnosticVideo - diagnosticStart} ptsUs=${info.presentationTimeUs}")
                     }
-                    if (generation == current && active) { srtSession?.sendVideo(videoBuffer, info); rtmpSession?.sendVideo(videoBuffer, info) }
+                    if (generation == current && active) {
+                        if(info.size>0) {
+                            lastVideoAt=android.os.SystemClock.elapsedRealtime()
+                            if(!live) main.post { if(generation==current && active && connected) { live=true; status=connectedStatus } }
+                        }
+                        srtSession?.sendVideo(videoBuffer, info); rtmpSession?.sendVideo(videoBuffer, info)
+                    }
                 }
                 override fun onVideoFormat(mediaFormat: MediaFormat) = Unit
             })
@@ -191,7 +201,11 @@ internal class RelayOutput(private val context: Context, private val mirror: Sur
             val keyframes = object : Runnable {
                 override fun run() {
                     if (generation != current || !active) return
-                    if (connected) video?.requestKeyframe()
+                    if (connected) {
+                        video?.requestKeyframe()
+                        live=BroadcastHealth.live(active,connected,lastVideoAt,android.os.SystemClock.elapsedRealtime())
+                        status=if(live) connectedStatus else "Relay connected · waiting for camera video"
+                    }
                     main.postDelayed(this, 2000)
                 }
             }
@@ -209,7 +223,7 @@ internal class RelayOutput(private val context: Context, private val mirror: Sur
     fun mute(value: Boolean) { if (microphone) { if (value) mic?.mute() else mic?.unMute() } }
 
     fun stop(message: String = "Relay output stopped") {
-        generation++; active = false; connected = false; microphone = false; bitrate = 0
+        generation++; active = false; connected = false; live = false; lastVideoAt=0; microphone = false; bitrate = 0
         surface?.let { runCatching { mirror.stopMirroring(it) } }; surface = null
         runCatching { mic?.stop() }; mic = null
         runCatching { audio?.stop() }; audio = null

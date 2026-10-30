@@ -1,0 +1,29 @@
+Input #0, matroska,webm, from 'artifacts/auto-landing/relay-received.mkv':
+  Metadata:
+    title           :
+    ENCODER         : Lavf63.1.101
+  Duration: 00:00:05.03, start: 0.000000, bitrate: 2002 kb/s
+  Stream #0:0: Video: h264 (Constrained Baseline), yuv420p(progressive), 640x360 [SAR 1:1 DAR 16:9], 30 fps, 30 tbr, 1k tbn, start 0.367000
+    Metadata:
+      DURATION        : 00:00:05.029000000
+  Stream #0:1: Audio: aac (LC), 48000 Hz, mono, fltp
+    Metadata:
+      DURATION        : 00:00:05.013000000
+[Parsed_volumedetect_0 @ 0000018e18f57d40] n_samples: 0
+Stream mapping:
+  Stream #0:1 -> #0:0 (aac (native) -> pcm_s16le (native))
+Press [q] to stop, [?] for help
+Output #0, null, to 'NUL':
+  Metadata:
+    title           :
+    encoder         : Lavf63.1.101
+  Stream #0:0: Audio: pcm_s16le, 48000 Hz, mono, s16, 768 kb/s
+    Metadata:
+      encoder         : Lavc63.1.101 pcm_s16le
+      DURATION        : 00:00:05.013000000
+[Parsed_volumedetect_0 @ 0000018e1add8480] n_samples: 240640
+[Parsed_volumedetect_0 @ 0000018e1add8480] mean_volume: -21.1 dB
+[Parsed_volumedetect_0 @ 0000018e1add8480] max_volume: -18.0 dB
+[Parsed_volumedetect_0 @ 0000018e1add8480] histogram_18db: 69487
+[out#0/null @ 0000018e18eba7c0] video:0KiB audio:470KiB subtitle:0KiB other streams:0KiB global headers:0KiB muxing overhead: unknown
+size=N/A time=00:00:05.01 bitrate=N/A speed= 708x elapsed=0:00:00.00

@@ -1,0 +1,1 @@
+zipalign -c -P 16 4 app-debug.apk: verified, exit 0

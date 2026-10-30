@@ -58,3 +58,8 @@ Latest internal build: RaidRift-0.8.0.apk, versionCode 13, SHA256 ea8740147f1a34
 Open AR camera, scan and tap a surface, then Test raid. Alice, Bob and Charlie now send ordinary English/Ukrainian messages for walking, turning, dancing and jumping. The streamer only starts the raid. Optional Chat accepts `walk right then jump`, `come closer`, `turn around then dance`, `йди ліворуч`, `стрибни`. Recognized language is a bounded offline grammar, not unrestricted model comprehension. Directions refer to the placed stage. Existing `!` commands remain compatible.
 
 Preview and AR both move through intermediate positions. Models turn smoothly and use separate walking/running clips; jumping has a visible root lift, one-shot animation and landing. No new rig pack or scene-understanding model is required for these actions. See ADR-007 and artifacts/natural-motion/verification.json. A new physical S25 walk/jump test is still required.
+## 0.9.0 automatic landing
+
+Start AR → scan a clear floor or table → wait for Landing ready → Test raid. The app now prepares a fixed measured landing zone automatically before the three test viewers arrive; manual tapping still overrides placement. Existing anchored characters are not moved to follow a newly observed surface. Scanning continues during broadcast, and output can start before any stage is ready. Supported text commands are still a local phrase grammar, not unrestricted LLM comprehension.
+
+See AUTO_LANDING.md and ADR-008-auto-landing.md. Current private receiver was restored and generated video/audio plus native camera-off output have new evidence. Physical S25 automatic placement, AR-composited relay, microphone/A/V sync and real Twitch remain open checks.

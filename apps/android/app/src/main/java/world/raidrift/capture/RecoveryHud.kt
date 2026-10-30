@@ -29,7 +29,7 @@ private val RiftMint = Color(0xff9be7c4)
 fun RecoveryHud(
     ar: Boolean, placed: Boolean, placing: Boolean, selecting: Boolean, tracking: Boolean,
     status: String, mode: String, heroes: List<Hero>, actor: String?, target: Pair<String, String>?,
-    tracks: List<TrackView>, toast: Pair<String, Boolean>?, recording: Boolean, relay: Boolean,
+    tracks: List<TrackView>, toast: Pair<String, Boolean>?, recording: Boolean, relay: Boolean, relayLive: Boolean,
     onCamera: () -> Unit, onSetup: () -> Unit, onPlace: () -> Unit, onSelect: () -> Unit,
     onActor: (String) -> Unit, onTarget: (TrackView) -> Unit, onClearTarget: () -> Unit,
     onCommand: (String) -> Unit, onRaid: () -> Unit, onChat: () -> Unit, onCapture: () -> Unit,
@@ -48,7 +48,7 @@ fun RecoveryHud(
                     Text("RAIDRIFT", color = Color.White, fontWeight = FontWeight.Black, fontSize = 18.sp, letterSpacing = 2.sp)
                     Text(mode, color = RiftViolet, fontSize = 10.sp, letterSpacing = 1.sp)
                 }
-                if (recording || relay) Text(if (relay) "● ON AIR" else "● REC", color = Color(0xffff9caa), fontSize = 11.sp)
+                if (recording || relay) Text(if (relay && relayLive) "● ON AIR" else if (relay) "◌ WAIT" else "● REC", color = Color(0xffff9caa), fontSize = 11.sp)
                 TextButton(onClick = onCamera, contentPadding = PaddingValues(horizontal = 10.dp)) { Text(if (ar) "Camera off" else "Start AR", fontSize = 12.sp) }
                 TextButton(onClick = onSetup, contentPadding = PaddingValues(horizontal = 10.dp)) { Text("Setup", fontSize = 12.sp) }
             }
@@ -61,7 +61,7 @@ fun RecoveryHud(
         }
         if (!ar && !testHasRaid) Column(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 108.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Your chat. In your world.", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 23.sp)
-            Text("Start AR → scan a floor or table → tap to place.", color = Color(0xffc6bfd6), fontSize = 12.sp, modifier = Modifier.padding(top = 5.dp))
+            Text("Start AR → scan a floor or table → wait for Landing ready.", color = Color(0xffc6bfd6), fontSize = 12.sp, modifier = Modifier.padding(top = 5.dp))
         }
         Column(Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (testChat != null && testHasRaid) Column(Modifier.fillMaxWidth().background(RiftInk, RoundedCornerShape(16.dp)).padding(horizontal = 12.dp, vertical = 5.dp)) {
@@ -79,7 +79,7 @@ fun RecoveryHud(
             }
             if (!ar && !testHasRaid) Button(onClick = onCamera, modifier = Modifier.fillMaxWidth()) { Text("Open AR camera") }
             if (testChat != null && !testHasRaid) Button(onClick = onRaid, enabled = !ar || placed, modifier = Modifier.fillMaxWidth()) {
-                Text(if (ar && !placed) "Place your stage, then test a raid" else if (!ar) "Preview test raid · 3 viewers" else "Test raid · 3 viewers")
+                Text(if (ar && !placed) "Scanning landing area…" else if (!ar) "Preview test raid · 3 viewers" else "Test raid · 3 viewers")
             }
             toast?.let { (text, ok) ->
                 Text(text, color = if (ok) RiftMint else Color(0xffffa7b1), fontSize = 12.sp, maxLines = 3,

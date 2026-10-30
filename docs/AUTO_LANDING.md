@@ -1,0 +1,15 @@
+# Automatic landing and relay update — 0.9.0, 2026-10-30
+
+The native command interpreter is still a deterministic English/Ukrainian phrase grammar, not an LLM. Geometry preparation is also local: ARCore tracked plane polygons plus timestamp-aligned depth, not a semantic model.
+
+Start AR and scan a clear floor or large table. Automatic placement searches at 4 Hz for a 1.10 m × 0.84 m measured footprint, checks overhead surfaces and 29 depth probes (including the actual three initial landing slots), and waits at least a second for stable evidence. Depth-capable devices wait for useful depth; unsupported devices explicitly show surface-only readiness. A manual surface tap remains available. Existing characters stay anchored; this version prepares one fixed stage, not independent new stages in every room.
+
+Raids observed while waiting are queued locally for at most two minutes and trigger once after readiness. Characters who joined during that wait still emerge through the newly opened portal. New arrivals pause when the automatic stage becomes unobserved/blocked or tracking pauses. A permanently lost stage requires the explicit Move stage recovery, so an established crowd is not silently teleported. Automatic-stage movement uses observed support rather than an extrapolated infinite floor.
+
+Broadcast output can now start before a stage is placed. Plane-grid visualization is suppressed in broadcast/recording, settings are scrollable, and the ON AIR indicator requires a transport connection plus recent encoded video. A stalled/unready source shows WAIT instead. These checks do not prove that a remote viewer received the stream.
+
+The existing MediaMTX receiver had stopped; it has been restarted with the loopback-only infra/tailnet-relay.yml configuration. Existing Tailscale forwards remain unchanged. Synthetic H.264+AAC publish/read and private HTTPS HLS manifest checks pass. Actual native camera-off 720p preview was received and decoded on this PC. AR camera output did not encode frames in the software emulator while ARCore tracking was paused; a physical S25 camera/AR + microphone/A/V sync + OBS rehearsal is still required. No live Twitch broadcast was started.
+
+Phone relay controls: Capture → Broadcast to OBS / relay → use the existing private ingest URL → explicitly allow output → Start broadcast. Optional microphone requires its own permission. OBS receives ordinary composed video; it does not run ARCore. On this PC use an OBS Media Source with rtsp://127.0.0.1:8554/live/raidrift. The phone needs Tailscale for the configured private RTMP URL, and the PC/receiver must remain on. scripts/start-tailnet-relay.ps1 restarts the existing private receiver if needed; it does not change firewall/Tailscale settings or start Twitch.
+
+See artifacts/auto-landing/verification.json for the final APK hash, exact test counts, native fixture evidence and remaining gates. Source/model licenses and notices are unchanged. The inherited model-hierarchy validator warnings from 0.8.0 remain documented; no new assets or dependencies were added.

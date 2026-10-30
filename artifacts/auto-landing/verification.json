@@ -1,0 +1,112 @@
+{
+  "date": "2026-10-30",
+  "versionName": "0.9.0-auto-landing",
+  "versionCode": 14,
+  "applicationId": "world.raidrift.capture.android",
+  "apkBytes": 121465861,
+  "apkSha256": "c080a33ab09b1e409e31d312992b1e8e6c13d130923af03e390afba8042c6ada",
+  "android": {
+    "tests": 86,
+    "failures": 0,
+    "lintErrors": 0,
+    "lintWarnings": 11,
+    "build": "testDebugUnitTest assembleDebug lintDebug passed",
+    "signature": "Original internal debug certificate; v2 verified",
+    "zipAlignment": "16 KiB verified"
+  },
+  "backend": {
+    "changed": false,
+    "retestedThisSlice": false,
+    "previousVerifiedResult": "84 pass, one conditional PostgreSQL skip"
+  },
+  "consultant": {
+    "tool": "an independent reviewer CLI",
+    "model": "independent review",
+    "effort": "high",
+    "mode": "read-only",
+    "fixed": [
+      "low-obstacle depth probing",
+      "delayed raid portal and hero eligibility",
+      "tracking pause readiness invalidation",
+      "large observed polygons",
+      "bounded candidate evaluation cost",
+      "settings overflow",
+      "no-stage output gating",
+      "connection vs actual encoded-video liveness"
+    ]
+  },
+  "landing": {
+    "cadenceTargetHz": 4,
+    "footprintMeters": [
+      1.1,
+      0.84
+    ],
+    "clearanceProbeCount": 29,
+    "minimumKnownDepthFraction": 0.8,
+    "stableMs": 1000,
+    "depthOptionalOnlyWhenDeviceUnsupported": true,
+    "newRaidWaitLimitMs": 120000,
+    "manualPlacementFallback": true,
+    "establishedCharactersAutomaticallyRelocated": false
+  },
+  "runtime": {
+    "device": "Disposable Boat Android API30 x86_64, software swangle GPU",
+    "installedApkHash": "See installed-apk-sha256.txt; exact final APK verified",
+    "cameraOffScenarioMessages": 15,
+    "cameraOffViewers": 3,
+    "scrollableSettings": "Observed lower walking-mode/manual-placement settings after a real swipe",
+    "relayBeforeStage": "Start output enabled and WAIT shown while no stage/camera video was ready",
+    "nativePreviewRelay": {
+      "status": "passed",
+      "path": "Native APK MediaCodec -> RTMP over private loopback SSH forward -> workstation MediaMTX -> RTSP -> FFmpeg decode",
+      "video": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 1280,
+            "height": 720,
+            "nb_read_frames": "28"
+          }
+        ],
+        "format": {
+          "duration": "4.973000",
+          "size": "292554"
+        }
+      },
+      "observedOnAirOnlyWithVideo": true,
+      "appHudIncludedInEncodedVideo": false
+    },
+    "arCameraRelay": {
+      "status": "unpassed",
+      "observation": "Emulator rendered the synthetic room but ARCore remained PAUSED; no encoded AR video frames were observed and RTMP publish timed out. The final UI correctly showed WAIT."
+    }
+  },
+  "receiver": {
+    "restored": true,
+    "configuration": "infra/tailnet-relay.yml",
+    "bind": "Loopback only; existing private Tailscale forwards unchanged",
+    "generatedVideoAudioTest": "H.264 + AAC received and decoded; 640x360, 5.029 s",
+    "generatedAudioMeanDb": -21.1,
+    "privateHlsManifestStatus": 200,
+    "nativePreviewReceivedFrames": 28,
+    "leftRunningForOwner": true,
+    "restartScript": "scripts/start-tailnet-relay.ps1",
+    "liveTwitchBroadcastStarted": false
+  },
+  "distribution": {
+    "desktop": "C:/Users/Andrii PC/Desktop/RaidRift-0.9.0.apk",
+    "privateUrl": "https://raidrift-pc.tail7252b4.ts.net/apk/RaidRift-0.9.0.apk?build=c080a33a",
+    "downloadHeadStatus": 200,
+    "downloadContentLength": 121465861
+  },
+  "openChecks": [
+    "Physical S25 automatic landing and confidence behavior",
+    "Physical S25 AR camera + character relay",
+    "Microphone fidelity, mute and A/V synchronization",
+    "OBS rehearsal and physical end-to-end latency/framing/thermal behavior",
+    "Real Twitch raid/chat credentials rehearsal",
+    "Independent new landing stages across rooms; current behavior retains one fixed stage"
+  ]
+}
