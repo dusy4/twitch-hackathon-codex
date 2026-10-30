@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="world.raidrift.capture.RoomObstaclesTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-10-30T23:25:18.435Z" hostname="DESKTOP-NDFJ2AJ" time="0.004">
+  <properties/>
+  <testcase name="wristYawAndLookingDownDoNotSwingFollowGoals" classname="world.raidrift.capture.RoomObstaclesTest" time="0.001"/>
+  <testcase name="twoDepthObservationsBlockUntilObservedFloorClearsOrEvidenceExpires" classname="world.raidrift.capture.RoomObstaclesTest" time="0.002"/>
+  <testcase name="isolatedDepthNoiseNeverBlocksAndDepthNeverCreatesFloor" classname="world.raidrift.capture.RoomObstaclesTest" time="0.0"/>
+  <testcase name="trackingGapOrDifferentSupportHeightCannotReuseObstacles" classname="world.raidrift.capture.RoomObstaclesTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

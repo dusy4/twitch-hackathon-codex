@@ -119,6 +119,11 @@ private fun CaptureApp(connection: WorldConnection) {
     val raidArrivalGate = remember { RaidArrivalGate() }
     val landingClock = remember { longArrayOf(0L) }
     val motor = remember { SurfaceMotor() }
+    val navigator = remember { RoomNavigator() }
+    val roomObstacles = remember { RoomObstacles() }
+    val walkingHeading = remember { WalkingHeading() }
+    val spatialClock = remember { longArrayOf(0L) }
+    var waitingForRoute by remember { mutableIntStateOf(0) }
     val motion = remember { MotionState() }
     val previewMotor = remember { SurfaceMotor() }
     val previewMotion = remember { MotionState() }
@@ -133,7 +138,7 @@ private fun CaptureApp(connection: WorldConnection) {
     var bursts by remember { mutableStateOf<List<ConfettiBurst>>(emptyList()) }
     var sceneClock by remember { mutableLongStateOf(0) }
     var debugOpen by remember { mutableStateOf(false) }
-    var showBoxes by remember { mutableStateOf(true) }
+    var showBoxes by remember { mutableStateOf(false) }
     var placementMode by remember { mutableStateOf(false) }
     var selectMode by remember { mutableStateOf(false) }
     var selectedTarget by remember { mutableStateOf<Pair<String, String>?>(null) }
@@ -275,7 +280,7 @@ private fun CaptureApp(connection: WorldConnection) {
     DisposableEffect(anchor) { val current = anchor; onDispose { runCatching { current?.detach() } } }
     DisposableEffect(rt) { onDispose { rt.reset() } }
     LaunchedEffect(ar) { if(!ar && !trail.preview) { playground.clearTrailChat();trail.stop();magicBursts=emptyList();orbitRevision++ } }
-    LaunchedEffect(ar) { detector.invalidate(); if (!ar) { autoStage=false; landingReady=false; landingArea=null; landingStability.clear(); raidArrivalGate.clear(); anchor = null; pendingTap = null; pendingTargetTap = null; selectedTarget = null; clip.stop(); output.stop(); relay.stop(); rt.reset(); motor.clear(); feet = emptyMap(); contactFrame.clock.reset(); contactFrame.pose = null; liveTracks = emptyList(); portal = null; bursts = emptyList() } }
+    LaunchedEffect(ar) { detector.invalidate(); if (!ar) { autoStage=false; landingReady=false; landingArea=null; landingStability.clear(); raidArrivalGate.clear(); anchor = null; pendingTap = null; pendingTargetTap = null; selectedTarget = null; clip.stop(); output.stop(); relay.stop(); rt.reset(); motor.clear(); navigator.clear(); feet = emptyMap(); contactFrame.clock.reset(); contactFrame.pose = null; liveTracks = emptyList(); portal = null; bursts = emptyList() } }
     LaunchedEffect(clip.recording) { if (clip.recording) { delay(20_000); clip.stop() } }
     val visibleWorld = state.world?.takeIf { state.authorized && !it.paused }
     // Only a rejected/revoked pairing stops output. A paused world or a network
@@ -321,7 +326,7 @@ private fun CaptureApp(connection: WorldConnection) {
         detector.invalidate(); rt.generation++; rt.frames.clear()
         playground.raid(System.currentTimeMillis()); localWorld = playground.world; testMessages = playground.messages
         testRunning = true; testDelivered = 0; selectedActor = null
-        motor.clear(); motion.clear(); previewMotor.clear(); previewMotion.clear(); previewPrevious.clear(); previewFeet = emptyMap(); feet = emptyMap(); rt.spawned.clear(); rt.previousFeet.clear(); rt.motorLift.clear(); rt.targetApproach.clear(); rt.facing.clear()
+        motor.clear(); navigator.clear(); motion.clear(); previewMotor.clear(); previewMotion.clear(); previewPrevious.clear(); previewFeet = emptyMap(); feet = emptyMap(); rt.spawned.clear(); rt.previousFeet.clear(); rt.motorLift.clear(); rt.targetApproach.clear(); rt.facing.clear()
         toast = "Test raid received · just watch the chat and portal" to true
     }
 
@@ -348,7 +353,7 @@ private fun CaptureApp(connection: WorldConnection) {
                 sceneUnderstanding = SceneUnderstanding(occlusion = depthSupported && occlusionOn, lighting = true, planeVisualization = anchor == null && !relay.active && !clip.recording && !output.active),
                 onSessionCreated = { session ->
                     if(!trail.preview) trail.stop()
-                    rt.reset(); detector.invalidate(); anchor = null; motor.clear(); feet = emptyMap(); autoStage = false; landingReady = false; landingArea = null; landingStability.clear(); raidArrivalGate.clear(); landingClock[0] = 0
+                    rt.reset(); detector.invalidate(); anchor = null; motor.clear(); navigator.clear(); roomObstacles.clear();walkingHeading.clear();spatialClock[0]=0; feet = emptyMap(); autoStage = false; landingReady = false; landingArea = null; landingStability.clear(); raidArrivalGate.clear(); landingClock[0] = 0
                     contactFrame.clock.reset(); contactFrame.pose = null
                     if (BuildConfig.DEBUG) android.util.Log.d("RaidRiftAR", "config planes=${session.config.planeFindingMode} light=${session.config.lightEstimationMode} update=${session.config.updateMode} cpu=${session.cameraConfig.imageSize}")
                     depthSupported = session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)
@@ -386,7 +391,7 @@ private fun CaptureApp(connection: WorldConnection) {
                             if (BuildConfig.DEBUG) android.util.Log.d("RaidRiftAR", "surfaceTap planes=$surfaces hit=${hit?.trackable?.javaClass?.simpleName} anchored=${created != null}")
                             if (created == null) error = "No floor or desk found there yet. Keep scanning slowly, then tap a surface."
                             else {
-                                anchor = created; autoStage = false; landingReady = true; landingArea = null; landingStability.clear(); placementMode = false; error = ""; motor.clear(); motion.clear(); feet = emptyMap()
+                                anchor = created; autoStage = false; landingReady = true; landingArea = null; landingStability.clear(); placementMode = false; error = ""; motor.clear(); navigator.clear(); motion.clear(); feet = emptyMap()
                                 contactFrame.clock.reset(); contactFrame.pose = null
                             }
                         }
@@ -409,9 +414,18 @@ private fun CaptureApp(connection: WorldConnection) {
                     val nowElapsed = SystemClock.elapsedRealtime()
                     val nowEpoch = System.currentTimeMillis()
                     val observed = allPlanes.filter { it.trackingState == TrackingState.TRACKING && it.subsumedBy == null }.take(64)
+                    val spatialRecord by lazy { captureFrameRecord(frame,"spatial",nowEpoch,emptyList()) }
+                    val spatialDue=nowElapsed-spatialClock[0]>=250
+                    if(!tracked) { roomObstacles.clear();walkingHeading.clear();navigator.clear() }
+                    if(spatialDue) {
+                        spatialClock[0]=nowElapsed
+                        if(tracked && depthSupported && floorY!=null) roomObstacles.observe(spatialRecord,floorY,nowElapsed)
+                    }
                     soundListener.foot=frame.camera.pose.foot()
-                    soundListener.right=frame.camera.pose.xAxis.let { FootPosition(it[0],it[1],it[2]) }
-                    if(feedActive && world!=null && !world.paused) trailEvents(trail.update(session,frame,observed,depthSupported,world.trailParticipants()))
+                    soundListener.right=frame.camera.displayOrientedPose.xAxis.let { FootPosition(it[0],it[1],it[2]) }
+                    if(feedActive && world!=null && !world.paused) {
+                        if(spatialDue) trailEvents(trail.update(session,frame,observed,depthSupported,world.trailParticipants()) { spatialRecord })
+                    }
                     else trail.suspendObservation()
                     if (world != null) raidArrivalGate.observe(world.raid,nowEpoch,nowElapsed,if(!paired)consumedTestRaid else null)
                     if (!tracked || autoStage && anchor?.trackingState != TrackingState.TRACKING) {
@@ -728,15 +742,10 @@ private fun CaptureApp(connection: WorldConnection) {
                                 SensedWall(origin, axis(1f, 0f, 0f), axis(0f, 0f, 1f), axis(0f, 1f, 0f), points)
                             }.getOrNull()
                         }
-                        // Support under a point: tracked upward planes, then the extended floor (past the
-                        // detected patch). Not the 160x90 depth collider: its noise invented surfaces in mid-air
-                        // (owner recording 2026-10-30: hero hovering at backpack height beside the backpack).
-                        fun measuredSupport(query: FootPosition): Float? = planes.mapNotNull { plane ->
-                            val height = plane.centerPose.ty()
-                            val sample = com.google.ar.core.Pose.makeTranslation(query.x, height, query.z)
-                            height.takeIf { it <= query.y + 0.035f && plane.isPoseInPolygon(sample) }
-                        }.maxOrNull()
-                        fun support(query: FootPosition): Float? = measuredSupport(query) ?: if (autoStage) null else (floorY ?: origin.ty()).takeIf { it <= query.y + 0.035f }
+                        // Polygons are finite. Manual placement/follow mode must not manufacture an
+                        // infinite floor at the anchor height. Copy values; do not retain ARCore planes.
+                        val walking=WalkingGeometry(landingSurfaces(planes).map { PlaneSnapshot(it.first.y,it.first.polygon) },walls) { roomObstacles.blocked(it,nowElapsed) }
+                        fun support(query: FootPosition): Float? = walking.support(query)
                         val elapsed = presentationStep
                         contactFrame.pose?.let { previous ->
                             val inverse = previous.inverse()
@@ -744,14 +753,16 @@ private fun CaptureApp(connection: WorldConnection) {
                                 val local = inverse.transformPoint(floatArrayOf(point.x, point.y, point.z))
                                 val mapped = origin.transformPoint(local)
                                 FootPosition(mapped[0], mapped[1], mapped[2])
-                            } }.onFailure { motor.clear() }
+                            } }.onFailure { motor.clear(); navigator.clear() }
                         }
                         contactFrame.pose = origin
                         val heroes = world.heroes.take(12)
                         val ids = heroes.map { it.id }.toSet()
-                        motion.retain(ids); motor.retain(ids); rt.previousFeet.keys.retainAll(ids); rt.motorLift.keys.retainAll(ids); rt.targetApproach.keys.retainAll(ids); rt.facing.keys.retainAll(ids)
+                        motion.retain(ids); motor.retain(ids); navigator.retain(ids); rt.previousFeet.keys.retainAll(ids); rt.motorLift.keys.retainAll(ids); rt.targetApproach.keys.retainAll(ids); rt.facing.keys.retainAll(ids)
+                        var routeWaits=0
                         val camPose = frame.camera.pose
                         val camZ = camPose.zAxis
+                        val heading=walkingHeading.sample(camPose.foot(),-camZ[0],-camZ[2])
                         val camFoot = FootPosition(camPose.tx(), camPose.ty(), camPose.tz())
                         val inverseOrigin = origin.inverse()
                         // Several heroes on one object get distinct slots around it.
@@ -773,7 +784,7 @@ private fun CaptureApp(connection: WorldConnection) {
                                 result.goal.copy(y = spot.foot.y + 0.25f)
                             } else if (followMe) {
                                 // Probe just below the phone so any ground/desk under the goal is found.
-                                Formation.goal(camFoot, -camZ[0], -camZ[2], hero.x, hero.y, camPose.ty() - 0.3f)
+                                Formation.goal(camFoot, heading.first, heading.second, hero.x, hero.y, motor.position(hero.id)?.y ?: origin.ty())
                             } else {
                                 val g = origin.transformPoint(floatArrayOf((hero.x - 0.5f) * 1.4f, 0f, (hero.y - 0.5f)))
                                 FootPosition(g[0], g[1], g[2])
@@ -787,7 +798,7 @@ private fun CaptureApp(connection: WorldConnection) {
                                 audio.step(RiftCue.LAND,gate.foot,soundListener.foot,soundListener.right)
                                 if (rt.spawned.size > 500) rt.spawned.clear()
                             }
-                            // Fixed-stage actors walk to object goals. Only the explicit walking mode can recall them.
+                            // Catch-up changes walking speed only. No automatic recall/teleport.
                             if (followMe) {
                                 motor.position(hero.id)?.let { body ->
                                     val distance = kotlin.math.hypot(goal.x-body.x,goal.z-body.z)
@@ -795,7 +806,10 @@ private fun CaptureApp(connection: WorldConnection) {
                                 }
                             }
                             val effectiveGoal = if (hero.animation in setOf("stop", "jump") || hero.animation.startsWith("turn_")) motor.position(hero.id) ?: goal else goal
-                            val foot = motor.updateWithWalls(hero.id, effectiveGoal, elapsed, { from, to -> walls.any { it.blocks(from, to) } }, speed) { query -> support(query) }
+                            val before=motor.position(hero.id)
+                            val waypoint=before?.let { navigator.next(hero.id,it,effectiveGoal,nowElapsed,walking::canStep) } ?: effectiveGoal
+                            if(before!=null && kotlin.math.hypot(effectiveGoal.x-before.x,effectiveGoal.z-before.z)>.15f && waypoint==before) routeWaits++
+                            val foot = motor.updateWithWalls(hero.id, waypoint, elapsed, { from, to -> !walking.canStep(from,to) }, speed) { query -> support(query) }
                                 ?: return@mapNotNull null
                             val previous = rt.previousFeet.put(hero.id, foot)
                             val observedSpeed = if (previous != null && elapsed > 0.001f) kotlin.math.hypot(foot.x - previous.x, foot.z - previous.z) / elapsed else 0f
@@ -805,7 +819,7 @@ private fun CaptureApp(connection: WorldConnection) {
                             val wantLift = if (spot != null && resting && toGoal < 0.12f) targetLift else 0f
                             val lift = (rt.motorLift[hero.id] ?: 0f).let { it + (wantLift - it) * kotlin.math.min(1f, elapsed * 5f) }
                             rt.motorLift[hero.id] = lift
-                            val movingFacing = if (moving) inverseOrigin.rotateVector(floatArrayOf(goal.x-foot.x,0f,goal.z-foot.z)) else null
+                            val movingFacing = if (moving && previous!=null) inverseOrigin.rotateVector(floatArrayOf(foot.x-previous.x,0f,foot.z-previous.z)) else null
                             val state = motion.sample(hero.id, hero.animation, hero.actionSerial,
                                 movingFacing?.let { TargetGoal.yaw(it[0],it[2]) }, elapsed)
                             val jumpLift = if (world.reducedMotion) 0f else state.lift
@@ -825,8 +839,9 @@ private fun CaptureApp(connection: WorldConnection) {
                                 if (moving) (observedSpeed / if (clip == "Running_A") MotionState.RUN_SPEED else MotionState.WALK_SPEED).coerceIn(.5f, 1.6f) else 1f,
                                 if (clip == "Jump_Full_Short") state.phase else null)
                         }.toMap()
+                        if(waitingForRoute!=routeWaits) waitingForRoute=routeWaits
                     } else if (anchor == null || anchor?.trackingState == TrackingState.STOPPED || world == null) {
-                        contactFrame.clock.reset(); contactFrame.pose = null; motor.clear()
+                        contactFrame.clock.reset(); contactFrame.pose = null; motor.clear(); navigator.clear(); waitingForRoute=0
                         if (feet.isNotEmpty()) feet = emptyMap()
                     } else if (origin == null) {
                         // Brief tracking loss: keep the motor and last poses (hidden by AnchorNode); on
@@ -869,7 +884,7 @@ private fun CaptureApp(connection: WorldConnection) {
             }
             // Compose overlays: never part of the SurfaceMirrorer broadcast/recording.
             if (anchor == null) ScanFloorOverlay(trackingOk, surfaces, followMe, Modifier.align(Alignment.Center), automaticLanding, landingStatus)
-            if (showBoxes && liveTracks.isNotEmpty()) DetectionOverlay(liveTracks, Modifier.fillMaxSize())
+            if ((showBoxes || selectMode) && liveTracks.isNotEmpty()) DetectionOverlay(liveTracks, Modifier.fillMaxSize())
         } else {
             val currentWorld by rememberUpdatedState(world)
             SceneView(Modifier.fillMaxSize(), engine = engine, modelLoader = modelLoader,
@@ -960,7 +975,8 @@ private fun CaptureApp(connection: WorldConnection) {
                 anchor == null && automaticLanding -> landingStatus
                 anchor == null -> if (surfaces == 0) "Scan a floor or table · move slowly side to side" else "Surface found · tap to place your characters"
                 autoStage -> landingStatus
-                followMe -> "Walking mode · characters follow you"
+                waitingForRoute>0 -> "Party waiting for a measured route · scan the floor around obstacles"
+                followMe -> "Party following · walks only on scanned ground"
                 else -> "Stage locked · characters stay here when you walk away"
             },
             mode = if (!paired) "TEST RAID · 3 STUB VIEWERS" else if (world?.mode == "SIMULATOR") "TEST ROOM · ${world.heroes.size} PLAYERS" else if (state.authorized) "TWITCH ROOM" else "RECONNECTING",
@@ -1008,7 +1024,7 @@ private fun CaptureApp(connection: WorldConnection) {
             Button(onClick = { settingsOpen = false; pairingPanel = true }, modifier = Modifier.fillMaxWidth()) { Text(if (paired) "Manage paired room" else "Connect Twitch room") }
             if (state.pairingRequested && testRoom) OutlinedButton(onClick = {
                 playground.pauseReplay(); rt.portal = null; runCatching { rt.portalAnchor?.detach() }; rt.portalAnchor = null; rt.portalStage = null
-                rt.seenRaid = NorthstarRuntime.UNSET; portal = null; motor.clear(); feet = emptyMap()
+                rt.seenRaid = NorthstarRuntime.UNSET; portal = null; motor.clear(); navigator.clear(); feet = emptyMap()
                 testRoom = false; settingsOpen = false
             }) { Text("Return to paired room") }
             OutlinedButton(enabled = !ar || anchor != null, onClick = { settingsOpen = false; startTestRaid() }) { Text("Start 3-viewer test raid") }

@@ -1,4 +1,4 @@
-# Native immersion and Rift Trail — 0.10.0
+# Native immersion and Rift Trail — 0.11.0
 
 Current baseline inventory: [CURRENT_STATE.md](CURRENT_STATE.md). Design and engineering choices: [ADR-009](ADR-009-expedition-immersion.md). IRL Pro and other broadcasting-app compatibility remain deferred by owner instruction.
 
@@ -10,9 +10,9 @@ Current baseline inventory: [CURRENT_STATE.md](CURRENT_STATE.md). Design and eng
 4. Explore new ground after each pickup. Three crystals reveal a shrine. Approach it to restore it; the test viewers then send fresh celebration messages. Fresh emotes from two distinct present characters complete the local trail.
 5. The quest card gives objective direction/distance and pause/tracking hints. **Explore** opens progress, pause/resume, end/restart and connected-room quest status. If no test raid or joined characters exist, start a raid or bring in your connected viewers for the finale.
 
-For a clean camera view, turn off **Setup → Show detected objects**; **Hide** collapses the practice chat feed. These controls affect the phone HUD, which is already excluded from native broadcast output.
+The AR camera starts in **Focus** with object rectangles hidden. **Controls** reveals the full toolbar and camera-off action; **Setup → Show detected objects** enables debug rectangles. **Hide** collapses the practice chat feed. Target selection can temporarily reveal object rectangles. These controls affect the phone HUD, which is already excluded from native broadcast output.
 
-Fixed-stage characters continue to stay where they landed while you explore. **Party walks with me** in Explore (also Walking mode in Setup) is an explicit option; quests do not teleport the cast or take over viewer commands. Follow mode still depends on available ground and may stop at unobserved geometry. This is not a complete room navigation mesh.
+Fixed-stage characters continue to stay where they landed while you explore. **Party walks with me** in Explore (also Walking mode in Setup) is an explicit option; quests do not teleport the cast or take over viewer commands. Follow mode still depends on available ground and may stop at unobserved geometry. 0.11 adds finite-support local routes and temporary depth obstacles; it waits if no measured route is known. This is not a complete room navigation mesh. See [MR_REFERENCE_REVIEW.md](MR_REFERENCE_REVIEW.md).
 
 ## Camera-off preview
 

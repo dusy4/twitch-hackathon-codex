@@ -14,6 +14,7 @@ data class TrailObservation(
     val tracked: Boolean, val candidate: TrailCandidate? = null,
     val siteTracked: Boolean = true, val siteFoot: FootPosition? = null,
     val siteVisible: Boolean = false, val participants: List<TrailParticipant> = emptyList(),
+    val candidateHint: String? = null,
 )
 enum class TrailEventKind { DISCOVERED, COLLECTED, RESTORED, CHEER, COMPLETED, LOST }
 data class TrailEvent(val id: Long, val kind: TrailEventKind, val foot: FootPosition?, val text: String)
@@ -76,6 +77,7 @@ class Expedition {
 
     private fun horizontal(a: FootPosition, b: FootPosition) = hypot(a.x - b.x, a.z - b.z)
     private fun finite(p: FootPosition) = p.x.isFinite() && p.y.isFinite() && p.z.isFinite()
+    fun allowsLocation(p: FootPosition):Boolean = finite(p) && (lost || sites.none { horizontal(it,p)<1.2f && abs(it.y-p.y)<.3f })
     private fun emit(kind: TrailEventKind, at: FootPosition?, text: String) = TrailEvent(++serial, kind, at, text)
 
     /** Called only when a native objective anchor permanently stops, not for a brief PAUSED state. */
@@ -148,16 +150,17 @@ class Expedition {
             baselinePeople(o)
             val moved = lastDiscoveryCamera?.let { horizontal(it, o.camera) >= 1.25f && state.distance-lastPickupDistance>=1.5f } ?: true
             if (!moved && !lost) {
-                state = state.copy(hint = "Explore a little farther to reveal the next ${if (state.phase == TrailPhase.SHRINE) "shrine" else "crystal"}")
+                val remaining=max(1.5f-(state.distance-lastPickupDistance),1.25f-(lastDiscoveryCamera?.let { horizontal(it,o.camera) } ?: 0f)).coerceAtLeast(.1f)
+                state = state.copy(hint = "Explore new ground · ${"%.1f".format(java.util.Locale.ROOT,remaining)} m farther for the next ${if (state.phase == TrailPhase.SHRINE) "shrine" else "crystal"}")
                 candidate = null; candidateSamples = 0
                 return emptyList()
             }
             val next = o.candidate?.takeIf { c -> finite(c.foot) &&
                 horizontal(c.foot, o.camera) in 1.15f..2.8f && o.camera.y - c.foot.y in .35f..2.2f &&
-                (lost || sites.none { horizontal(it, c.foot) < 1.2f && abs(it.y - c.foot.y) < .3f }) }
+                allowsLocation(c.foot) }
             if (next == null) {
                 candidate = null; candidateSamples = 0
-                state = state.copy(hint = "Scan a clear floor ahead · magic needs a measured surface")
+                state = state.copy(hint = o.candidateHint ?: "Scan a clear floor ahead · magic needs a measured surface")
                 return emptyList()
             }
             val first = candidate
@@ -214,27 +217,54 @@ class Expedition {
 
 /** Cheap, bounded candidate search over observed polygons plus same-frame depth clearance. */
 object TrailPlacement {
-    fun choose(record: FrameRecord, surfaces: List<LandingSurface>, depthRequired: Boolean): TrailCandidate? {
-        if(record.projection.size!=16 || record.projection.any { !it.isFinite() }) return null
+    data class Search(val candidate: TrailCandidate?, val hint: String)
+    fun choose(record: FrameRecord, surfaces: List<LandingSurface>, depthRequired: Boolean): TrailCandidate? = search(record,surfaces,depthRequired).candidate
+    fun search(record: FrameRecord, surfaces: List<LandingSurface>, depthRequired: Boolean, preferred: TrailCandidate? = null, allowed: (FootPosition)->Boolean = { true }): Search {
+        if(record.projection.size!=16 || record.projection.any { !it.isFinite() } || record.projection[0]<=0f || record.projection[5]<=0f) return Search(null,"Waiting for calibrated camera tracking")
+        if(surfaces.isEmpty()) return Search(null,"Floor not measured · sweep the camera slowly side to side")
+        if(depthRequired && record.depth==null) return Search(null,"Waiting for room depth · move slowly in good light")
         val camera = record.displayPose
-        for (v in listOf(.70f, .83f, .58f)) for (u in listOf(.5f, .35f, .65f)) {
+        var reason="Look a little farther ahead at an open floor"
+        fun evaluate(c: TrailCandidate): Search {
+            val surface=surfaces.firstOrNull { it.id==c.surfaceId } ?: return Search(null,reason)
+            val p=c.foot.copy(y=surface.y)
+            if(!listOf(p.x,c.foot.y,p.z,surface.y).all { it.isFinite() } || surface.polygon.size !in 3..256 || surface.polygon.any { !it.u.isFinite() || !it.v.isFinite() } || kotlin.math.abs(surface.y-c.foot.y)>.035f) return Search(null,reason)
+            if(hypot(p.x-camera.tx,p.z-camera.tz) !in 1.15f..2.8f || camera.ty-p.y !in .35f..2.2f) return Search(null,reason)
+            if(!allowed(p)) return Search(null,"Explore another patch · this ground was already discovered")
+            // A prior candidate stays world-fixed while the camera jitters, but must remain in view.
+            val delta=FootPosition(p.x-camera.tx,p.y-camera.ty,p.z-camera.tz)
+            val local=RigidPose(0f,0f,0f,-camera.qx,-camera.qy,-camera.qz,camera.qw).rotate(delta.x,delta.y,delta.z)
+            if(local.z>=-.1f) return Search(null,reason)
+            val u=(record.projection[0]*local.x/-local.z-record.projection[8]+1f)*.5f
+            val v=(1f-record.projection[5]*local.y/-local.z+record.projection[9])*.5f
+            if(u !in .08f.. .92f || v !in .12f.. .96f) return Search(null,reason)
+            val patch=PlaneSnapshot(surface.y,surface.polygon)
+            val corners=listOf(-.18f to -.18f,-.18f to .18f,.18f to -.18f,.18f to .18f)
+            if(corners.any { !patch.contains(p.x+it.first,p.z+it.second,0f) }) return Search(null,"Measured patch too small · scan a wider open floor")
+            if(surfaces.any { it.y>p.y+.07f && it.y<p.y+1.05f && PlaneSnapshot(it.y,it.polygon).contains(p.x,p.z,0f) }) return Search(null,"Furniture above this patch · look at open floor beside it")
+            val feet=corners.map { (x,z) -> LandingPlanner.depthClearance(record,p.copy(x=p.x+x,z=p.z+z),true) }
+            val center=LandingPlanner.depthClearance(record,p,true)
+            val body=LandingPlanner.depthClearance(record,p.copy(y=p.y+.35f))
+            if(Clearance.BLOCKED in feet || center==Clearance.BLOCKED || body==Clearance.BLOCKED) return Search(null,"Something blocks this patch · scan the floor beside it")
+            // One missing edge sample is tolerated; actual blocking evidence is never relaxed.
+            val checked=center==Clearance.CLEAR && body==Clearance.CLEAR && feet.count { it==Clearance.CLEAR }>=3
+            if(depthRequired && !checked) return Search(null,"Depth incomplete here · hold the open floor in view")
+            return Search(c.copy(foot=p,depthChecked=checked),"")
+        }
+        preferred?.let { evaluate(it).takeIf { result -> result.candidate!=null }?.let { result -> return result } }
+        for (v in listOf(.70f, .83f, .58f,.92f)) for (u in listOf(.5f, .35f, .65f,.22f,.78f)) {
             val ray = GroundRay.cameraDirection(u, v, record.projection)
             val direction = camera.rotate(ray.x, ray.y, ray.z)
             for (surface in surfaces.take(24).sortedBy { it.y }) {
                 if (!surface.y.isFinite() || camera.ty - surface.y !in .35f..2.2f || surface.polygon.size !in 3..256 || surface.polygon.any { !it.u.isFinite() || !it.v.isFinite() }) continue
                 val p = GroundRay.intersect(camera.origin, direction, surface.y, 3.5f) ?: continue
                 if (hypot(p.x-camera.tx,p.z-camera.tz) !in 1.15f..2.8f) continue
-                val patch = PlaneSnapshot(surface.y,surface.polygon)
-                val corners = listOf(-.18f to -.18f, -.18f to .18f, .18f to -.18f, .18f to .18f, 0f to 0f)
-                if (corners.any { !patch.contains(p.x+it.first,p.z+it.second,0f) }) continue
-                if (surfaces.any { other -> other.y > p.y+.07f && other.y < p.y+1.05f && PlaneSnapshot(other.y,other.polygon).contains(p.x,p.z,0f) }) continue
-                val probes = corners.map { (x,z) -> LandingPlanner.depthClearance(record, p.copy(x=p.x+x,z=p.z+z),true) } +
-                    LandingPlanner.depthClearance(record,p.copy(y=p.y+.35f))
-                if (Clearance.BLOCKED in probes || depthRequired && probes.any { it != Clearance.CLEAR }) continue
-                return TrailCandidate(p,surface.id,probes.all { it == Clearance.CLEAR })
+                val result=evaluate(TrailCandidate(p,surface.id,false))
+                if(result.candidate!=null) return result
+                reason=result.hint
             }
         }
-        return null
+        return Search(null,reason)
     }
 }
 

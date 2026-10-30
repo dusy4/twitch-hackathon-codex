@@ -1,0 +1,44 @@
+--------- beginning of kernel
+--------- beginning of system
+--------- beginning of main
+10-30 23:27:51.696  6152  6152 D RaidRiftTrail: DISCOVERED: Lost crystal 1 discovered
+10-30 23:28:05.022  6152  6152 D RaidRiftTrail: COLLECTED: Crystal 1 / 3 recovered
+10-30 23:28:33.473  6152  6152 D RaidRiftTrail: DISCOVERED: Lost crystal 2 discovered
+10-30 23:28:44.467  6152  6152 D RaidRiftTrail: COLLECTED: Crystal 2 / 3 recovered
+10-30 23:29:13.741  6152  6152 D RaidRiftTrail: DISCOVERED: Lost crystal 3 discovered
+10-30 23:29:24.938  6152  6152 D RaidRiftTrail: COLLECTED: Crystal 3 / 3 recovered
+10-30 23:29:53.948  6152  6152 D RaidRiftTrail: DISCOVERED: The rift shrine is here
+10-30 23:30:00.944  6152  6152 D RaidRiftTrail: RESTORED: Shrine restored · a cheer from two different characters completes the trail
+10-30 23:30:02.395  6152  6152 D RaidRiftTrail: CHEER: Alice cheers for the trail!
+10-30 23:30:03.635  6152  6152 D RaidRiftTrail: CHEER: Bob cheers for the trail!
+10-30 23:30:03.635  6152  6152 D RaidRiftTrail: COMPLETED: Rift Trail complete · 3 crystals, one restored shrine, your party
+10-30 23:30:36.321  6152  6152 D RaidRiftAR: config planes=HORIZONTAL_AND_VERTICAL light=AMBIENT_INTENSITY update=LATEST_CAMERA_IMAGE cpu=1280x720
+10-30 23:30:39.213  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Detector not started
+10-30 23:30:40.263  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Loading detector model…
+10-30 23:30:41.290  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Loading detector model…
+10-30 23:30:42.291  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:43.308  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:44.324  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:45.325  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:46.341  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:47.358  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:48.375  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:49.391  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:50.408  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:51.425  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:52.441  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:53.458  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:54.477  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:55.491  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:56.508  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:57.525  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:58.542  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:30:59.558  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:31:00.558  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:31:01.576  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:31:02.596  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:31:03.608  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:31:04.609  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:31:05.625  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:31:06.641  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet
+10-30 23:31:07.642  6152  6152 D RaidRiftAR: frame state=PAUSED floors=0 points=0 imageFps=0.0 anchor=null previousFeet=0 detector=Scanning · no confident objects yet

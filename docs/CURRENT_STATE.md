@@ -1,6 +1,6 @@
 # RaidRift: current product state
 
-Updated 2026-10-31. This is the entry point for current capabilities; earlier progress logs are historical. The 0.9 table records the baseline, followed by the current 0.10 additions.
+Updated 2026-10-31. This is the entry point for current capabilities; earlier progress logs are historical. The 0.9 table records the baseline; 0.10 adds immersion and 0.11 adds measured local navigation.
 
 ## Product and priority
 
@@ -23,7 +23,15 @@ RaidRift turns a Twitch raid into a portal and individual viewer characters in t
 
 Latest baseline: version 0.9.0-auto-landing / code 14; SHA256 c080a33ab09b1e409e31d312992b1e8e6c13d130923af03e390afba8042c6ada. 86 JVM tests passed; build/lint/signature/16 KiB alignment checked. Evidence: `artifacts/auto-landing/verification.json` and `docs/AUTO_LANDING.md`.
 
-## Current native update: 0.10.0-rift-trail
+## Current native update: 0.11.0-measured-routes
+
+Code 16 responds to sampled review of the owner's physical 0.10 recording and both supplied MR references. Finite support replaces extrapolated AR walking floors. Bounded local A* and short-lived depth obstacle cells support detours around observed obstacles; unknown or invalid ground waits. Follow goals retain their support layer and steady heading; cached usable legs continue while moving goals queue fairly. Searches have a cooperative 2 ms deadline, one per callback and at most two per 500 ms. This is not a full room navmesh, furniture semantics, full occlusion or a promise that all clutter is sensed.
+
+AR Focus controls and hidden default object boxes reduce clutter. Crystal candidates remain world-fixed while valid; broader search, recent-site exclusion and specific floor/depth/travel hints improve discovery feedback. Depth only blocks movement, never creates support. Any previous selected-target sitting behavior is still experimental: an occupied target can correctly stop a ground route, and no climb/off-mesh interaction was added. Invalid start geometry waits rather than secretly moving an actor to a new floor.
+
+See [MR_REFERENCE_REVIEW.md](MR_REFERENCE_REVIEW.md), [ADR-010](ADR-010-measured-room-navigation.md) and `artifacts/measured-routes/verification.json` for the final APK, checks and explicit S25 gates. Existing local quests/audio/relay are retained. MRUK/Phanto are Quest references, not phone sensing dependencies. No additional assets/models were imported.
+
+## Previous native update: 0.10.0-rift-trail
 
 Code 15 adds a session-local Rift Trail: measured anchored discoveries while walking, three crystal pickups with proximity/visibility dwell, shrine restoration and a fresh two-character party finale. Stub responses are incoming per-viewer chat messages. Quests do not teleport or commandeer characters and do not award Shards. Connected server quest status is visible separately. See [IMMERSION.md](IMMERSION.md) for the streamer flow, explicit following choice and labelled camera-off preview.
 

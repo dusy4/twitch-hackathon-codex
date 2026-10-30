@@ -1,0 +1,19 @@
+1 · Find a surface [233,572][488,620] android.widget.TextView
+Hold the phone steady, then move it slowly [115,628][606,660] android.widget.TextView
+RAIDRIFT [60,84][247,172] android.widget.TextView
+TEST RAID · 3 STUB VIEWERS [60,172][247,196] android.widget.TextView
+Camera off [279,120][404,160] android.widget.TextView
+Focus [461,120][528,160] android.widget.TextView
+Setup [590,120][655,160] android.widget.TextView
+◌ [52,246][73,294] android.widget.TextView
+Move slowly · find a well-lit, textured surface [89,246][668,294] android.widget.TextView
+STUB CHAT · 15/15 [48,866][556,914] android.widget.TextView
+Hide [590,870][638,910] android.widget.TextView
+Charlie: стрибни [48,938][228,968] android.widget.TextView
+RaidRift → Charlie: Charlie · jump [48,974][400,1004] android.widget.TextView
+Targets [60,1080][144,1120] android.widget.TextView
+Replay raid [170,1080][293,1120] android.widget.TextView
+Camera [319,1080][405,1120] android.widget.TextView
+Chat [453,1080][505,1120] android.widget.TextView
+Explore [553,1080][637,1120] android.widget.TextView
+Capture [669,1080][676,1120] android.widget.TextView

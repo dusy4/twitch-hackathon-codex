@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -41,6 +42,7 @@ fun RecoveryHud(
 ) {
     var expanded by remember { mutableStateOf(false) }
     var chatVisible by remember { mutableStateOf(true) }
+    var focused by rememberSaveable { mutableStateOf(true) }
     val fullControls = !ar || expanded
     LaunchedEffect(target?.first) { if (target != null) expanded = true }
     Box(Modifier.fillMaxSize().imePadding()) {
@@ -52,7 +54,8 @@ fun RecoveryHud(
                     Text(mode, color = RiftViolet, fontSize = 10.sp, lineHeight=12.sp, letterSpacing = 1.sp, maxLines=1,overflow=TextOverflow.Ellipsis)
                 }
                 if (recording || relay) Text(if (relay && relayLive) "● ON AIR" else if (relay) "◌ WAIT" else "● REC", color = Color(0xffff9caa), fontSize = 11.sp)
-                TextButton(onClick = onCamera, contentPadding = PaddingValues(horizontal = 10.dp)) { Text(if (ar) "Camera off" else "Start AR", fontSize = 12.sp) }
+                if (!ar || !focused) TextButton(onClick = onCamera, contentPadding = PaddingValues(horizontal = 10.dp)) { Text(if (ar) "Camera off" else "Start AR", fontSize = 12.sp) }
+                if (ar) TextButton(onClick = { focused=!focused }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text(if(focused) "Controls" else "Focus", fontSize = 12.sp) }
                 TextButton(onClick = onSetup, contentPadding = PaddingValues(horizontal = 10.dp)) { Text("Setup", fontSize = 12.sp) }
             }
             if (ar) Row(Modifier.fillMaxWidth().padding(top = 7.dp).background(RiftInk, RoundedCornerShape(14.dp)).padding(horizontal = 12.dp, vertical = 8.dp),
@@ -61,7 +64,7 @@ fun RecoveryHud(
                 Text(when { placing -> "Tap a surface to move the stage"; selecting -> "Tap an object or the surface you want to use"; else -> status },
                     color = Color(0xffe6e1f0), fontSize = 12.sp, modifier = Modifier.weight(1f), maxLines = 2)
             }
-            TrailCard(trail,trailPaused,trailPreview,trailGuidance,onQuests,onTrailStep)
+            TrailCard(trail,trailPaused,trailPreview,trailGuidance,onQuests,onTrailStep,compact=ar && focused)
         }
         if (!ar && !testHasRaid && !trail.active) Column(Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 108.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text("Your chat. In your world.", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 23.sp)
@@ -71,11 +74,11 @@ fun RecoveryHud(
             if (testChat != null && testHasRaid) Column(Modifier.fillMaxWidth().background(RiftInk, RoundedCornerShape(16.dp)).padding(horizontal = 12.dp, vertical = 5.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text("STUB CHAT · $testDelivered/$testTotal", color = RiftViolet, fontSize = 10.sp, modifier = Modifier.weight(1f))
-                    if (testRunning) TextButton(onClick = onStopTest, contentPadding = PaddingValues(horizontal = 6.dp)) { Text("Stop chat", fontSize = 11.sp) }
+                    if (testRunning && (!ar || !focused)) TextButton(onClick = onStopTest, contentPadding = PaddingValues(horizontal = 6.dp)) { Text("Stop chat", fontSize = 11.sp) }
                     TextButton(onClick = { chatVisible = !chatVisible }, contentPadding = PaddingValues(horizontal = 6.dp)) { Text(if (chatVisible) "Hide" else "Show", fontSize = 11.sp) }
                 }
                 val recentChat = if (testChat.lastOrNull()?.speaker == "Test room") testChat.dropLast(1) else testChat
-                if (chatVisible) recentChat.takeLast(2).forEach { line ->
+                if (chatVisible) recentChat.takeLast(if(ar && focused)1 else 2).forEach { line ->
                     Text("${line.speaker}: ${line.text}", color = if (!line.ok) Color(0xffffa7b1) else if (line.system) Color(0xffc6bfd6) else RiftMint,
                         fontSize = 11.sp, lineHeight = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(bottom = 3.dp))
                 }
@@ -89,7 +92,11 @@ fun RecoveryHud(
                 Text(text, color = if (ok) RiftMint else Color(0xffffa7b1), fontSize = 12.sp, maxLines = 3,
                     lineHeight = 16.sp, modifier = Modifier.fillMaxWidth().background(RiftInk, RoundedCornerShape(12.dp)).padding(12.dp))
             }
-            Column(Modifier.fillMaxWidth().background(RiftInk, RoundedCornerShape(22.dp)).border(1.dp, Color(0x337d6caa), RoundedCornerShape(22.dp)).padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (ar && focused) Row(Modifier.fillMaxWidth().background(RiftInk,RoundedCornerShape(22.dp)).padding(horizontal=8.dp),horizontalArrangement=Arrangement.SpaceEvenly) {
+                TextButton(onClick=onQuests) { Text("Explore",fontSize=12.sp) }
+                TextButton(onClick=onChat) { Text("Chat",fontSize=12.sp) }
+                TextButton(onClick=onCapture) { Text("Capture",fontSize=12.sp) }
+            } else Column(Modifier.fillMaxWidth().background(RiftInk, RoundedCornerShape(22.dp)).border(1.dp, Color(0x337d6caa), RoundedCornerShape(22.dp)).padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (fullControls && testChat == null) Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     heroes.take(8).forEachIndexed { i, hero ->
                         FilterChip(selected = hero.id == (actor ?: heroes.firstOrNull()?.id), onClick = { onActor(hero.id) }, label = { Text(hero.name, fontSize = 12.sp) })

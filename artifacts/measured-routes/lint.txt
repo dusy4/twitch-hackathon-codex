@@ -1,0 +1,161 @@
+C:\Users\Andrii PC\Documents\Codex\2026-10-27\extract-the-attached-zip-then-read\raidrift-handoff\raidrift-codex-handoff\apps\android\app\build.gradle.kts:12: Warning: Not targeting the latest versions of Android; compatibility modes apply. Consider testing and updating this version. Consult the android.os.Build.VERSION_CODES javadoc for details. [OldTargetApi]
+        targetSdk = 36
+        ~~~~~~~~~~~~~~
+
+   Explanation for issues of type "OldTargetApi":
+   When your application or sdk runs on a version of Android that is more
+   recent than your targetSdk specifies that it has been tested with, various
+   compatibility modes kick in. This ensures that your application continues
+   to work, but it may look out of place. For example, if the targetSdk is
+   less than 14, your app may get an option button in the UI.
+
+   To fix this issue, set the targetSdk to the highest available value. Then
+   test your app to make sure everything works correctly. You may want to
+   consult the compatibility notes to see what changes apply to each version
+   you are adding support for:
+   https://developer.android.com/reference/android/os/Build.VERSION_CODES.html
+   as well as follow this guide:
+   https://developer.android.com/distribute/best-practices/develop/target-sdk.
+   html
+
+   https://developer.android.com/distribute/best-practices/develop/target-sdk.html
+
+C:\Users\Andrii PC\Documents\Codex\2026-10-27\extract-the-attached-zip-then-read\raidrift-handoff\raidrift-codex-handoff\apps\android\gradle\wrapper\gradle-wrapper.properties:4: Warning: A newer version of Gradle than 9.8.1 is available: 9.8.2 [AndroidGradlePluginVersion]
+distributionUrl=https\://services.gradle.org/distributions/gradle-9.8.1-bin.zip
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "AndroidGradlePluginVersion":
+   This detector looks for usage of the Android Gradle Plugin where the
+   version you are using is not the current stable release. Using older
+   versions is fine, and there are cases where you deliberately want to stick
+   with an older version. However, you may simply not be aware that a more
+   recent version is available, and that is what this lint check helps find.
+
+C:\Users\Andrii PC\Documents\Codex\2026-10-27\extract-the-attached-zip-then-read\raidrift-handoff\raidrift-codex-handoff\apps\android\app\build.gradle.kts:62: Warning: A newer version of androidx.lifecycle:lifecycle-viewmodel-ktx than 2.10.0 is available: 2.11.0 [GradleDependency]
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C:\Users\Andrii PC\Documents\Codex\2026-10-27\extract-the-attached-zip-then-read\raidrift-handoff\raidrift-codex-handoff\apps\android\app\build.gradle.kts:63: Warning: A newer version of androidx.lifecycle:lifecycle-runtime-compose than 2.10.0 is available: 2.11.0 [GradleDependency]
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "GradleDependency":
+   This detector looks for usages of libraries where the version you are using
+   is not the current stable release. Using older versions is fine, and there
+   are cases where you deliberately want to stick with an older version.
+   However, you may simply not be aware that a more recent version is
+   available, and that is what this lint check helps find.
+
+C:\Users\Andrii PC\Documents\Codex\2026-10-27\extract-the-attached-zip-then-read\raidrift-handoff\raidrift-codex-handoff\apps\android\app\build.gradle.kts:64: Warning: A newer version of com.squareup.okhttp3:okhttp than 5.5.0 is available: 5.5.1 [NewerVersionAvailable]
+    implementation("com.squareup.okhttp3:okhttp:5.5.0")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+C:\Users\Andrii PC\Documents\Codex\2026-10-27\extract-the-attached-zip-then-read\raidrift-handoff\raidrift-codex-handoff\apps\android\app\build.gradle.kts:73: Warning: A newer version of org.json:json than 20250517 is available: 20260814 [NewerVersionAvailable]
+    testImplementation("org.json:json:20250517")
+                       ~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "NewerVersionAvailable":
+   This detector checks with a central repository to see if there are newer
+   versions available for the dependencies used by this project. This is
+   similar to the GradleDependency check, which checks for newer versions
+   available in the Android SDK tools and libraries, but this works with any
+   MavenCentral dependency, and connects to the library every time, which
+   makes it more flexible but also much slower.
+
+C:\Users\Andrii PC\Documents\Codex\2026-10-27\extract-the-attached-zip-then-read\raidrift-handoff\raidrift-codex-handoff\apps\android\app\src\main\java\world\raidrift\capture\MainActivity.kt:859: Warning: Reading Resources using LocalContext.current.resources is not configuration-aware and may return stale values if the Configuration changes [LocalContextResourcesRead from androidx.compose.ui]
+                            if (start != null && SystemClock.elapsedRealtime() - start.third < 500 && kotlin.math.hypot(event.x - start.first, event.y - start.second) < 20 * context.resources.displayMetrics.density) {
+                                                                                                                                                                              ~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "LocalContextResourcesRead":
+   Changes to the Configuration object will not cause
+   LocalContext.current.resources reads to be invalidated, so calls to APIs
+   such as Resources.getString() will not be updated when the Configuration
+   changes. Instead, use LocalResources.current to retrieve the Resources -
+   this will invalidate callers when the Configuration changes, to ensure that
+   these calls reflect the latest values.
+
+   Vendor: Jetpack Compose
+   Identifier: androidx.compose.ui
+   Feedback: https://issuetracker.google.com/issues/new?component=612128
+
+C:\Users\Andrii PC\Documents\Codex\2026-10-27\extract-the-attached-zip-then-read\raidrift-handoff\raidrift-codex-handoff\apps\android\app\src\debug\res\xml\network_security_config.xml:6: Warning: Insecure Base Configuration [InsecureBaseConfiguration]
+    <base-config cleartextTrafficPermitted="true" />
+                                            ~~~~
+
+   Explanation for issues of type "InsecureBaseConfiguration":
+   Permitting cleartext traffic could allow eavesdroppers to intercept data
+   sent by your app, which impacts the privacy of your users. Consider only
+   allowing encrypted traffic by setting the cleartextTrafficPermitted tag to
+   false.
+
+   https://goo.gle/InsecureBaseConfiguration
+   https://developer.android.com/preview/features/security-config.html
+
+C:\Users\Andrii PC\Documents\Codex\2026-10-27\extract-the-attached-zip-then-read\raidrift-handoff\raidrift-codex-handoff\apps\android\app\src\main\java\world\raidrift\capture\MainActivity.kt:245: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        immersionPrefs.edit().putBoolean("sound",gameSound).putFloat("volume",soundVolume).putBoolean("monitor",phoneSound).putBoolean("reduced",reducedMotion).apply()
+        ~~~~~~~~~~~~~~~~~~~~~
+C:\Users\Andrii PC\Documents\Codex\2026-10-27\extract-the-attached-zip-then-read\raidrift-handoff\raidrift-codex-handoff\apps\android\app\src\main\java\world\raidrift\capture\WorldConnection.kt:177: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        if (BuildConfig.DEBUG) prefs.edit().putString("server", url.toString().trimEnd('/')).putString("token", token.trim()).apply()
+                               ~~~~~~~~~~~~
+C:\Users\Andrii PC\Documents\Codex\2026-10-27\extract-the-attached-zip-then-read\raidrift-handoff\raidrift-codex-handoff\apps\android\app\src\main\java\world\raidrift\capture\WorldConnection.kt:219: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+                    if (BuildConfig.DEBUG) prefs.edit().remove("token").apply()
+                                           ~~~~~~~~~~~~
+C:\Users\Andrii PC\Documents\Codex\2026-10-27\extract-the-attached-zip-then-read\raidrift-handoff\raidrift-codex-handoff\apps\android\app\src\main\java\world\raidrift\capture\WorldConnection.kt:235: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        if (BuildConfig.DEBUG) prefs.edit().remove("token").apply()
+                               ~~~~~~~~~~~~
+
+   Explanation for issues of type "UseKtx":
+   The Android KTX libraries decorates the Android platform SDK as well as
+   various libraries with more convenient extension functions available from
+   Kotlin, allowing you to use default parameters, named parameters, and
+   more.
+
+   Available options:
+
+   **remove-defaults** (default is true):
+   Whether to skip arguments that match the defaults provided by the extension.
+
+   Extensions often provide default values for some of the parameters. For example:
+   ```kotlin
+   fun Path.readLines(charset: Charset = Charsets.UTF_8): List<String> { return Files.readAllLines(this, charset) }
+   ```
+   This lint check will by default automatically omit parameters that match the default, so if your code was calling
+
+   ```kotlin
+   Files.readAllLines(file, Charset.UTF_8)
+   ```
+   lint would replace this with
+   ```kotlin
+   file.readLines()
+   ```
+   rather than
+
+   ```kotlin
+   file.readLines(Charset.UTF_8
+   ```
+   You can turn this behavior off using this option.
+
+   To configure this option, use a `lint.xml` file with an <option> like this:
+
+   ```xml
+   <lint>
+       <issue id="UseKtx">
+           <option name="remove-defaults" value="true" />
+       </issue>
+   </lint>
+   ```
+
+   **require-present** (default is true):
+   Whether to only offer extensions already available.
+
+   This option lets you only have lint suggest extension replacements if those extensions are already available on the class path (in other words, you're already depending on the library containing the extension method.)
+
+   To configure this option, use a `lint.xml` file with an <option> like this:
+
+   ```xml
+   <lint>
+       <issue id="UseKtx">
+           <option name="require-present" value="true" />
+       </issue>
+   </lint>
+   ```
+
+0 errors, 12 warnings

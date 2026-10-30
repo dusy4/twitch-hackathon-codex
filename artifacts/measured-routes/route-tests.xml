@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="world.raidrift.capture.RoomNavigationTest" tests="9" skipped="0" failures="0" errors="0" timestamp="2026-10-30T23:25:17.996Z" hostname="DESKTOP-NDFJ2AJ" time="0.146">
+  <properties/>
+  <testcase name="disconnectedRoomWaitsAndNewObstacleInvalidatesCachedPathImmediately" classname="world.raidrift.capture.RoomNavigationTest" time="0.029"/>
+  <testcase name="unsupportedGroundAndDeskEdgesCannotBecomeWalkingFloor" classname="world.raidrift.capture.RoomNavigationTest" time="0.002"/>
+  <testcase name="narrowDoorwayAndLargeDropRemainClosed" classname="world.raidrift.capture.RoomNavigationTest" time="0.001"/>
+  <testcase name="cooperativeDeadlineEndsSearchBeforeNodeCap" classname="world.raidrift.capture.RoomNavigationTest" time="0.005"/>
+  <testcase name="anActorThatStopsRequestingCannotHoldTheQueueAfterTwoFrames" classname="world.raidrift.capture.RoomNavigationTest" time="0.001"/>
+  <testcase name="searchesAreGloballyBoundedAndCannotSpawnOrRecallAnActor" classname="world.raidrift.capture.RoomNavigationTest" time="0.007"/>
+  <testcase name="finiteWallAndLowFurnitureHaveDetoursWithoutWarpingOrWrongFloorHeight" classname="world.raidrift.capture.RoomNavigationTest" time="0.03"/>
+  <testcase name="twelveMovingGoalsKeepUsingValidOldLegsWhileReplansWait" classname="world.raidrift.capture.RoomNavigationTest" time="0.062"/>
+  <testcase name="stopAndJumpCancelEvenAShortCachedRouteWithoutWaitingForReplan" classname="world.raidrift.capture.RoomNavigationTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

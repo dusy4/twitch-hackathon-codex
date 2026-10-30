@@ -1,0 +1,156 @@
+{
+  "date": "2026-10-31",
+  "versionName": "0.11.0-measured-routes",
+  "versionCode": 16,
+  "applicationId": "world.raidrift.capture.android",
+  "apk": {
+    "path": "artifacts/raidrift-capture-debug.apk",
+    "sha256": "081258921fb10bfced62f9a1cc40e329ecdd64640c54bc39e9f5de21014b658d",
+    "bytes": 122152162,
+    "debugSignatureVerified": true,
+    "zipalign16KiB": true
+  },
+  "jvm": {
+    "tests": 126,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 12
+  },
+  "buildLog": "build.log",
+  "consultations": [
+    {
+      "model": [
+        "independent review"
+      ],
+      "effortRequested": "high",
+      "isError": false,
+      "turns": 17,
+      "permissionDenials": 0,
+      "source": "mr-consult-result.json"
+    },
+    {
+      "model": [
+        "independent review"
+      ],
+      "effortRequested": "high",
+      "isError": false,
+      "turns": 24,
+      "permissionDenials": 0,
+      "source": "mr-final-review.json"
+    }
+  ],
+  "nativeSourceHashes": {
+    "apps/android/app/src/main/java/world/raidrift/capture/BroadcastHealth.kt": "e1ddf0079c8d7c27dcbdd02f57bddaa457471e07934195d8c7b00497fb297e88",
+    "apps/android/app/src/main/java/world/raidrift/capture/CompositeOutput.kt": "a843d9f7ed937e0e1196ce3552d13fe3d71b0f98adba57e7ca0f016b4d3c98fc",
+    "apps/android/app/src/main/java/world/raidrift/capture/Expedition.kt": "5d4b6fa49584d9ca05834c0f83005421d95b3d25e1f801e421c076300cf1cf54",
+    "apps/android/app/src/main/java/world/raidrift/capture/HeroAnimator.kt": "96582a48a86cbaa1739afb89df3e2d59d0f77752074ec118c555985c2a585ff7",
+    "apps/android/app/src/main/java/world/raidrift/capture/ImmersionScene.kt": "4564abe8cefd076c351b3d492fb34e94e707d9de1bd67fb01bc8da2a67f064f2",
+    "apps/android/app/src/main/java/world/raidrift/capture/LandingPlanner.kt": "c98053109dfd6346bb6794d37935f4f7bc81cd33673494decca34f3a79e44301",
+    "apps/android/app/src/main/java/world/raidrift/capture/LocalClip.kt": "6f4c379e08b902ae62db67ef3d5e36671e103e11cfe20efb72d677b74b3d936a",
+    "apps/android/app/src/main/java/world/raidrift/capture/MainActivity.kt": "f81b455efe960250dd20ee88bbda15a210aa5a4c47c3fd6ad97e909a3ad599b3",
+    "apps/android/app/src/main/java/world/raidrift/capture/MotionState.kt": "ca3ccc80b42be96bc0ea0f0e4ba340692d637178ed0444e6fbc9df5109c7c5c1",
+    "apps/android/app/src/main/java/world/raidrift/capture/Northstar.kt": "c626a23e2734e1b6751999324bf11fdedf973660ec4f7f867aebf0f11001af30",
+    "apps/android/app/src/main/java/world/raidrift/capture/NorthstarScene.kt": "ec90319bea41a2b4be6a3e1ccb021261df04cc4d7e66d534f7ea5e8f6970daec",
+    "apps/android/app/src/main/java/world/raidrift/capture/NorthstarUi.kt": "b89b6c7666a82b0f734a3d1892ec857a6b1f594f26521e6876c618dfcdd0f7d8",
+    "apps/android/app/src/main/java/world/raidrift/capture/ObjectDetection.kt": "8de2ba92acec37d5a8493e2b0e3e359f0fb393f462ace0e55e777372cc15e018",
+    "apps/android/app/src/main/java/world/raidrift/capture/PcmEffects.kt": "410228ae747a62c46225b42ef25009f13d4501826f9d8c33ff67212d1211e08a",
+    "apps/android/app/src/main/java/world/raidrift/capture/Playground.kt": "10e4354da3827a897f40f92ddc0df0121e985562826bd9f8bcbcb9ff46349f5d",
+    "apps/android/app/src/main/java/world/raidrift/capture/PreviewOrbit.kt": "5e05ebb9f97a93847f2e2e91a477c769182a954fdc9acd58e0e6cde9eb5cb55c",
+    "apps/android/app/src/main/java/world/raidrift/capture/RaidArrivalGate.kt": "611aa36a7f5b890b8abce386bd2e94ca75d2145c25c9e44d2b46e28ceac0fbe1",
+    "apps/android/app/src/main/java/world/raidrift/capture/RecoveryHud.kt": "176b52027a8b30df1307d977630844d1cab34f45ad4fcfc748e84ca8bdd14c74",
+    "apps/android/app/src/main/java/world/raidrift/capture/RelayOutput.kt": "edb1cac44da0dde1d88a00fe7ad43f8e1c5385807a1f6f07e38515fb9f061309",
+    "apps/android/app/src/main/java/world/raidrift/capture/RiftAudio.kt": "ff313e66716c1e127632ad853043260f9bb3eca0dd48d53a3707b52229ad437b",
+    "apps/android/app/src/main/java/world/raidrift/capture/RoomNavigation.kt": "2e0eda340716ca9dc311db3339ffd105ae7ce1a67014fdf621aa072bd385d6c0",
+    "apps/android/app/src/main/java/world/raidrift/capture/RoomObstacles.kt": "461b8405d9239b9bc82623f824055f8a722eca43af1cd12dd4197fa9125e66f5",
+    "apps/android/app/src/main/java/world/raidrift/capture/SensedWall.kt": "c87fa19c0f38b5486c054c4cab12d8f8d58506b3d5488febfc5d10d77a772ea0",
+    "apps/android/app/src/main/java/world/raidrift/capture/SpatialObservation.kt": "74a9fae36dc0205b59dee6a8ce0ac0d08d440df451482ce1de04ebae95b233d5",
+    "apps/android/app/src/main/java/world/raidrift/capture/SurfaceMotor.kt": "dcd2e735aec49d6421af793c5ae07e630330f906fa98d53f685edf9ba6defde1",
+    "apps/android/app/src/main/java/world/raidrift/capture/TextIntent.kt": "13d6b49ef3982c434280a80b5e2e8a47fe84a3668a62ecd26c1c11e021eef0ba",
+    "apps/android/app/src/main/java/world/raidrift/capture/TrailRuntime.kt": "f8d52e2a5bc3b8f0ee93215590271d5bc04e88fd95a87e93dee04fefaec84795",
+    "apps/android/app/src/main/java/world/raidrift/capture/TrailUi.kt": "aeec16dbe960a9bd88781a7d7f302ffb37a2bad53a646382bd6683c2a1aa7276",
+    "apps/android/app/src/main/java/world/raidrift/capture/WorldConnection.kt": "ee6cd9a299b83abc9db9eeaca98fc2556e78356a0afa772dde2fdab6f658f71e",
+    "apps/android/app/src/main/java/world/raidrift/capture/WorldFrames.kt": "ba38c9e957096b22d3c96d169f8c1dd3d967cbc0d3fdc060c5cd3db607607d53",
+    "apps/android/app/src/test/java/world/raidrift/capture/BroadcastHealthTest.kt": "d1229b9d73b4eff76d8a1ce2df73110cf49027369b46d07a25123e8bd7e60dfa",
+    "apps/android/app/src/test/java/world/raidrift/capture/ExpeditionTest.kt": "6d0ff8e18c1813060a9b3a7fa34aa1a71f12818bfb7f7515c7a4c1e51a1aece3",
+    "apps/android/app/src/test/java/world/raidrift/capture/LandingPlannerTest.kt": "a235c0d367e2c87d6f0dfe5f699bb39a109ab168aa6a9b15e3e1c4a22da5d9fc",
+    "apps/android/app/src/test/java/world/raidrift/capture/NativeSafetyTest.kt": "bf1e5af3dbd930e2cab8ae1e33cd9850b0823e3ee2d9aca9f98dbb4ef93590e0",
+    "apps/android/app/src/test/java/world/raidrift/capture/NaturalMotionTest.kt": "ddb6419ff5fc15240c6608ea821c40ee446f89bf7ab88b00f1fbaeaa6dde3293",
+    "apps/android/app/src/test/java/world/raidrift/capture/NorthstarTest.kt": "9c7d26c0ed7dccc1d8bd721694f5a4b11aa9aa10809d4b6bf1cc063a67e8eb09",
+    "apps/android/app/src/test/java/world/raidrift/capture/PcmEffectsTest.kt": "e6ccbbcdc92560352afb34f4b0cf3a9f7668877422648c591488d2b2f06e5a7d",
+    "apps/android/app/src/test/java/world/raidrift/capture/PreviewOrbitTest.kt": "abb3f34eced1d57ea83f9d24d4c08647bcf37c3d30a24a49199ebef4dc70af9c",
+    "apps/android/app/src/test/java/world/raidrift/capture/RaidArrivalGateTest.kt": "3db8dd2e3befb15efcaec01867b31e5cf0b60b959659828b5a64c84fa406958b",
+    "apps/android/app/src/test/java/world/raidrift/capture/RecoveryTest.kt": "7e4326ed55faa7a74cf2aeeac9fbd9cf601613f167b2ffafebb924140b08d6e3",
+    "apps/android/app/src/test/java/world/raidrift/capture/RelayEndpointTest.kt": "a988436fe0bdd2f8ae095a4cc869bf6cb53e22de21b44f0c897bb5cfd373c175",
+    "apps/android/app/src/test/java/world/raidrift/capture/RoomNavigationTest.kt": "ace952a607f42be7b570d04e02e0896eb2fcf3ff6471e0260da4e6f1343496d3",
+    "apps/android/app/src/test/java/world/raidrift/capture/RoomObstaclesTest.kt": "dd759edd020bb121bcf6e7eb83212596e67fc0e240a51c1a125dbeac539e2e02",
+    "apps/android/app/src/test/java/world/raidrift/capture/SensedWallTest.kt": "e6a9852a7ddf3267f7d854a1280af7eb5a08362825fa9f5f65dcf6a93dd48c1b",
+    "apps/android/app/src/test/java/world/raidrift/capture/TestChatTest.kt": "447bd6c677422d669ff4eddf626d0875f1aeecf43323781e223540139cbd6d4e",
+    "apps/android/app/src/test/java/world/raidrift/capture/TrailSearchTest.kt": "4b7e5abcd00f7bee88325c7982098253b8a6b97e0bcf875b2f0b0a32091ab2a3",
+    "apps/android/app/src/test/java/world/raidrift/capture/WorldFramesTest.kt": "33f45f73d4fcf6d3b08f3ec368dd5599bb95335d1566086cbd068c4a4bc3d5c0",
+    "apps/android/app/build.gradle.kts": "a4321a5825a509e7d54a79172ec8db34b6badd6ac01b81468c05563b181abaad"
+  },
+  "runtime": {
+    "status": "passed native UI and labelled preview; physical navigation open",
+    "physicalS25Validated": false,
+    "actualRoomNavigationValidated": false,
+    "actualAROcclusionValidated": false,
+    "liveTwitchValidated": false,
+    "exactApkSha256Matched": true,
+    "previewWalkSteps": 22,
+    "previewTrailEvents": {
+      "DISCOVERED": 4,
+      "COLLECTED": 3,
+      "RESTORED": 1,
+      "CHEER": 2,
+      "COMPLETED": 1
+    },
+    "observedCheeringCharacters": [
+      "Alice",
+      "Bob"
+    ],
+    "focusToggleAndFullCameraControl": true,
+    "androidRuntimeCrashSeen": false,
+    "arCameraRendered": true,
+    "arTracking": "PAUSED",
+    "arMeasuredPlanes": 0,
+    "arPhantomCharacters": false,
+    "evidence": [
+      "party.png",
+      "first-crystal.png",
+      "first-pickup.png",
+      "after-qa-stop.png",
+      "ar-focus.png",
+      "ar-controls.png",
+      "runtime-log.txt"
+    ],
+    "harnessNote": "The repeat-walk helper raised StopIteration because the completion event removed Walk forward between two accessibility reads. Original failed helper receipt is retained. Follow-up accessibility inspection, screenshot and native events verified completion, then actual AR Focus/Controls were exercised manually through ADB. No app/source change was made after the final build.",
+    "defaultDetectionRectanglesChecked": false
+  },
+  "limits": [
+    "Finite current plane support, not a persistent semantic room mesh",
+    "Short-lived depth obstacles can miss thin, reflective, occluded and moving objects",
+    "Unknown or invalid start geometry waits; no automatic teleport recovery",
+    "Selected-target sitting on occupied furniture can stop; no climb/off-mesh link",
+    "Cooperative route deadline is not an S25 frame-time benchmark",
+    "No new relay/microphone physical A/V-sync or Twitch rehearsal pass"
+  ],
+  "qaSandboxCleanup": {
+    "operation": {
+      "attemptCount": 1,
+      "completedAt": "2026-10-30T23:32:54.268Z",
+      "expectedBy": null,
+      "id": "bdop_a073b9bf8cdb44dc995755cd5c44c185",
+      "kind": "sandbox",
+      "reason": "explicit",
+      "requestedAt": "2026-10-30T23:32:50.383Z",
+      "stage": "completed",
+      "status": "completed",
+      "targetId": "bx_u6r43wjy"
+    }
+  },
+  "sourceHashScope": "SHA256 of build working-tree bytes; Git can normalize line endings"
+}

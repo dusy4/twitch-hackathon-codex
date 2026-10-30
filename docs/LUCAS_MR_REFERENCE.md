@@ -29,3 +29,8 @@ The reply is not evidence. The original post confirms PICO CLI but not Unity ver
 ## Implementation direction
 
 Keep the verified, licensed character assets and existing authoritative multiplayer service. Add actual runtime pose + surface hit-test + anchor placement through WebXR where supported; preserve a truthful unsupported-device state. For native phone room tracking, continue AR Foundation. For a Quest/PICO target, use its documented scene/depth/interaction SDK adapter once the device is known. Surface contact/navigation and depth occlusion are separate acceptance gates. Do not label image-coordinate following, a fixed virtual plane, emulator output or this reference video as a passing live AR implementation.
+
+
+## Current implementation correction — 2026-10-31
+
+The Android app is now Kotlin + SceneView + ARCore, not AR Foundation. The earlier direction above is historical. New supplied phone/MR videos, current SDK verification and the native navigation decision are documented in [MR_REFERENCE_REVIEW.md](MR_REFERENCE_REVIEW.md) and ADR-010. No exact device attribution for both supplied MR clips or unpublished author implementation is asserted.

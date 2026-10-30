@@ -15,16 +15,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun TrailCard(state: TrailState, paused: Boolean, preview: Boolean, guidance: String, onOpen: () -> Unit, onStep: () -> Unit) {
+fun TrailCard(state: TrailState, paused: Boolean, preview: Boolean, guidance: String, onOpen: () -> Unit, onStep: () -> Unit, compact: Boolean = false) {
     if(!state.active) return
     Surface(onClick=onOpen,color=Color(0xe6101220),shape=RoundedCornerShape(16.dp),modifier=Modifier.fillMaxWidth().padding(top=7.dp)) {
         Column(Modifier.padding(horizontal=13.dp,vertical=10.dp),verticalArrangement=Arrangement.spacedBy(4.dp)) {
-            Text(if(preview) "SIMULATED TRAIL · LOCAL PRACTICE" else "RIFT TRAIL · LOCAL SESSION",color=Color(0xffc2a8ff),fontSize=9.sp,lineHeight=12.sp,letterSpacing=1.sp)
+            if(!compact) Text(if(preview) "SIMULATED TRAIL · LOCAL PRACTICE" else "RIFT TRAIL · LOCAL SESSION",color=Color(0xffc2a8ff),fontSize=9.sp,lineHeight=12.sp,letterSpacing=1.sp)
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween) {
                 Text(state.title,color=Color.White,fontWeight=FontWeight.Bold,fontSize=13.sp,lineHeight=16.sp,maxLines=1,overflow=TextOverflow.Ellipsis,modifier=Modifier.weight(1f))
                 Text(state.progress.substringBefore('·').trim(),color=Color(0xff9be7c4),fontSize=12.sp,lineHeight=16.sp,maxLines=1)
             }
-            Text(if(paused) "Trail paused · tap to resume" else state.hint,color=Color(0xffd9d1e8),fontSize=11.sp,lineHeight=14.sp,maxLines=2)
+            Text(if(paused) "Trail paused · tap to resume" else state.hint,color=Color(0xffd9d1e8),fontSize=11.sp,lineHeight=14.sp,maxLines=if(compact)1 else 2,overflow=TextOverflow.Ellipsis)
             if(!paused && guidance.isNotBlank() && state.site!=null && state.phase!=TrailPhase.COMPLETE) Text(guidance,color=Color(0xff9be7c4),fontSize=10.sp,lineHeight=12.sp,maxLines=1)
             if(state.charge>0 && state.charge<1) LinearProgressIndicator(progress={state.charge},modifier=Modifier.fillMaxWidth(),color=Color(0xff9be7c4))
             if(preview && !paused && state.phase!=TrailPhase.COMPLETE) TextButton(onClick=onStep,contentPadding=PaddingValues(horizontal=2.dp,vertical=0.dp),modifier=Modifier.height(32.dp)) {

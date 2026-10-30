@@ -26,11 +26,12 @@ class TrailRuntime : AutoCloseable {
     private var lastUpdate = 0L
     private var lastPreview = 0L
     private var siteId: String? = null
+    private var preferredCandidate: TrailCandidate? = null
     private val visibility=ObjectiveVisibility()
 
     fun start(simulated: Boolean) {
         release(); engine.start(); paused=false; preview=simulated; previewWalk=0f; previewGoal=0f;occluded=false
-        lastUpdate=0;lastPreview=0;state=engine.state
+        lastUpdate=0;lastPreview=0;preferredCandidate=null;state=engine.state
     }
     fun togglePause() { paused=!paused;engine.pause();state=engine.state }
     fun stop() { release();engine.stop();state=engine.state;paused=false;guidance="" }
@@ -55,19 +56,21 @@ class TrailRuntime : AutoCloseable {
         return events
     }
 
-    fun update(session: Session, frame: Frame, planes: List<Plane>, depthSupported: Boolean, participants: List<TrailParticipant>): List<TrailEvent> {
+    fun update(session: Session, frame: Frame, planes: List<Plane>, depthSupported: Boolean, participants: List<TrailParticipant>, snapshot: (() -> FrameRecord)? = null): List<TrailEvent> {
         if(preview || paused || !state.active) return emptyList()
         val now=SystemClock.elapsedRealtime()
-        if(now-lastUpdate<250) return emptyList()
+        if(snapshot==null && now-lastUpdate<250) return emptyList()
         lastUpdate=now
         val events=mutableListOf<TrailEvent>()
         val cameraTracked=frame.camera.trackingState==TrackingState.TRACKING
         if(anchor?.trackingState==TrackingState.STOPPED) {
             engine.loseSite()?.let(events::add);release()
         }
-        val record=if(cameraTracked) captureFrameRecord(frame,"trail",now,emptyList()) else null
+        val record=if(cameraTracked) snapshot?.invoke() ?: captureFrameRecord(frame,"trail",now,emptyList()) else null
         val surfaces=if(cameraTracked) landingSurfaces(planes) else emptyList()
-        val candidate=if(record!=null && engine.state.site==null) TrailPlacement.choose(record,surfaces.map { it.first },depthSupported) else null
+        val search=if(record!=null && engine.state.site==null) TrailPlacement.search(record,surfaces.map { it.first },depthSupported,preferredCandidate,engine::allowsLocation) else null
+        val candidate=search?.candidate
+        preferredCandidate=candidate
         val native=anchor
         val foot=native?.takeIf { it.trackingState==TrackingState.TRACKING }?.pose?.foot()
         val point=foot ?: engine.state.site?.foot
@@ -92,7 +95,7 @@ class TrailRuntime : AutoCloseable {
                 depthVisible
         } else { guidance=if(point!=null)"Waiting for objective tracking" else "";false }
         events+=engine.update(TrailObservation(now,frame.timestamp,frame.camera.pose.foot(),cameraTracked,candidate,
-            siteTracked=native?.trackingState==TrackingState.TRACKING,siteFoot=foot,siteVisible=visible,participants=participants))
+            siteTracked=native?.trackingState==TrackingState.TRACKING,siteFoot=foot,siteVisible=visible,participants=participants,candidateHint=search?.hint))
         val site=engine.state.site
         if(site?.id!=siteId) {
             release()
