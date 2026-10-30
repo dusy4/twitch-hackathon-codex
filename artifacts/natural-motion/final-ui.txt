@@ -1,0 +1,12 @@
+RAIDRIFT [60,84][253,132] android.widget.TextView
+TEST RAID · 3 STUB VIEWERS [60,132][375,180] android.widget.TextView
+Start AR [439,112][532,152] android.widget.TextView
+Setup [590,112][655,152] android.widget.TextView
+STUB CHAT · 15/15 [48,866][556,914] android.widget.TextView
+Hide [590,870][638,910] android.widget.TextView
+Alice: сядь [48,938][167,968] android.widget.TextView
+RaidRift → Alice: Alice · sit [48,974][332,1004] android.widget.TextView
+Replay raid [54,1080][177,1120] android.widget.TextView
+Camera [248,1080][334,1120] android.widget.TextView
+Chat [427,1080][479,1120] android.widget.TextView
+Capture [572,1080][660,1120] android.widget.TextView

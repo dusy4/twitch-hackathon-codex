@@ -130,7 +130,8 @@ class RecoveryTest {
         assertEquals(3,local.world.heroes.map { it.id }.toSet().size)
         local.pauseReplay()
         local.command("jump",local.world.heroes.first().id,null,emptyList(),1000)
-        assertFalse(local.tick(2000)); assertTrue(local.tick(2500))
+        for (at in 1100L..2200L step 100) local.tick(at)
+        assertTrue(local.tick(2300))
         assertEquals("idle",local.world.heroes.first().animation)
     }
 }

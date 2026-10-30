@@ -28,7 +28,7 @@ import kotlin.math.sin
  * sits (support under the feet, or the feet when it rests on an object) and [airborne] how far
  * above that support the feet are.
  */
-data class HeroPose(val position: Position, val yaw: Float, val clip: String, val shadow: Position = position, val airborne: Float = 0f)
+data class HeroPose(val position: Position, val yaw: Float, val clip: String, val shadow: Position = position, val airborne: Float = 0f, val animationSpeed: Float = 1f, val jumpPhase: Float? = null)
 
 data class Located(val foot: FootPosition, val topY: Float?, val source: String)
 

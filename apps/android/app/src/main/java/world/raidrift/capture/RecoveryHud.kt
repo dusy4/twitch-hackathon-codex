@@ -140,10 +140,10 @@ fun TestChatSheet(viewers: List<TestViewer>, messages: List<TestChatLine>, selec
                 viewers.forEach { v -> FilterChip(selected = v.id == viewer.id, onClick = { onViewer(v.id) }, label = { Text(v.name) }) }
             }
             Text("Typing as ${viewer.name} → ${viewer.character}", color = RiftMint, fontSize = 12.sp, lineHeight = 16.sp)
-            OutlinedTextField(text, { text = it.take(300) }, label = { Text("Message as ${viewer.name}") }, placeholder = { Text("!dance or !rift sit on the chair") },
+            OutlinedTextField(text, { text = it.take(300) }, label = { Text("Message as ${viewer.name}") }, placeholder = { Text("Walk right then jump / come closer") },
                 modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send), keyboardActions = KeyboardActions(onSend = { send() }))
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                listOf("!w", "!a", "!s", "!d", "!jump", "!dance", "!sit", "!join").forEach { action -> SuggestionChip(onClick = { send(action) }, label = { Text(action) }) }
+                listOf("walk left", "walk right", "come closer", "jump", "turn around", "dance", "sit down", "join").forEach { action -> SuggestionChip(onClick = { send(action) }, label = { Text(action) }) }
             }
             Button(onClick = { send() }, enabled = text.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Send as ${viewer.name}") }
         }

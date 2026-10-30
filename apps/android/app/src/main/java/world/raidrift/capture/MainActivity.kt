@@ -72,8 +72,6 @@ private const val DEBUG_RELAY = "rtmp://raidrift-pc.tail7252b4.ts.net:1935/live/
 
 /** Follow-me: re-anchor once the streamer is this far from the anchor. */
 private const val REANCHOR_METRES = 6f
-/** Follow-me: an actor this far behind its goal re-enters at the goal. */
-private const val RECALL_METRES = 5f
 /** Rendered character height: a small creature on a desk or floor. */
 private const val CHARACTER_HEIGHT_METRES = 0.30f
 // KayKit heroes share one skeleton: GLB origin is between the feet on the ground, head top at
@@ -108,6 +106,13 @@ private fun CaptureApp(connection: WorldConnection) {
     var lastDepthCheck by remember { mutableLongStateOf(0) }
     var surfaces by remember { mutableIntStateOf(0) }
     val motor = remember { SurfaceMotor() }
+    val motion = remember { MotionState() }
+    val previewMotor = remember { SurfaceMotor() }
+    val previewMotion = remember { MotionState() }
+    var previewFeet by remember { mutableStateOf<Map<String, HeroPose>>(emptyMap()) }
+    val previewPrevious = remember { mutableMapOf<String, FootPosition>() }
+    val previewTime = remember { longArrayOf(0L) }
+
     var feet by remember { mutableStateOf<Map<String, HeroPose>>(emptyMap()) }
     val rt = remember { NorthstarRuntime() }
     var liveTracks by remember { mutableStateOf<List<TrackView>>(emptyList()) }
@@ -264,7 +269,7 @@ private fun CaptureApp(connection: WorldConnection) {
         detector.invalidate(); rt.generation++; rt.frames.clear()
         playground.raid(System.currentTimeMillis()); localWorld = playground.world; testMessages = playground.messages
         testRunning = true; testDelivered = 0; selectedActor = null
-        motor.clear(); feet = emptyMap(); rt.spawned.clear(); rt.previousFeet.clear(); rt.motorLift.clear(); rt.targetApproach.clear(); rt.facing.clear()
+        motor.clear(); motion.clear(); previewMotor.clear(); previewMotion.clear(); previewPrevious.clear(); previewFeet = emptyMap(); feet = emptyMap(); rt.spawned.clear(); rt.previousFeet.clear(); rt.motorLift.clear(); rt.targetApproach.clear(); rt.facing.clear()
         toast = "Test raid received · just watch the chat and portal" to true
     }
 
@@ -633,7 +638,7 @@ private fun CaptureApp(connection: WorldConnection) {
                         contactFrame.pose = origin
                         val heroes = world.heroes.take(12)
                         val ids = heroes.map { it.id }.toSet()
-                        motor.retain(ids); rt.previousFeet.keys.retainAll(ids); rt.motorLift.keys.retainAll(ids); rt.targetApproach.keys.retainAll(ids); rt.facing.keys.retainAll(ids)
+                        motion.retain(ids); motor.retain(ids); rt.previousFeet.keys.retainAll(ids); rt.motorLift.keys.retainAll(ids); rt.targetApproach.keys.retainAll(ids); rt.facing.keys.retainAll(ids)
                         val camPose = frame.camera.pose
                         val camZ = camPose.zAxis
                         val camFoot = FootPosition(camPose.tx(), camPose.ty(), camPose.tz())
@@ -645,13 +650,13 @@ private fun CaptureApp(connection: WorldConnection) {
                             val spot = hero.target?.let { rt.space[it] }
                             val resting = hero.animation in RESTING_ANIMATIONS
                             var targetLift = 0f
-                            var speed = 0.45f
+                            var speed = MotionState.travelSpeed(hero.animation)
                             val goal = if (spot != null) {
                                 val approach = rt.targetApproach[hero.id]?.takeIf { it.first == hero.target }?.second ?: camFoot.also {
                                     rt.targetApproach[hero.id] = hero.target to it
                                 }
                                 val result = TargetGoal.goal(spot.foot, spot.topY, slots[hero.id] ?: 0, resting, approach.x, approach.z)
-                                targetLift = result.lift; speed = 1.0f
+                                targetLift = result.lift; speed = MotionState.RUN_SPEED
                                 // Probe slightly above the object's foot so the ground under it is found.
                                 result.goal.copy(y = spot.foot.y + 0.25f)
                             } else if (followMe) {
@@ -669,8 +674,14 @@ private fun CaptureApp(connection: WorldConnection) {
                                 if (rt.spawned.size > 500) rt.spawned.clear()
                             }
                             // Fixed-stage actors walk to object goals. Only the explicit walking mode can recall them.
-                            if (followMe) motor.recall(hero.id, goal, RECALL_METRES)
-                            val foot = motor.updateWithWalls(hero.id, goal, elapsed, { from, to -> walls.any { it.blocks(from, to) } }, speed) { query -> support(query) }
+                            if (followMe) {
+                                motor.position(hero.id)?.let { body ->
+                                    val distance = kotlin.math.hypot(goal.x-body.x,goal.z-body.z)
+                                    speed = (MotionState.WALK_SPEED + distance * .8f).coerceAtMost(2.5f)
+                                }
+                            }
+                            val effectiveGoal = if (hero.animation in setOf("stop", "jump") || hero.animation.startsWith("turn_")) motor.position(hero.id) ?: goal else goal
+                            val foot = motor.updateWithWalls(hero.id, effectiveGoal, elapsed, { from, to -> walls.any { it.blocks(from, to) } }, speed) { query -> support(query) }
                                 ?: return@mapNotNull null
                             val previous = rt.previousFeet.put(hero.id, foot)
                             val observedSpeed = if (previous != null && elapsed > 0.001f) kotlin.math.hypot(foot.x - previous.x, foot.z - previous.z) / elapsed else 0f
@@ -679,20 +690,22 @@ private fun CaptureApp(connection: WorldConnection) {
                             val wantLift = if (spot != null && resting && toGoal < 0.12f) targetLift else 0f
                             val lift = (rt.motorLift[hero.id] ?: 0f).let { it + (wantLift - it) * kotlin.math.min(1f, elapsed * 5f) }
                             rt.motorLift[hero.id] = lift
-                            val local = inverseOrigin.transformPoint(floatArrayOf(foot.x, foot.y + lift, foot.z))
+                            val movingFacing = if (moving) inverseOrigin.rotateVector(floatArrayOf(goal.x-foot.x,0f,goal.z-foot.z)) else null
+                            val state = motion.sample(hero.id, hero.animation, hero.actionSerial,
+                                movingFacing?.let { TargetGoal.yaw(it[0],it[2]) }, elapsed)
+                            val jumpLift = if (world.reducedMotion) 0f else state.lift
+                            val local = inverseOrigin.transformPoint(floatArrayOf(foot.x, foot.y + lift + jumpLift, foot.z))
                             // Contact shadow: at the feet when resting on an object, else on the measured support below.
                             val onObject = lift > 0.05f
                             val supportY = if (onObject) foot.y + lift else (support(foot) ?: foot.y).coerceAtMost(foot.y)
                             val shadowLocal = inverseOrigin.transformPoint(floatArrayOf(foot.x, supportY, foot.z))
-                            // KayKit models face +Z (cape at -Z, toes/visor at +Z): face the walking direction, otherwise the camera.
-                            val facing = if (moving && toGoal > 0.05f) floatArrayOf(goal.x - foot.x, 0f, goal.z - foot.z)
-                                else floatArrayOf(camPose.tx() - foot.x, 0f, camPose.tz() - foot.z)
-                            val localFacing = inverseOrigin.rotateVector(facing)
-                            val clip = if (world.reducedMotion) "Idle" else presentedClip(hero.animation, moving, spot != null, lift > 0.05f)
-                            val yaw = if (moving || hero.id !in rt.facing) TargetGoal.yaw(localFacing[0], localFacing[2]).also { rt.facing[hero.id] = it } else rt.facing.getValue(hero.id)
+                            val clip = if (world.reducedMotion) "Idle" else if (state.jumping) "Jump_Full_Short" else if (hero.animation == "jump") "Idle" else presentedClip(if (followMe && speed > .35f) "run" else hero.animation, moving, spot != null, lift > 0.05f)
+                            val yaw = state.yaw.also { rt.facing[hero.id] = it }
                             val rendered = if (clip == "Sit_Chair_Idle") SeatContact.root(FootPosition(local[0],local[1],local[2]),yaw) else FootPosition(local[0],local[1],local[2])
                             hero.id to HeroPose(Position(rendered.x, rendered.y, rendered.z), yaw, clip,
-                                Position(shadowLocal[0], shadowLocal[1], shadowLocal[2]), if (onObject) 0f else foot.y + lift - supportY)
+                                Position(shadowLocal[0], shadowLocal[1], shadowLocal[2]), if (onObject) jumpLift else foot.y + lift + jumpLift - supportY,
+                                if (moving) (observedSpeed / if (clip == "Running_A") MotionState.RUN_SPEED else MotionState.WALK_SPEED).coerceIn(.5f, 1.6f) else 1f,
+                                if (clip == "Jump_Full_Short") state.phase else null)
                         }.toMap()
                     } else if (anchor == null || anchor?.trackingState == TrackingState.STOPPED || world == null) {
                         contactFrame.clock.reset(); contactFrame.pose = null; motor.clear()
@@ -732,11 +745,34 @@ private fun CaptureApp(connection: WorldConnection) {
             if (anchor == null) ScanFloorOverlay(trackingOk, surfaces, followMe, Modifier.align(Alignment.Center))
             if (showBoxes && liveTracks.isNotEmpty()) DetectionOverlay(liveTracks, Modifier.fillMaxSize())
         } else {
+            val currentWorld by rememberUpdatedState(world)
             SceneView(Modifier.fillMaxSize(), engine = engine, modelLoader = modelLoader,
                 materialLoader = materialLoader, cameraNode = camera, autoCenterContent = false,
-                frameRatePolicy = FrameRatePolicy.OnDemand(maxFps = 30),
+                frameRatePolicy = FrameRatePolicy.Continuous(maxFps = 30),
                 renderQuality = RenderQuality.Performance,
                 cameraManipulator = null, surfaceMirrorer = mirror,
+                onFrame = { nanos ->
+                    val dt = if (previewTime[0] == 0L) 0f else ((nanos - previewTime[0]) / 1_000_000_000f).coerceIn(0f, 1f / 15f)
+                    previewTime[0] = nanos
+                    val current = currentWorld
+                    if (current != null && !current.paused && feedActive) {
+                        val ids = current.heroes.map { it.id }.toSet()
+                        previewMotor.retain(ids); previewMotion.retain(ids); previewPrevious.keys.retainAll(ids)
+                        previewFeet = current.heroes.associate { hero ->
+                            if (hero.spawnedAt != null && raidIsFresh(hero.spawnedAt, System.currentTimeMillis(), 10_000)) previewMotor.place(hero.id, FootPosition(0f, 0f, -.25f))
+                            val goal = if (hero.animation in setOf("stop", "jump") || hero.animation.startsWith("turn_")) previewMotor.position(hero.id) ?: FootPosition((hero.x-.5f)*1.4f,0f,hero.y-.5f)
+                                else FootPosition((hero.x-.5f)*1.4f,0f,hero.y-.5f)
+                            val foot = previewMotor.updateWithWalls(hero.id, goal, dt, { _, _ -> false }, MotionState.travelSpeed(hero.animation)) { 0f }!!
+                            val previous = previewPrevious.put(hero.id, foot) ?: foot
+                            val moving = kotlin.math.hypot(foot.x-previous.x, foot.z-previous.z) > .0001f
+                            val desired = hero.facing ?: if (moving) TargetGoal.yaw(goal.x-foot.x, goal.z-foot.z) else null
+                            val state = previewMotion.sample(hero.id, hero.animation, hero.actionSerial, desired, dt)
+                            val lift = if (current.reducedMotion) 0f else state.lift
+                            val clip = if (current.reducedMotion) "Idle" else if (state.jumping) "Jump_Full_Short" else if (hero.animation == "jump") "Idle" else presentedClip(hero.animation, moving, false, false)
+                            hero.id to HeroPose(Position(foot.x,foot.y+lift,foot.z), state.yaw, clip, Position(foot.x,0f,foot.z),lift, jumpPhase = if (clip == "Jump_Full_Short") state.phase else null)
+                        }
+                    }
+                },
                 onTouchEvent = { event, _ ->
                     when (event.actionMasked) {
                         MotionEvent.ACTION_DOWN -> { lastPreviewTouch = event.x to event.y; lastPreviewPinch = null }
@@ -760,9 +796,9 @@ private fun CaptureApp(connection: WorldConnection) {
                     true
                 }) {
                 val stageMaterial = remember(materialLoader) { materialLoader.createColorInstance(Color(0xff272238), roughness = .95f) }
-                CubeNode(size = Size(2.2f, .035f, 1.5f), materialInstance = stageMaterial, position = Position(0f,-.03f,0f))
+                CubeNode(size = Size(2.2f, .035f, 1.5f), materialInstance = stageMaterial, position = Position(0f,-.0175f,0f))
                 world?.let { current ->
-                    CharacterWorld(current) { camera.worldPosition }
+                    CharacterWorld(current, previewFeet) { camera.worldPosition }
                     current.raid?.takeIf { raidIsFresh(it.started,System.currentTimeMillis(),10_000) }?.let { raid ->
                         val started = remember(raid.id) { SystemClock.elapsedRealtime() }
                         NorthstarProps(PortalWorld(raid.id,"TEST RAID · ${raid.count} ARRIVALS",FootPosition(0f,.5f,-.25f),FootPosition(0f,0f,-.25f),0f,started),emptyList(),sceneClock) { camera.worldPosition }
@@ -965,11 +1001,13 @@ private fun SceneScope.CharacterWorld(world: NativeWorld, feet: Map<String, Hero
         Node(position = position, rotation = Rotation(0f, pose?.yaw ?: 0f, 0f), isVisible = visible) {
             // ~30 cm tall. Uses the GLB's own origin (feet) and a fixed scale. Not scaleToUnits/centerOrigin:
             // those fit the bounding box (hats, capes, T-pose arms), so size and pivot varied per hero.
-            instance?.let { ModelNode(modelInstance = it, autoAnimate = false,
-                animationName = pose?.clip ?: if (world.reducedMotion) "Idle" else characterClip(hero.animation),
-                animationSpeed = if (world.reducedMotion) 0.25f else 1f,
-                scale = Scale(CHARACTER_HEIGHT_METRES / KAYKIT_BODY_HEIGHT_UNITS),
-                rotation = Rotation(0f, 0f, 0f)) }
+            instance?.let {
+                val driver = remember(it) { HeroAnimator(it.animator) }
+                val playback by rememberUpdatedState(HeroPlayback(pose?.clip ?: "Idle", pose?.animationSpeed ?: 1f, pose?.jumpPhase, hero.actionSerial))
+                ModelNode(modelInstance = it, autoAnimate = false,
+                    scale = Scale(CHARACTER_HEIGHT_METRES / KAYKIT_BODY_HEIGHT_UNITS),
+                    rotation = Rotation(0f, 0f, 0f), apply = { onFrame = { nanos -> driver.frame(nanos, playback) } })
+            }
             TextNode(text = hero.name, position = Position(0f, CHARACTER_HEIGHT_METRES + 0.06f, 0f), widthMeters = 0.28f, heightMeters = 0.06f, cameraPositionProvider = cameraPosition)
             if (hero.message.isNotBlank()) TextNode(text = hero.message.take(60), position = Position(0f, CHARACTER_HEIGHT_METRES + 0.15f, 0f), widthMeters = 0.46f, heightMeters = 0.065f, cameraPositionProvider = cameraPosition)
         }

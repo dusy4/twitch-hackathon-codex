@@ -9,6 +9,7 @@ import {
   defaultConfig,
 } from "../../packages/shared/contracts.js";
 import { z } from "zod";
+import { chatIntent } from "./chat-intent.js";
 import { randomUUID } from "node:crypto";
 import { TRACK_TTL_MS } from "../../packages/shared/tracker.js";
 import {
@@ -67,6 +68,7 @@ export function localCompile(
     .replace(/^!(rift|ourapp)\s+/i, "")
     .replace(/^!/, "")
     .toLowerCase();
+  prompt = chatIntent(prompt) || prompt;
   prompt = animationAliases[prompt] || prompt;
   const directionAliases: Record<string, string> = {
     w: "up",
@@ -173,22 +175,29 @@ export function localCompile(
       message: `Choreography: ${clauses.join(" → ").slice(0, 140)}`,
     });
   }
+  if (["turn_left", "turn_right", "turn_around"].includes(prompt))
+    return Plan.parse({
+      version: 1,
+      steps: [step("play_animation", prompt, null, 800)],
+      message: prompt.replaceAll("_", " "),
+    });
   const movement: Record<string, [number, number]> = {
     left: [-0.13, 0],
     right: [0.13, 0],
     up: [0, -0.09],
     down: [0, 0.09],
   };
-  if (movement[prompt]) {
-    const [dx, dy] = movement[prompt];
+  const moveName = prompt.replace(/^run /, "");
+  if (movement[moveName]) {
+    const [dx, dy] = movement[moveName];
     return Plan.parse({
       version: 1,
       steps: [
         step(
           "navigate",
-          "walk",
+          prompt.startsWith("run ") ? "run" : "walk",
           null,
-          700,
+          prompt.startsWith("run ") ? 500 : 1000,
           Math.max(0.04, Math.min(0.96, x + dx)),
           Math.max(0.15, Math.min(0.9, y + dy)),
         ),

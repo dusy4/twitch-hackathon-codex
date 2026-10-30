@@ -19,6 +19,9 @@ for (const name of await readdir(source)) {
   const gltf = JSON.parse(original.subarray(20, 20 + jsonLength).toString('utf8'));
   // Optional hand weapons are all present in the source pack; no loadout is selected here.
   for (const node of gltf.nodes) if (node.name?.startsWith('handslot')) delete node.children;
+  const accessories = new Set(['1H_Sword_Offhand','Badge_Shield','Rectangle_Shield','Round_Shield','Spike_Shield','1H_Sword','2H_Sword','Spellbook','Spellbook_open','1H_Wand','2H_Staff','Knife_Offhand','1H_Crossbow','2H_Crossbow','Knife','Throwable','1H_Axe_Offhand','Barbarian_Round_Shield','1H_Axe','2H_Axe','Mug']);
+  let hiddenAccessories = 0;
+  for (const node of gltf.nodes) if (node.mesh !== undefined && accessories.has(node.name)) { delete node.mesh; hiddenAccessories++; }
   let removed = 0;
   for (const clip of gltf.animations ?? []) {
     clip.channels = clip.channels.filter(({ target }) => {
@@ -36,6 +39,6 @@ for (const name of await readdir(source)) {
   header.writeUInt32LE(padded.length, 12);
   const generated = Buffer.concat([header, padded, rest]);
   await writeFile(join(destination, name), generated);
-  receipts.push({ name, sourceSha256: createHash('sha256').update(original).digest('hex'), generatedSha256: createHash('sha256').update(generated).digest('hex'), removedRootTranslationChannels: removed });
+  receipts.push({ name, sourceSha256: createHash('sha256').update(original).digest('hex'), generatedSha256: createHash('sha256').update(generated).digest('hex'), removedRootTranslationChannels: removed, hiddenAccessories });
 }
-await writeFile(join(destination, 'native-derivatives.json'), JSON.stringify({ license: 'CC0-1.0', operation: 'Remove root translation channels; retain skeletal animation and binary buffers', files: receipts }, null, 2));
+await writeFile(join(destination, 'native-derivatives.json'), JSON.stringify({ license: 'CC0-1.0', operation: 'Remove root translation channels and optional accessory mesh references; retain skeletal animation and binary buffers', files: receipts }, null, 2));

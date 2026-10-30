@@ -1,3 +1,4 @@
+import { chatIntent } from "./chat-intent.js";
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import staticFiles from "@fastify/static";
@@ -1553,7 +1554,7 @@ export async function createApp(
     targetHint?: string,
   ): Promise<{ plan?: string; source: "keywords" | "ai" }> {
     w.log("chat", `${who.name}: ${text.slice(0, 200)}`);
-    if (/^!join\s*$/i.test(text)) {
+    if (/^!join\s*$/i.test(text) || chatIntent(text) === "join") {
       try {
         await w.join(who, true);
       } catch (error) {
@@ -1684,7 +1685,10 @@ export async function createApp(
                 "CHANNEL_MISMATCH",
                 "Subscription channel mismatch",
               );
-            if (CHAT_COMMAND.test(event.message.text)) {
+            if (
+              CHAT_COMMAND.test(event.message.text) ||
+              chatIntent(event.message.text) !== null
+            ) {
               const c = (
                 await db.query("SELECT connected FROM channels WHERE id=$1", [
                   event.broadcaster_user_id,
@@ -1692,12 +1696,38 @@ export async function createApp(
               ).rows[0];
               if (c?.connected) {
                 const w = await world(event.broadcaster_user_id);
-                const who = await account(
-                  db,
-                  event.chatter_user_id,
-                  event.chatter_user_name,
-                  w.state.mode === "SIMULATOR",
-                );
+                // Ordinary chat only directs an already participating viewer. It cannot
+                // silently create an account, mint a join reward or claim a raid slot.
+                const plain = !event.message.text.trim().startsWith("!");
+                const existing =
+                  plain && chatIntent(event.message.text) !== "join"
+                    ? (
+                        await db.query(
+                          "SELECT * FROM accounts WHERE twitch_id=$1 AND deleted=false",
+                          [event.chatter_user_id],
+                        )
+                      ).rows[0]
+                    : null;
+                if (
+                  plain &&
+                  chatIntent(event.message.text) !== "join" &&
+                  (!existing ||
+                    !w.state.avatars.some((a) => a.id === existing.id))
+                ) {
+                  await db.query(
+                    "UPDATE inbox SET status='done',payload='{}'::jsonb WHERE id=$1",
+                    [row.id],
+                  );
+                  continue;
+                }
+                const who =
+                  existing ??
+                  (await account(
+                    db,
+                    event.chatter_user_id,
+                    event.chatter_user_name,
+                    w.state.mode === "SIMULATOR",
+                  ));
                 // Run concurrently: an AI-planned action can take seconds and
                 // must not serialize the rest of the batch (raids, other
                 // channels). Actions are idempotent per chat message id.

@@ -27,7 +27,7 @@ class TestChatTest {
         assertEquals(room.scenario.size, room.delivered)
         assertEquals(3, room.world.heroes.size)
         assertEquals(room.scenario.map { it.text }, room.messages.filter { !it.system }.map { it.text })
-        assertTrue(room.messages.any { !it.ok && "Couldn't find" in it.text })
+        assertTrue(room.messages.filter { !it.system }.any { "then jump" in it.text })
         assertEquals("sit", room.world.heroes.first { it.id == "test-alice" }.animation)
         val finished = room.world
         room.tick(999_000)

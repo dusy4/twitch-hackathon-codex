@@ -32,6 +32,7 @@ class SurfaceMotor {
     private data class Body(var foot: FootPosition, var velocityY: Float = 0f)
     private val bodies = mutableMapOf<String, Body>()
     fun clear() = bodies.clear()
+    fun position(id: String): FootPosition? = bodies[id]?.foot
     fun retain(ids: Set<String>) { bodies.keys.retainAll(ids) }
 
     /** Drops an actor that fell too far behind its goal so it re-enters at the goal. Returns true if dropped. */

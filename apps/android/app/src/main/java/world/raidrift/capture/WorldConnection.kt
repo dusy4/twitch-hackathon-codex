@@ -26,7 +26,7 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-data class Hero(val id: String, val name: String, val x: Float, val y: Float, val animation: String, val target: String? = null, val spawnedAt: Long? = null, val message: String = "")
+data class Hero(val id: String, val name: String, val x: Float, val y: Float, val animation: String, val target: String? = null, val spawnedAt: Long? = null, val message: String = "", val facing: Float? = null, val actionSerial: Long = 0L)
 data class Raid(val id: String, val started: Long, val count: Int, val from: String = "", val test: Boolean = false)
 /** [source] = "server" marks open-vocabulary detections made on the PC in uploaded frame [frameId]. */
 data class ServerTrack(val id: String, val label: String, val box: TrackBox, val confidence: Float, val seenAt: Long,
@@ -54,7 +54,7 @@ data class NativeWorld(
                 require(id.length in 1..80 && x.isFinite() && y.isFinite() && x in 0.0..1.0 && y in 0.0..1.0) { "Invalid character position or identity" }
                 val target = text(hero, "target", 200)?.takeIf { it.length in 1..80 }
                 val spawned = if (hero.has("spawnedAt") && !hero.isNull("spawnedAt")) hero.optLong("spawnedAt").takeIf { it > 0 } else null
-                Hero(id, hero.getString("name").take(40), x.toFloat(), y.toFloat(), hero.optString("animation", "idle").take(40), target, spawned, text(hero, "message", 140) ?: "")
+                Hero(id, hero.getString("name").take(40), x.toFloat(), y.toFloat(), hero.optString("animation", "idle").take(40), target, spawned, text(hero, "message", 140) ?: "", actionSerial = hero.optLong("animationAt", 0L))
             }
             require(heroes.map { it.id }.toSet().size == heroes.size) { "Duplicate character identity" }
             val raid = json.optJSONObject("raid")?.let { Raid(it.getString("id"), it.getLong("started"), it.optInt("count").coerceIn(0, 1_000_000), it.optString("from", "").take(50), it.optBoolean("test")) }

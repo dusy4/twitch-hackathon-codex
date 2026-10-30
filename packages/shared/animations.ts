@@ -1,5 +1,8 @@
 export const animationNames = [
   "idle",
+  "turn_left",
+  "turn_right",
+  "turn_around",
   "join",
   "walk",
   "run",

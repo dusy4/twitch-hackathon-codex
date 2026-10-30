@@ -1,0 +1,70 @@
+[
+  {
+    "name": "Knight",
+    "source": {
+      "errors": 0,
+      "warnings": 6,
+      "warningCodes": [
+        "NODE_SKINNED_MESH_NON_ROOT"
+      ]
+    },
+    "generated": {
+      "errors": 0,
+      "warnings": 6,
+      "warningCodes": [
+        "NODE_SKINNED_MESH_NON_ROOT"
+      ]
+    }
+  },
+  {
+    "name": "Mage",
+    "source": {
+      "errors": 0,
+      "warnings": 6,
+      "warningCodes": [
+        "NODE_SKINNED_MESH_NON_ROOT"
+      ]
+    },
+    "generated": {
+      "errors": 0,
+      "warnings": 6,
+      "warningCodes": [
+        "NODE_SKINNED_MESH_NON_ROOT"
+      ]
+    }
+  },
+  {
+    "name": "Rogue",
+    "source": {
+      "errors": 0,
+      "warnings": 6,
+      "warningCodes": [
+        "NODE_SKINNED_MESH_NON_ROOT"
+      ]
+    },
+    "generated": {
+      "errors": 0,
+      "warnings": 6,
+      "warningCodes": [
+        "NODE_SKINNED_MESH_NON_ROOT"
+      ]
+    }
+  },
+  {
+    "name": "Barbarian",
+    "source": {
+      "errors": 0,
+      "warnings": 6,
+      "warningCodes": [
+        "NODE_SKINNED_MESH_NON_ROOT"
+      ]
+    },
+    "generated": {
+      "errors": 0,
+      "warnings": 6,
+      "warningCodes": [
+        "NODE_SKINNED_MESH_NON_ROOT"
+      ]
+    }
+  }
+]

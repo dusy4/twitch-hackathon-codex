@@ -1,0 +1,97 @@
+{
+  "date": "2026-10-30",
+  "version": "0.8.0-natural-motion",
+  "versionCode": 13,
+  "applicationId": "world.raidrift.capture.android",
+  "apkBytes": 123385425,
+  "apkSha256": "ea8740147f1a3443acf7c55dd9e34666917da820ff1405e4d3c6a08613b62085",
+  "android": {
+    "tests": 74,
+    "failures": 0,
+    "lintErrors": 0,
+    "lintWarnings": 11,
+    "build": [
+      "testDebugUnitTest",
+      "assembleDebug",
+      "lintDebug"
+    ],
+    "signature": "v2 verified, original internal debug certificate",
+    "zipAlignment": "16 KiB verified"
+  },
+  "backend": {
+    "passed": 84,
+    "skipped": 1,
+    "failed": 0,
+    "skip": "Conditional native PostgreSQL integration",
+    "webBuildAndTypecheck": "passed",
+    "changedTypeScriptFormatting": "passed",
+    "liveServerRestarted": false
+  },
+  "consultant": {
+    "tool": "an independent reviewer CLI",
+    "model": "independent review",
+    "effort": "high",
+    "mode": "read-only",
+    "reviews": 2,
+    "fixed": [
+      "preview teleportation",
+      "unprefixed chat implicit joins/rewards",
+      "yaw wrapping",
+      "UTF-8 hints",
+      "reduced-motion jump phase",
+      "old arrival replay",
+      "plain WASD chatter",
+      "midair jump retrigger"
+    ]
+  },
+  "runtime": {
+    "platform": "Boat Android API30 x86_64, software swangle GPU",
+    "installedApkSha256": "ea8740147f1a3443acf7c55dd9e34666917da820ff1405e4d3c6a08613b62085",
+    "scenarioMessagesDelivered": 15,
+    "independentNamedViewers": 3,
+    "observed": [
+      "portal entrance",
+      "walking through intermediate positions",
+      "facing changes",
+      "visible jump takeoff and landing",
+      "Ukrainian and English message inputs",
+      "removed optional weapons",
+      "Replay retains exactly three named characters"
+    ],
+    "nativeErrors": "No AndroidRuntime or ModelNode errors in captured log",
+    "screenRecording": {
+      "path": "native-chat-motion.mp4",
+      "durationSeconds": 49.9059,
+      "frames": 476,
+      "size": [
+        720,
+        1280
+      ],
+      "codec": "H.264",
+      "bytes": 4507338,
+      "scope": "Camera-off synthetic native scene and HUD. Software-emulator frame rate is not phone performance."
+    }
+  },
+  "modelValidation": {
+    "errorsPerModel": 0,
+    "warningsPerModel": 6,
+    "warnings": "Inherited NODE_SKINNED_MESH_NON_ROOT, also reproduced on original source files",
+    "newAssetsOrDependencies": false,
+    "license": "Existing KayKit CC0-1.0"
+  },
+  "distribution": {
+    "desktop": "C:/Users/Andrii PC/Desktop/RaidRift-0.8.0.apk",
+    "privateDownload": "https://raidrift-pc.tail7252b4.ts.net/apk/RaidRift-0.8.0.apk?build=ea874014",
+    "privateDownloadHeadStatus": 200,
+    "privateDownloadContentLength": 123385425,
+    "telegram": "Separate UI delivery; upload is not inferred from APK preparation"
+  },
+  "limits": [
+    "Offline bounded intent grammar, not unrestricted LLM comprehension",
+    "Directions follow placed-stage axes",
+    "No collision-tested real-object jump/vault",
+    "Physical S25 walking/jumping/drift/thermal check still open",
+    "Real Twitch and camera-to-OBS validation still open",
+    "Browser turn rendering parity not claimed"
+  ]
+}
