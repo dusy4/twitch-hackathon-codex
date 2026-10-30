@@ -48,7 +48,6 @@ import com.google.ar.core.TrackingState
 import io.github.sceneview.*
 import io.github.sceneview.ar.*
 import io.github.sceneview.ar.scene.SceneUnderstanding
-import io.github.sceneview.ar.physics.DepthCollider
 import io.github.sceneview.math.Position
 import io.github.sceneview.math.Rotation
 import kotlinx.coroutines.delay
@@ -114,14 +113,13 @@ private fun CaptureApp(connection: WorldConnection) {
     var bursts by remember { mutableStateOf<List<ConfettiBurst>>(emptyList()) }
     var sceneClock by remember { mutableLongStateOf(0) }
     var debugOpen by remember { mutableStateOf(false) }
-    var showBoxes by remember { mutableStateOf(BuildConfig.DEBUG) }
+    var showBoxes by remember { mutableStateOf(false) }
     var detectorOn by remember { mutableStateOf(true) }
     var localDebug by remember { mutableStateOf(LocalDebug()) }
     var arFps by remember { mutableFloatStateOf(0f) }
     var propsNote by remember { mutableStateOf("") }
     var toast by remember { mutableStateOf<Pair<String, Boolean>?>(null) }
     LaunchedEffect(toast) { if (toast != null) { delay(5000); toast = null } }
-    var depthCollider by remember { mutableStateOf<DepthCollider?>(null) }
     val contactFrame = remember { ContactFrame() }
     val arDiagnostics = remember { ArFrameDiagnostics() }
     var lightMode by remember { mutableStateOf(LightMode.HDR) }
@@ -455,19 +453,14 @@ private fun CaptureApp(connection: WorldConnection) {
                                 SensedWall(origin, axis(1f, 0f, 0f), axis(0f, 0f, 1f), axis(0f, 1f, 0f), points)
                             }.getOrNull()
                         }
-                        // Measured support under a point: tracked upward planes, then recent depth, then the
-                        // extended floor (past the detected patch), so characters don't vanish off its edge.
-                        fun measuredSupport(query: FootPosition): Float? {
-                            val measured = planes.mapNotNull { plane ->
-                                val height = plane.centerPose.ty()
-                                val sample = com.google.ar.core.Pose.makeTranslation(query.x, height, query.z)
-                                height.takeIf { it <= query.y + 0.035f && plane.isPoseInPolygon(sample) }
-                            }.maxOrNull()
-                            val collider = depthCollider
-                            val recentDepth = collider?.takeIf { System.currentTimeMillis() - it.lastRebuildTimestampMs in 0..500 }
-                                ?.floorYAt(query.x, query.y + 0.035f, query.z, 0f)
-                            return listOfNotNull(measured, recentDepth).maxOrNull()
-                        }
+                        // Support under a point: tracked upward planes, then the extended floor (past the
+                        // detected patch). Not the 160x90 depth collider: its noise invented surfaces in mid-air
+                        // (owner recording 2026-10-30: hero hovering at backpack height beside the backpack).
+                        fun measuredSupport(query: FootPosition): Float? = planes.mapNotNull { plane ->
+                            val height = plane.centerPose.ty()
+                            val sample = com.google.ar.core.Pose.makeTranslation(query.x, height, query.z)
+                            height.takeIf { it <= query.y + 0.035f && plane.isPoseInPolygon(sample) }
+                        }.maxOrNull()
                         fun support(query: FootPosition): Float? = measuredSupport(query) ?: floorY?.takeIf { it <= query.y + 0.035f }
                         val elapsed =if (contactFrame.timestamp == 0L) 0f else (frame.timestamp - contactFrame.timestamp) / 1_000_000_000f
                         contactFrame.timestamp = frame.timestamp
@@ -552,11 +545,6 @@ private fun CaptureApp(connection: WorldConnection) {
                     true
                 }
             ) {
-                if (depthSupported) {
-                    val collider = rememberDepthCollider(refreshIntervalMs = 200, stride = 8)
-                    SideEffect { depthCollider = collider }
-                    DisposableEffect(collider) { onDispose { depthCollider = null } }
-                }
                 // Real shadows: invisible shadow catchers on tracked floors/desks (only once placed, so they
                 // never stack with the plane renderer's own receiver).
                 if (shadowMode.real && anchor != null) shadowPlanes.forEach { plane -> key(plane) { ShadowReceiverPlane(plane = plane) } }

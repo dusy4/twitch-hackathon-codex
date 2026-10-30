@@ -138,7 +138,9 @@ class DetectorWorker(private val context: Context) {
             .setBaseOptions(BaseOptions.builder().setModelAssetPath(MODEL_ASSET).build())
             .setRunningMode(RunningMode.IMAGE)
             .setMaxResults(15)
-            .setScoreThreshold(0.35f)
+            // 0.5: at 0.35 with all 80 classes EfficientDet-Lite0 called a magazine "surfboard" and a
+            // backpack "dining table". Anything it misses, the PC's open-vocabulary detector finds by name.
+            .setScoreThreshold(0.5f)
             .build()
         ObjectDetector.createFromOptions(context, options).also { detector = it; status = "Detector ready" }
     } catch (e: Throwable) {
