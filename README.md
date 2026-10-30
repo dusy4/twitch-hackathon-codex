@@ -1,5 +1,7 @@
 # RaidRift — implementation workspace
 
+**Latest native internal build: 0.7.1-test-chat.** The S25 owner reports that initial placement works and stays anchored. Open AR camera → scan/tap a surface → **Test raid**: three stub viewers join through the portal and send predefined messages independently while the broadcaster watches. No PC/server is needed for this local test. It is labelled STUB/TEST and does not establish a live Twitch integration. [Native test instructions and evidence](docs/ANDROID_RECOVERY.md), [input-stub design and remaining gates](docs/ADR-006-test-raid-chat.md).
+
 **Android phone + laptop test:** [LAN setup and phone checklist](docs/ANDROID_LAN_TEST.md). Run `npm ci`, then `npm run lan:test` on your laptop. The Android development APK is attached to the [Android LAN test prerelease](https://github.com/dusy4/twitch-hackathon-codex/releases/tag/android-lan-test-2026-10-29). Tracked AR character visibility remains an open test; this is not a production release.
 
 Run `npm ci`, `npm run build`, then `npm start` from this directory. Open **http://127.0.0.1:3400**.

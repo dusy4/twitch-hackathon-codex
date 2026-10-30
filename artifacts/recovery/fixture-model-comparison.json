@@ -1,0 +1,247 @@
+[
+  {
+    "model": "efficientdet_lite0.tflite",
+    "video": "moving-chairs.webm",
+    "t": 0.5,
+    "hits": [
+      {
+        "class": "chair",
+        "score": 0.404
+      },
+      {
+        "class": "refrigerator",
+        "score": 0.334
+      },
+      {
+        "class": "chair",
+        "score": 0.331
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite0.tflite",
+    "video": "moving-chairs.webm",
+    "t": 1.5,
+    "hits": [
+      {
+        "class": "chair",
+        "score": 0.456
+      },
+      {
+        "class": "chair",
+        "score": 0.447
+      },
+      {
+        "class": "chair",
+        "score": 0.378
+      },
+      {
+        "class": "refrigerator",
+        "score": 0.36
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite0.tflite",
+    "video": "moving-chairs.webm",
+    "t": 2.5,
+    "hits": [
+      {
+        "class": "chair",
+        "score": 0.435
+      },
+      {
+        "class": "refrigerator",
+        "score": 0.378
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite0.tflite",
+    "video": "dog-tail.webm",
+    "t": 0.5,
+    "hits": [
+      {
+        "class": "horse",
+        "score": 0.816
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite0.tflite",
+    "video": "dog-tail.webm",
+    "t": 1.5,
+    "hits": [
+      {
+        "class": "horse",
+        "score": 0.782
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite0.tflite",
+    "video": "dog-tail.webm",
+    "t": 2.5,
+    "hits": [
+      {
+        "class": "horse",
+        "score": 0.848
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite0.tflite",
+    "video": "dog-rain.webm",
+    "t": 0.5,
+    "hits": []
+  },
+  {
+    "model": "efficientdet_lite0.tflite",
+    "video": "dog-rain.webm",
+    "t": 1.5,
+    "hits": [
+      {
+        "class": "cat",
+        "score": 0.739
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite0.tflite",
+    "video": "dog-rain.webm",
+    "t": 2.5,
+    "hits": [
+      {
+        "class": "bird",
+        "score": 0.409
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "video": "moving-chairs.webm",
+    "t": 0.5,
+    "hits": [
+      {
+        "class": "chair",
+        "score": 0.746
+      },
+      {
+        "class": "chair",
+        "score": 0.59
+      },
+      {
+        "class": "handbag",
+        "score": 0.477
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "video": "moving-chairs.webm",
+    "t": 1.5,
+    "hits": [
+      {
+        "class": "chair",
+        "score": 0.711
+      },
+      {
+        "class": "chair",
+        "score": 0.543
+      },
+      {
+        "class": "handbag",
+        "score": 0.434
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "video": "moving-chairs.webm",
+    "t": 2.5,
+    "hits": [
+      {
+        "class": "chair",
+        "score": 0.727
+      },
+      {
+        "class": "chair",
+        "score": 0.672
+      },
+      {
+        "class": "handbag",
+        "score": 0.477
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "video": "dog-tail.webm",
+    "t": 0.5,
+    "hits": [
+      {
+        "class": "horse",
+        "score": 0.887
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "video": "dog-tail.webm",
+    "t": 1.5,
+    "hits": [
+      {
+        "class": "horse",
+        "score": 0.902
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "video": "dog-tail.webm",
+    "t": 2.5,
+    "hits": [
+      {
+        "class": "horse",
+        "score": 0.91
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "video": "dog-rain.webm",
+    "t": 0.5,
+    "hits": [
+      {
+        "class": "cow",
+        "score": 0.543
+      },
+      {
+        "class": "car",
+        "score": 0.391
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "video": "dog-rain.webm",
+    "t": 1.5,
+    "hits": [
+      {
+        "class": "bird",
+        "score": 0.633
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "video": "dog-rain.webm",
+    "t": 2.5,
+    "hits": [
+      {
+        "class": "bird",
+        "score": 0.672
+      }
+    ]
+  }
+]

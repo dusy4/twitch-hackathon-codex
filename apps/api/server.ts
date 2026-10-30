@@ -1543,13 +1543,14 @@ export async function createApp(
     return reply.code(204).send();
   });
   const CHAT_COMMAND =
-    /^!(join|left|right|up|down|jump|wave|dance|sit|rift|ourapp|stop)(\s|$)/i;
+    /^!(join|left|right|up|down|w|a|s|d|forward|backward|back|jump|wave|dance|sit|rift|ourapp|stop)(\s|$)/i;
   /** The one chat-command path shared by Twitch EventSub and the phone. */
   async function chatCommand(
     w: World,
     who: Record<string, any>,
     text: string,
     messageId: string,
+    targetHint?: string,
   ): Promise<{ plan?: string; source: "keywords" | "ai" }> {
     w.log("chat", `${who.name}: ${text.slice(0, 200)}`);
     if (/^!join\s*$/i.test(text)) {
@@ -1562,7 +1563,12 @@ export async function createApp(
       }
       return { plan: "join", source: "keywords" };
     }
-    const result = await w.action(who, text.slice(0, 500), `chat:${messageId}`);
+    const result = await w.action(
+      who,
+      text.slice(0, 500),
+      `chat:${messageId}`,
+      targetHint,
+    );
     return {
       plan: result.summary ?? result.message ?? result.status,
       source: result.source ?? "keywords",
@@ -1800,11 +1806,19 @@ export async function createApp(
         .object({
           text: z.string().trim().min(1).max(500),
           name: z.string().trim().min(1).max(25).optional(),
+          actorId: z.string().min(1).max(80).optional(),
+          targetHint: z.string().min(1).max(80).optional(),
         })
         .strict(),
       req.body,
     );
     const w = await world(room);
+    if (w.state.mode !== "SIMULATOR")
+      throw new GameError(
+        "VIEWER_CONTROLLER_REQUIRED",
+        "Live viewers control their own characters through Twitch chat or the authenticated viewer controller.",
+        403,
+      );
     const name = data.name || "Streamer";
     const text = data.text.startsWith("!") ? data.text : `!rift ${data.text}`;
     try {
@@ -1813,17 +1827,37 @@ export async function createApp(
           "UNKNOWN_COMMAND",
           "Try !join, !dance, !jump or !rift <anything>.",
         );
-      const who = await account(
-        db,
-        simulatedId(name),
-        name,
-        w.state.mode === "SIMULATOR",
-      );
+      const existing = data.actorId
+        ? (
+            await db.query(
+              "SELECT * FROM accounts WHERE id=$1 AND demo=true AND deleted=false",
+              [data.actorId],
+            )
+          ).rows[0]
+        : null;
+      if (
+        data.actorId &&
+        (!existing || !w.state.avatars.some((a) => a.id === data.actorId))
+      )
+        throw new GameError(
+          "ACTOR_NOT_PRESENT",
+          "Select a character in this test room.",
+          404,
+        );
+      const who =
+        existing ||
+        (await account(
+          db,
+          simulatedId(name),
+          name,
+          w.state.mode === "SIMULATOR",
+        ));
       const result = await chatCommand(
         w,
         who,
         text.slice(0, 500),
         `native-${randomUUID()}`,
+        data.targetHint,
       );
       return { ok: true, ...result };
     } catch (error) {
@@ -1845,7 +1879,9 @@ export async function createApp(
       ...t,
       seenAt: now,
     }));
-    w.updateTracks(tracks, w.state.epoch, NATIVE_TRACK_HOLD_MS);
+    // Native producer confirms repeated observations and calibrated geometry locally.
+    // Preserve the reported model confidence; do not inflate .32-.49 candidates to .5.
+    w.updateTracks(tracks, w.state.epoch, NATIVE_TRACK_HOLD_MS, 0.32);
     return { ok: true, epoch: w.state.epoch };
   });
   const MAX_FRAME_BYTES = 400 * 1024;

@@ -495,7 +495,12 @@ export class World extends EventEmitter {
       status,
     });
   }
-  updateTracks(tracks: SceneTrack[], epoch: number, holdMs = 0) {
+  updateTracks(
+    tracks: SceneTrack[],
+    epoch: number,
+    holdMs = 0,
+    phoneConfidence = 0.5,
+  ) {
     if (!this.state.config.vision)
       throw new GameError("NO_CONSENT", "Enable camera processing first.", 403);
     if (epoch !== this.state.epoch)
@@ -507,7 +512,8 @@ export class World extends EventEmitter {
         now - t.seenAt >= -200 &&
         (t.classifiedAt === undefined ||
           (now - t.classifiedAt < 2000 && now - t.classifiedAt >= -200)) &&
-        t.confidence >= (t.source === "server" ? SERVER_MIN_CONFIDENCE : 0.5),
+        t.confidence >=
+          (t.source === "server" ? SERVER_MIN_CONFIDENCE : phoneConfidence),
     );
     const [left, top, right, bottom] = this.state.config.geometry.crop;
     const current = observed.filter((t) => {

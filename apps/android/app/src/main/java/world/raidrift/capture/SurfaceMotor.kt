@@ -64,7 +64,7 @@ class SurfaceMotor {
         val body = bodies[id] ?: run {
             val observed = floor(target) ?: return null
             if (!observed.isFinite() || observed > target.y + 0.035f) return null
-            Body(target).also { bodies[id] = it }
+            Body(target.copy(y = observed)).also { bodies[id] = it }
         }
         val dt = elapsed.coerceIn(0f, 1f / 15f)
         val current = body.foot

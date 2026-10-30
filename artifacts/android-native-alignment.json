@@ -107,6 +107,21 @@
       ]
     },
     {
+      "path": "lib/arm64-v8a/libmediapipe_tasks_jni.so",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "supports16KiBLoadAlignment": true,
+      "relro": [
+        {
+          "endAligned16KiB": false,
+          "writableTailInRoundedPage": false
+        }
+      ]
+    },
+    {
       "path": "lib/x86_64/libandroidx.graphics.path.so",
       "loadSegmentAlignments": [
         16384,
@@ -198,6 +213,21 @@
     },
     {
       "path": "lib/x86_64/libjingle_peerconnection_so.so",
+      "loadSegmentAlignments": [
+        16384,
+        16384,
+        16384
+      ],
+      "supports16KiBLoadAlignment": true,
+      "relro": [
+        {
+          "endAligned16KiB": false,
+          "writableTailInRoundedPage": false
+        }
+      ]
+    },
+    {
+      "path": "lib/x86_64/libmediapipe_tasks_jni.so",
       "loadSegmentAlignments": [
         16384,
         16384,

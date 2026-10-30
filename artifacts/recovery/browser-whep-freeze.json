@@ -1,0 +1,15 @@
+{
+  "scope": "Actual browser peer with synthetic canvas frames, then frozen drawing while sender ICE/track stay live; native SRT is tested separately",
+  "before": {
+    "connection": "connected",
+    "track": "live",
+    "audioTrack": "live"
+  },
+  "clearUpperBoundMs": 4013,
+  "deletedSessions": 1,
+  "video": {
+    "width": 0,
+    "detached": true,
+    "hidden": true
+  }
+}

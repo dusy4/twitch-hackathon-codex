@@ -39,6 +39,7 @@ data class Located(val foot: FootPosition, val topY: Float?, val source: String)
 data class PortalWorld(val raidId: String, val banner: String, val center: FootPosition, val foot: FootPosition, val yaw: Float, val createdAt: Long, val footKnown: Boolean = true)
 
 data class ConfettiBurst(val id: String, val origin: FootPosition, val startedAt: Long)
+data class ManualTarget(val id: String, var label: String, val anchor: Anchor, val lift: Float)
 
 enum class LightMode(val label: String) { HDR("Environmental HDR"), AMBIENT("Ambient intensity") }
 enum class ShadowMode(val label: String, val blob: Boolean, val real: Boolean) {
@@ -57,6 +58,8 @@ class NorthstarRuntime {
     val seenProps = mutableSetOf<String>()
     var bursts = listOf<ConfettiBurst>()
     var portal: PortalWorld? = null
+    var portalAnchor: Anchor? = null
+    var portalStage: Anchor? = null
     var lastDetectSubmit = 0L
     var lastTracksPost = 0L
     var lastFrameUpload = 0L
@@ -71,15 +74,39 @@ class NorthstarRuntime {
     val serverTracks = ServerTrackRegistry<Anchor>()
     /** Last projected view box per server track, re-posted while the anchor is off-screen or tracking pauses. */
     val serverBoxes = mutableMapOf<String, TrackBox>()
+    val objectSizes = mutableMapOf<String, Pair<Float, Float>>()
+    val manualTargets = linkedMapOf<String, ManualTarget>()
+    val targetApproach = mutableMapOf<String, Pair<String, FootPosition>>()
+    val facing = mutableMapOf<String, Float>()
+    var generation = 0
+    var lastCameraTimestamp = 0L
+    var lastPresentation = 0L
 
     fun dropObjectAnchor(id: String) { objectAnchors.remove(id)?.let { runCatching { it.detach() } } }
 
     fun reset() {
+        runCatching { portalAnchor?.detach() }; portalAnchor = null
+        generation++; lastCameraTimestamp = 0; lastPresentation = 0
         tracker.clear(); space.clear(); motorLift.clear(); previousFeet.clear(); sources.clear(); frames.clear()
         objectAnchors.values.forEach { runCatching { it.detach() } }; objectAnchors.clear()
         serverTracks.clear().forEach { runCatching { it.anchor.detach() } }; serverBoxes.clear()
+        objectSizes.clear(); manualTargets.clear(); targetApproach.clear(); facing.clear(); seenRaid = UNSET; seenProps.clear(); spawned.clear(); portal = null; portalStage = null; bursts = emptyList()
+        lastDetectSubmit = 0; lastTracksPost = 0; lastFrameUpload = 0
     }
     companion object { const val UNSET = "\u0000unset" }
+}
+
+/** A raid belongs to the placed stage, so looking around cannot move its entrance. */
+internal fun stagePortal(stage: Pose, raid: Raid, now: Long, camera: Pose, supports: (FootPosition) -> Boolean): PortalWorld {
+    val candidates = listOf(0f to -.25f, -.16f to -.12f, 0f to 0f).map { (x,z) ->
+        stage.transformPoint(floatArrayOf(x, 0f, z)).let { FootPosition(it[0], it[1], it[2]) }
+    }
+    val measured = candidates.firstOrNull(supports)
+    val foot = measured ?: candidates.last()
+    val p = floatArrayOf(foot.x, foot.y, foot.z)
+    val yaw = TargetGoal.yaw(camera.tx()-p[0], camera.tz()-p[2])
+    return PortalWorld(raid.id, "${if (raid.test) "TEST RAID" else "RAID"}${if (raid.from.isNotBlank()) " · ${raid.from.uppercase()}" else ""} · ${raid.count}",
+        FootPosition(p[0],p[1]+.5f,p[2]), foot, yaw, now, footKnown = measured != null)
 }
 
 /** Lowest tracked upward plane height, used as the ground for fallbacks. */
@@ -219,6 +246,8 @@ internal fun captureFrameRecord(frame: Frame, frameId: String, now: Long, planes
     }.getOrNull()
     val depth = runCatching {
         frame.acquireDepthImage16Bits().use { image ->
+            // A compute-constrained device may return old depth. It cannot be paired with this pose.
+            if (kotlin.math.abs(frame.timestamp - image.timestamp) > 100_000_000L) return@use null
             val plane = image.planes[0]
             val buffer = plane.buffer.duplicate(); buffer.rewind()
             val bytes = ByteArray(buffer.remaining()); buffer.get(bytes)
@@ -252,6 +281,8 @@ private val CONFETTI_COLORS = listOf(Color(0xffff5a5a), Color(0xffffd23f), Color
 internal fun SceneScope.NorthstarProps(portal: PortalWorld?, bursts: List<ConfettiBurst>, clock: Long, cameraPosition: () -> Position) {
     val ringMaterial = remember(materialLoader) { materialLoader.createColorInstance(Color(0xffb38cff), metallic = 0f, roughness = 0.2f, reflectance = 0.9f) }
     val innerMaterial = remember(materialLoader) { materialLoader.createColorInstance(Color(0x9966e0ff)) }
+    val obsidian = remember(materialLoader) { materialLoader.createColorInstance(Color(0xff24122f), metallic = .35f, roughness = .5f) }
+    val membrane = remember(materialLoader) { materialLoader.createColorInstance(Color(0xbb8745df), metallic = .15f, roughness = .3f) }
     val confetti = remember(materialLoader) { CONFETTI_COLORS.map { materialLoader.createColorInstance(it) } }
     portal?.let { p ->
         val age = (clock - p.createdAt).coerceAtLeast(0L) / 1000f
@@ -259,8 +290,14 @@ internal fun SceneScope.NorthstarProps(portal: PortalWorld?, bursts: List<Confet
         val pulse = 1f + 0.06f * sin(age * 6f)
         key(p.raidId) {
             Node(position = Position(p.center.x, p.center.y, p.center.z), rotation = Rotation(0f, p.yaw, 0f)) {
-                TorusNode(majorRadius = 0.45f, minorRadius = 0.045f, majorSegments = 40, minorSegments = 10, materialInstance = ringMaterial,
-                    rotation = Rotation(90f, 0f, 0f), scale = io.github.sceneview.math.Scale(grow * pulse))
+                Node(scale = io.github.sceneview.math.Scale(grow)) {
+                    for (side in listOf(-1f,1f)) repeat(7) { i ->
+                        CubeNode(size = Size(.15f,.14f,.18f), materialInstance = obsidian, position = Position(side*.42f,-.42f+i*.14f,0f))
+                        CubeNode(size = Size(.025f,.085f,.19f), materialInstance = ringMaterial, position = Position(side*.34f,-.42f+i*.14f,0f))
+                    }
+                    for (side in listOf(-1f,1f)) repeat(5) { i -> CubeNode(size = Size(.14f,.15f,.18f), materialInstance = obsidian, position = Position(-.28f+i*.14f,side*.49f,0f)) }
+                    CubeNode(size = Size(.67f,.88f,.015f), materialInstance = membrane, position = Position(0f,0f,-.025f))
+                }
                 TorusNode(majorRadius = 0.3f, minorRadius = 0.02f, majorSegments = 32, minorSegments = 8, materialInstance = innerMaterial,
                     rotation = Rotation(90f, age * 120f, 0f), scale = io.github.sceneview.math.Scale(grow))
                 TextNode(text = p.banner, position = Position(0f, 0.65f, 0f), widthMeters = 1.1f, heightMeters = 0.13f, cameraPositionProvider = cameraPosition)

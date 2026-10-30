@@ -3,7 +3,10 @@ package world.raidrift.capture
 import android.content.Context
 import android.content.Intent
 import android.media.MediaRecorder
+import android.media.MediaExtractor
+import android.media.MediaFormat
 import android.os.Environment
+import android.view.Surface
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -17,6 +20,8 @@ class LocalClip(private val context: Context, private val mirror: SurfaceMirrore
     var file by mutableStateOf<File?>(null); private set
     var message by mutableStateOf("Silent MP4 · saved only on this device"); private set
     private var recorder: MediaRecorder? = null
+    /** SurfaceMirrorer matches Java Surface identity; MediaRecorder.getSurface may wrap anew. */
+    private var inputSurface: Surface? = null
     init {
         context.getExternalFilesDir(Environment.DIRECTORY_MOVIES)?.let { root ->
             file = File(root, "raidrift").listFiles { candidate -> candidate.isFile && candidate.name.startsWith("raidrift-") && candidate.extension == "mp4" }
@@ -34,6 +39,7 @@ class LocalClip(private val context: Context, private val mirror: SurfaceMirrore
         if (!folder.isDirectory && !folder.mkdirs()) { message = "Device storage is unavailable"; return }
         val destination = File(folder, "raidrift-pending.mp4")
         val capture = MediaRecorder()
+        var surface: Surface? = null
         try {
             capture.setVideoSource(MediaRecorder.VideoSource.SURFACE)
             capture.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
@@ -48,13 +54,14 @@ class LocalClip(private val context: Context, private val mirror: SurfaceMirrore
             }
             capture.setOutputFile(destination.absolutePath)
             capture.prepare()
-            mirror.startMirroring(capture.surface, width = 1280, height = 720)
+            surface = capture.surface
+            mirror.startMirroring(surface, width = 1280, height = 720)
             capture.start()
-            recorder = capture; file = destination; recording = true
+            recorder = capture; inputSurface = surface; file = destination; recording = true
             message = "Recording · stops automatically after 20 seconds · no audio"
         } catch (_: Exception) {
-            runCatching { mirror.stopMirroring(capture.surface) }
-            capture.release(); destination.delete()
+            surface?.let { runCatching { mirror.stopMirroring(it) } }
+            capture.release(); surface?.release(); destination.delete()
             message = "Video encoder could not start. Recording is unavailable on this device."
         }
     }
@@ -62,11 +69,21 @@ class LocalClip(private val context: Context, private val mirror: SurfaceMirrore
     fun stop() {
         val capture = recorder ?: return
         recorder = null
-        runCatching { mirror.stopMirroring(capture.surface) }
+        val surface = inputSurface; inputSurface = null
+        surface?.let { runCatching { mirror.stopMirroring(it) } }
         val completed = runCatching { capture.stop() }.isSuccess
-        capture.release(); recording = false
-        if (!completed || file?.length() == 0L) {
-            file?.delete(); file = null; message = "Clip was too short or interrupted; discarded."
+        capture.release(); surface?.release(); recording = false
+        val valid = completed && file?.let { candidate ->
+            if (candidate.length() == 0L) false else runCatching {
+                val probe = MediaExtractor()
+                try {
+                    probe.setDataSource(candidate.absolutePath)
+                    (0 until probe.trackCount).any { probe.getTrackFormat(it).getString(MediaFormat.KEY_MIME)?.startsWith("video/") == true }
+                } finally { probe.release() }
+            }.getOrDefault(false)
+        } == true
+        if (!valid) {
+            file?.delete(); file = null; message = "Recording was interrupted or invalid; discarded. Try again or use Broadcast."
         } else message = "Local clip ready · review before sharing · no audio"
     }
 

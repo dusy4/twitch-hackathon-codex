@@ -36,18 +36,27 @@ fun trackIdFor(label: String, n: Int) = "ph-${label.trim().replace(' ', '_')}-$n
 
 data class Detection(val label: String, val score: Float, val box: TrackBox)
 
-class TrackedObject(val id: String, val label: String, var box: TrackBox, var score: Float, var lastSeen: Long, var hits: Int = 1)
+class TrackedObject(val id: String, val label: String, var box: TrackBox, var score: Float, var lastSeen: Long, var hits: Int = 1) {
+    /** The actual observation; display smoothing must never be used to sample capture-time depth. */
+    var observedBox: TrackBox = box
+}
 
 /** Greedy IoU tracker with a centroid fallback for fast/small boxes. Ids look like "ph-dog-3". */
 class ObjectTracker(private val maxAgeMs: Long = 1500, private val iouThreshold: Float = 0.2f, private val centroidMax: Float = 0.15f) {
     private val tracks = mutableListOf<TrackedObject>()
     private val counters = mutableMapOf<String, Int>()
+    private var preserved = emptySet<String>()
 
-    fun clear() { tracks.clear() }
+    fun clear() { tracks.clear(); preserved = emptySet() }
+    fun preserve(ids: Set<String>) { preserved = ids }
     fun active(now: Long): List<TrackedObject> = tracks.filter { now - it.lastSeen <= maxAgeMs }
+    fun remembered(id: String): TrackedObject? = tracks.firstOrNull { it.id == id }
+
+    /** Camera motion predicts where stationary world objects appear before matching new observations. */
+    fun predict(boxes: Map<String, TrackBox>) { tracks.forEach { t -> boxes[t.id]?.let { t.box = it } } }
 
     fun update(detections: List<Detection>, now: Long): List<TrackedObject> {
-        tracks.removeAll { now - it.lastSeen > maxAgeMs }
+        tracks.removeAll { now - it.lastSeen > maxAgeMs && it.id !in preserved }
         data class Pair3(val track: TrackedObject, val det: Int, val score: Float)
         val candidates = mutableListOf<Pair3>()
         detections.forEachIndexed { index, det ->
@@ -69,6 +78,7 @@ class ObjectTracker(private val maxAgeMs: Long = 1500, private val iouThreshold:
             val b = c.track.box
             c.track.box = TrackBox(blend(b.x, det.box.x), blend(b.y, det.box.y), blend(b.w, det.box.w), blend(b.h, det.box.h))
             c.track.score = det.score; c.track.lastSeen = now; c.track.hits++
+            c.track.observedBox = det.box
         }
         detections.forEachIndexed { index, det ->
             if (index in usedDets) return@forEachIndexed
@@ -201,7 +211,7 @@ class TrackSpace(
     private val anchoredHoldMs: Long = 15_000, private val samplesNeeded: Int = 4, private val maxSpread: Float = 0.12f,
     private val moveDistance: Float = 0.35f, private val moveSamples: Int = 3
 ) {
-    class Spot(var foot: FootPosition, var topY: Float?, var lastSeen: Long, val label: String, var source: String) {
+    class Spot(var foot: FootPosition, var topY: Float?, var lastSeen: Long, var label: String, var source: String) {
         internal val samples = ArrayDeque<FootPosition>()
         internal var outliers = 0
         var anchored = false; internal set
@@ -226,6 +236,9 @@ class TrackSpace(
             spot.samples.addLast(foot); spot.outliers++
             while (spot.samples.size > moveSamples) spot.samples.removeFirst()
             if (spot.outliers < moveSamples) return AnchorAction.NONE
+            // A moved object must agree on its NEW position; unrelated depth outliers cannot move an anchor.
+            val candidate = mean(spot.samples)
+            if (spot.samples.any { distance(it, candidate) > maxSpread }) return AnchorAction.NONE
             spot.anchorAt = mean(spot.samples); spot.outliers = 0; spot.samples.clear()
             return AnchorAction.MOVE
         }
@@ -249,6 +262,7 @@ class TrackSpace(
     fun pin(id: String, label: String, foot: FootPosition, topY: Float?, source: String, now: Long) {
         val spot = spots.getOrPut(id) { Spot(foot, topY, now, label, source) }
         spot.foot = foot; spot.lastSeen = now; spot.anchored = true; spot.pinned = true; spot.source = source
+        spot.label = label
         if (topY != null) spot.topY = topY
     }
     fun remove(id: String) { spots.remove(id) }
@@ -378,7 +392,7 @@ data class DebugState(
  * [frameId] (keeps them alive server-side); phone-detected tracks omit both.
  */
 data class OutgoingTrack(val id: String, val label: String, val box: TrackBox, val confidence: Float, val seenAt: Long,
-                         val source: String? = null, val frameId: String? = null)
+                         val source: String? = null, val frameId: String? = null, val attributes: List<String> = emptyList())
 
 fun tracksPayload(tracks: List<OutgoingTrack>): JSONObject {
     val array = JSONArray()
@@ -387,7 +401,7 @@ fun tracksPayload(tracks: List<OutgoingTrack>): JSONObject {
         .sortedWith(compareByDescending<OutgoingTrack> { it.source == "server" }.thenByDescending { it.confidence }).take(50).forEach { t ->
         val x = t.box.x.coerceIn(0f, 1f); val y = t.box.y.coerceIn(0f, 1f)
         val w = t.box.w.coerceIn(0f, 1f - x); val h = t.box.h.coerceIn(0f, 1f - y)
-        val item = JSONObject().put("id", t.id).put("class", t.label).put("attributes", JSONArray())
+        val item = JSONObject().put("id", t.id).put("class", t.label).put("attributes", JSONArray(t.attributes.take(10)))
             .put("box", JSONArray().put(x.toDouble()).put(y.toDouble()).put(w.toDouble()).put(h.toDouble()))
             .put("confidence", t.confidence.coerceIn(0f, 1f).toDouble())
             .put("anchor", JSONArray().put((x + w / 2f).toDouble()).put((y + h).toDouble()))

@@ -1,0 +1,11 @@
+{
+  "model": "EfficientDet-Lite2 int8",
+  "source": "https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite2/int8/1/efficientdet_lite2.tflite",
+  "retrieved": "2026-10-30",
+  "bytes": 7515971,
+  "sha256": "b3f50554cb0ea559e90328845f7d9ba4d13c8bff372914d24e06bc8bb72fa896",
+  "modelDocumentation": "https://ai.google.dev/edge/mediapipe/solutions/vision/object_detector",
+  "upstreamSourceLicense": "Apache-2.0, Google/TensorFlow EfficientDet lineage. Preserve bundled Apache license and notices.",
+  "input": "448x448 uint8 RGB; explicitly letterboxed with neutral gray padding before MediaPipe inference",
+  "deployment": "Local CPU inference, with measured-latency fallback to bundled EfficientDet-Lite0. No paid inference. Phone/GPU/NPU latency is not inferred from desktop timings."
+}

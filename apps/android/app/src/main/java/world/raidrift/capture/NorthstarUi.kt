@@ -48,10 +48,10 @@ data class ArControls(
 @Composable
 fun ScanFloorOverlay(trackingOk: Boolean, surfaces: Int, followMe: Boolean, modifier: Modifier = Modifier) {
     val (title, hint) = when {
-        !trackingOk -> "Starting camera tracking" to "Hold the phone steady, then move it slowly"
-        surfaces == 0 -> "Scan the floor" to "Point at the floor and move the phone slowly side to side"
+        !trackingOk -> "1 · Find a surface" to "Hold the phone steady, then move it slowly"
+        surfaces == 0 -> "1 · Scan a floor or table" to "Point at a textured surface and move slowly side to side"
         followMe -> "Floor found" to "Keep the floor in view · characters are on their way"
-        else -> "Floor found" to "Tap the floor or a desk to place the characters"
+        else -> "2 · Tap to place your stage" to "Tap the floor or table once. Then press Test raid and watch."
     }
     Column(modifier.padding(24.dp).background(Color(0xb0101420), androidx.compose.foundation.shape.RoundedCornerShape(14.dp)).padding(horizontal = 18.dp, vertical = 12.dp),
         horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {

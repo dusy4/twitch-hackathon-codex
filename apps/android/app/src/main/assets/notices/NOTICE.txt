@@ -1,5 +1,7 @@
 RaidRift Android Capture — third-party notices
 
+Recovery build: additionally bundles Google's EfficientDet-Lite2 int8 checkpoint, 7,515,971 bytes, SHA-256 b3f50554cb0ea559e90328845f7d9ba4d13c8bff372914d24e06bc8bb72fa896. Source and preprocessing details: assets/models/efficientdet_lite2_int8.provenance.json. TensorFlow EfficientDet source lineage is Apache-2.0. No model training or Ultralytics/AGPL/EdgeTAM/Liquid weights are included. Object recognition stays local; paired-room frame uploads are part of the explicitly selected camera-processing workflow described in the app.
+
 SceneView 4.62.0 and its Apache-2.0 runtime components: retain the accompanying Apache license and the resolved component license inventory in android-dependencies.json. Kotlin, kotlinx.coroutines, AndroidX, Filament/gltfio, OkHttp/Okio, Guava and Kotlin math components retain their respective upstream ownership and license declarations.
 
 Fuel 2.3.1 and Result 3.1.0: MIT notices and copyright texts accompany this file.

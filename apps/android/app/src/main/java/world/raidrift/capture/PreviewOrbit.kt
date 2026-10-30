@@ -7,7 +7,7 @@ import kotlin.math.sin
 internal class PreviewOrbit {
     var yaw = 0f; private set
     var pitch = 20f; private set
-    var radius = 1.6f; private set
+    var radius = 2.6f; private set
     fun drag(dx: Float, dy: Float) {
         if (!dx.isFinite() || !dy.isFinite()) return
         yaw = (yaw + dx.coerceIn(-2000f, 2000f) * 0.35f) % 360f

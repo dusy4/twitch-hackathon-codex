@@ -1,0 +1,17 @@
+{
+  "scope": "Real native Android UI -> private server authoritative simulator -> native poll/render, synthetic accounts only",
+  "avatars": [
+    {
+      "id": "cc82529f-0819-4dcf-ae3a-ac699df00591",
+      "name": "Mossling",
+      "animation": "idle",
+      "target": null
+    },
+    {
+      "id": "bde89578-51c5-40ff-917c-c4d71bedef43",
+      "name": "Emberfox",
+      "animation": "dance",
+      "target": null
+    }
+  ]
+}

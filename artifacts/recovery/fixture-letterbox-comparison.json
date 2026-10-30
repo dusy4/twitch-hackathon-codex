@@ -1,0 +1,310 @@
+[
+  {
+    "model": "efficientdet_lite0.tflite",
+    "letterbox": true,
+    "video": "moving-chairs.webm",
+    "t": 0.5,
+    "hits": [
+      {
+        "label": "chair",
+        "score": 0.735
+      },
+      {
+        "label": "refrigerator",
+        "score": 0.575
+      },
+      {
+        "label": "chair",
+        "score": 0.424
+      },
+      {
+        "label": "dining table",
+        "score": 0.371
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite0.tflite",
+    "letterbox": true,
+    "video": "moving-chairs.webm",
+    "t": 1.5,
+    "hits": [
+      {
+        "label": "chair",
+        "score": 0.752
+      },
+      {
+        "label": "chair",
+        "score": 0.464
+      },
+      {
+        "label": "tv",
+        "score": 0.427
+      },
+      {
+        "label": "refrigerator",
+        "score": 0.426
+      },
+      {
+        "label": "dining table",
+        "score": 0.348
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite0.tflite",
+    "letterbox": true,
+    "video": "moving-chairs.webm",
+    "t": 2.5,
+    "hits": [
+      {
+        "label": "chair",
+        "score": 0.769
+      },
+      {
+        "label": "refrigerator",
+        "score": 0.493
+      },
+      {
+        "label": "tv",
+        "score": 0.437
+      },
+      {
+        "label": "chair",
+        "score": 0.409
+      },
+      {
+        "label": "dining table",
+        "score": 0.394
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite0.tflite",
+    "letterbox": true,
+    "video": "dog-tail.webm",
+    "t": 0.5,
+    "hits": [
+      {
+        "label": "dog",
+        "score": 0.888
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite0.tflite",
+    "letterbox": true,
+    "video": "dog-tail.webm",
+    "t": 1.5,
+    "hits": [
+      {
+        "label": "dog",
+        "score": 0.906
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite0.tflite",
+    "letterbox": true,
+    "video": "dog-tail.webm",
+    "t": 2.5,
+    "hits": [
+      {
+        "label": "dog",
+        "score": 0.833
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite0.tflite",
+    "letterbox": true,
+    "video": "dog-rain.webm",
+    "t": 0.5,
+    "hits": [
+      {
+        "label": "cat",
+        "score": 0.529
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite0.tflite",
+    "letterbox": true,
+    "video": "dog-rain.webm",
+    "t": 1.5,
+    "hits": [
+      {
+        "label": "cat",
+        "score": 0.711
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite0.tflite",
+    "letterbox": true,
+    "video": "dog-rain.webm",
+    "t": 2.5,
+    "hits": [
+      {
+        "label": "dog",
+        "score": 0.532
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "letterbox": true,
+    "video": "moving-chairs.webm",
+    "t": 0.5,
+    "hits": [
+      {
+        "label": "chair",
+        "score": 0.746
+      },
+      {
+        "label": "chair",
+        "score": 0.691
+      },
+      {
+        "label": "car",
+        "score": 0.391
+      },
+      {
+        "label": "book",
+        "score": 0.367
+      },
+      {
+        "label": "dining table",
+        "score": 0.348
+      },
+      {
+        "label": "chair",
+        "score": 0.328
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "letterbox": true,
+    "video": "moving-chairs.webm",
+    "t": 1.5,
+    "hits": [
+      {
+        "label": "chair",
+        "score": 0.727
+      },
+      {
+        "label": "chair",
+        "score": 0.727
+      },
+      {
+        "label": "chair",
+        "score": 0.391
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "letterbox": true,
+    "video": "moving-chairs.webm",
+    "t": 2.5,
+    "hits": [
+      {
+        "label": "chair",
+        "score": 0.691
+      },
+      {
+        "label": "chair",
+        "score": 0.672
+      },
+      {
+        "label": "refrigerator",
+        "score": 0.5
+      },
+      {
+        "label": "dining table",
+        "score": 0.367
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "letterbox": true,
+    "video": "dog-tail.webm",
+    "t": 0.5,
+    "hits": [
+      {
+        "label": "dog",
+        "score": 0.902
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "letterbox": true,
+    "video": "dog-tail.webm",
+    "t": 1.5,
+    "hits": [
+      {
+        "label": "dog",
+        "score": 0.902
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "letterbox": true,
+    "video": "dog-tail.webm",
+    "t": 2.5,
+    "hits": [
+      {
+        "label": "dog",
+        "score": 0.879
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "letterbox": true,
+    "video": "dog-rain.webm",
+    "t": 0.5,
+    "hits": [
+      {
+        "label": "car",
+        "score": 0.5
+      },
+      {
+        "label": "dog",
+        "score": 0.434
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "letterbox": true,
+    "video": "dog-rain.webm",
+    "t": 1.5,
+    "hits": [
+      {
+        "label": "dog",
+        "score": 0.609
+      }
+    ]
+  },
+  {
+    "model": "efficientdet_lite2_int8.tflite",
+    "letterbox": true,
+    "video": "dog-rain.webm",
+    "t": 2.5,
+    "hits": [
+      {
+        "label": "dog",
+        "score": 0.809
+      },
+      {
+        "label": "car",
+        "score": 0.59
+      }
+    ]
+  }
+]

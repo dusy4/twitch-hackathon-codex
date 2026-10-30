@@ -1,0 +1,54 @@
+{
+  "version": "0.7.0-recovery",
+  "versionCode": 11,
+  "applicationId": "world.raidrift.capture.android",
+  "branch": "fix/android-ar-recovery",
+  "apk": {
+    "bytes": 121307837,
+    "sha256": "47451597ad97f5c07809c8d4be3f95e2a220da5626f8ab19ad37bbc9c6c3b46d",
+    "kind": "internal signed debug APK",
+    "privateDownload": "https://raidrift-pc.tail7252b4.ts.net/apk/RaidRift-0.7.0.apk"
+  },
+  "automated": {
+    "androidJvm": {"tests": 64, "failures": 0},
+    "androidBuild": "PASS",
+    "androidLint": {"errors": 0, "warnings": 11},
+    "backend": {"pass": 80, "fail": 0, "skip": 1},
+    "webBuildAndTypecheck": "PASS",
+    "formatting": "PASS",
+    "chromiumIntegration": {"pass": 3, "fail": 0},
+    "apkSignature": "PASS (v2)",
+    "zipAlignment16KiB": "PASS",
+    "nativeLoadSegment16KiB": "PASS (16 libraries; structural only)"
+  },
+  "consultant": {
+    "cli": "an independent reviewer 2.1.309",
+    "model": "independent review",
+    "effort": "high",
+    "readOnlyReviews": 2,
+    "correctedFindings": ["high-refresh presentation timer", "walking-mode re-anchor", "model-load fallback", "remembered furniture publication"],
+    "rejectedSuggestion": "CPU intrinsics for depth: the official ARCore sample confirms texture intrinsics"
+  },
+  "nativeRuntime": {
+    "scope": "Intermediate 0.7.0 candidates in an accelerated software-GPU Boat emulator; synthetic accounts only",
+    "preview": "PASS",
+    "independentLocalSit": "PASS",
+    "privateQuickPair": "PASS",
+    "selectedAuthoritativeActorCommand": "PASS: Emberfox dance and Mossling idle",
+    "finalHashNativeFullRetest": "NOT PASSED: emulator install/control timeouts",
+    "arCameraFeed": "PASS",
+    "physicalAnchorsDriftDepth": "NOT PASSED: emulator camera/IMU timing failure",
+    "clip": "Older candidate invalid (missing moov); final Surface ownership and container validation fixes built, physical capture unpassed",
+    "liveTwitch": "NOT RUN",
+    "physicalS25ThermalFps": "NOT RUN",
+    "redmiAdb": "TCP 5555 refused"
+  },
+  "privacy": "Owner recording stays local and is absent from the APK. No paid QA inference or public publishing is claimed.",
+  "privateServer": {
+    "origin": "https://raidrift-pc.tail7252b4.ts.net",
+    "mode": "SIMULATOR",
+    "port": 3412,
+    "sidecar": "Existing loopback CUDA service retained; no new training",
+    "planner": "Existing configured adapter retained; no paid QA inference"
+  }
+}

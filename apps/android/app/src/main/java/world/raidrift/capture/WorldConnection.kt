@@ -243,13 +243,15 @@ class WorldConnection(application: Application) : AndroidViewModel(application) 
     }
 
     /** POST /v1/native/chat. Plain text is treated as `!rift <text>` by the server. */
-    fun chat(text: String, name: String?, onResult: (ChatReply) -> Unit) {
+    fun chat(text: String, name: String?, actorId: String? = null, targetHint: String? = null, onResult: (ChatReply) -> Unit) {
         val clean = text.trim().take(300)
         if (clean.isEmpty()) return
         viewModelScope.launch {
             val reply = runCatching {
                 val body = JSONObject().put("text", clean)
-                name?.trim()?.takeIf { it.isNotEmpty() }?.let { body.put("name", it.take(40)) }
+                if (actorId == null) name?.trim()?.takeIf { it.isNotEmpty() }?.let { body.put("name", it.take(25)) }
+                actorId?.let { body.put("actorId", it.take(80)) }
+                targetHint?.let { body.put("targetHint", it.take(80)) }
                 val (code, raw) = post("v1/native/chat", body, slowClient)
                 ChatReply.parse(code, raw)
             }.getOrElse { ChatReply(false, it.message?.take(120) ?: "Chat failed") }

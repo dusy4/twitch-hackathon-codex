@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-30",
+  "versionName": "0.7.1-test-chat",
+  "versionCode": 12,
+  "apk": {
+    "sha256": "841a047593f64c7a0fa755defe1cbc899f80371d00110bcfe86f123ecaeffcfc",
+    "bytes": 121394180,
+    "signature": "APK v2 verified; original internal debug certificate",
+    "zipAlignment16KiB": "pass"
+  },
+  "automated": {
+    "androidJvm": { "pass": 68, "fail": 0 },
+    "androidBuild": "pass",
+    "androidLint": { "errors": 0, "warnings": 11 },
+    "backend": { "pass": 82, "fail": 0, "skip": 1, "skipReason": "conditional PostgreSQL integration test" },
+    "webBuildAndTypecheck": "pass",
+    "changedTypeScriptFormatting": "pass",
+    "identityAndTransport": "Count-only raid, three identified chatters, repeated join, WASD and ownership checks through actual backend EventSub inbox; no live Twitch request"
+  },
+  "consultant": { "cli": "an independent reviewer", "model": "independent review", "effort": "high", "readOnly": true },
+  "scenario": {
+    "input": "Device-only scheduled incoming chat stub, not render transform scripting",
+    "viewers": ["Alice", "Bob", "Charlie"],
+    "messages": 15,
+    "activeDurationMs": 36000,
+    "behavior": "Raid count; staggered !join; independent commands; measured chair lookup or honest failure; retained roster after completion",
+    "replay": "Replaces roster; stable identity; no extra streamer character"
+  },
+  "runtime": {
+    "boat": "Final APK installed and launched; native camera-off portal, three named characters and completed replay visually inspected",
+    "previewRecording": {
+      "status": "pass",
+      "apkSha256": "841a047593f64c7a0fa755defe1cbc899f80371d00110bcfe86f123ecaeffcfc",
+      "codec": "h264",
+      "width": 1280,
+      "height": 720,
+      "durationSeconds": 19.847044,
+      "frames": 112,
+      "bytes": 1945311,
+      "scope": "Decoded camera-off scene frame and in-app playback visually inspected; software emulator, not physical AR, final broadcast framing or a 30-FPS pass"
+    },
+    "physical": "Owner reported 0.7.0 S25 placement generally works and remains anchored; not an instrumented benchmark or a physical test of this new sequence",
+    "liveTwitch": "not tested",
+    "physicalArPortalEntry": "not tested",
+    "physicalCaptureObsAndThermals": "not tested"
+  },
+  "evidence": ["final-initial.png", "final-portal.png", "final-three-viewers.png", "final-chat-console.png", "final-preview.mp4", "final-preview-metadata.json", "final-clip-frame.png", "final-clip-review.png"],
+  "limitations": [
+    "Camera-off emulator screenshots/MP4 do not establish physical AR tracking or phone FPS",
+    "The local keyword handler is smaller than the server planner; the stub is not a successful Twitch integration",
+    "Initial placement uses horizontal support; arbitrary object reconstruction and robust moving-object affordances remain incomplete",
+    "Fixed stage stays behind when the camera walks away; explicit Walking mode can recall lagging characters beyond five metres",
+    "Backend WASD source is built/tested; the pre-existing private paired server must be restarted to load those backend changes"
+  ]
+}

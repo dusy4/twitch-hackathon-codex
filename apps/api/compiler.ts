@@ -68,6 +68,16 @@ export function localCompile(
     .replace(/^!/, "")
     .toLowerCase();
   prompt = animationAliases[prompt] || prompt;
+  const directionAliases: Record<string, string> = {
+    w: "up",
+    a: "left",
+    s: "down",
+    d: "right",
+    forward: "up",
+    back: "down",
+    backward: "down",
+  };
+  prompt = directionAliases[prompt] || prompt;
   if (!prompt || prompt.length > 500)
     throw new GameError("INVALID_PROMPT", "Use between 1 and 500 characters.");
   if (
