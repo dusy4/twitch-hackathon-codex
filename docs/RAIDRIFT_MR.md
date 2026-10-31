@@ -10,7 +10,7 @@ Start with the [three-minute street checklist](STREET_TEST_RUNBOOK.md). For reco
 
 | Area | Evidence and current boundary |
 |---|---|
-| Unity version | `Editor/BuildTools.cs`: **0.21.1**, package `world.raidrift.mr`. `RaidRift-MR-0.20.0.apk` was built and published to the private APK share on October 31 at 22:23 Kyiv after `RoomSelfTest` and `CameraFeelSelfTest` passed and HUD previews rendered; `RaidRift-MR-0.20.1.apk` followed at 22:30 (automatic re-pair and Live channel re-apply), 0.20.2 at 22:37 (selfie recovery) and 0.21.0 at 22:52 (readable portal/emote effects, detector every 1.2 s while live) and 0.21.1 at ~23:00 (raid banner kept inside the portrait frame). Later overnight builds are listed in the Unity lead's log; the newest known-good APK is named on the owner's dashboard page. No build has a phone pass yet. |
+| Unity version | `Editor/BuildTools.cs`: **0.21.8** (versionCode 25), package `world.raidrift.mr`. `RaidRift-MR-0.20.0.apk` was built and published to the private APK share on October 31 at 22:23 Kyiv after `RoomSelfTest` and `CameraFeelSelfTest` passed and HUD previews rendered; `RaidRift-MR-0.20.1.apk` followed at 22:30 (automatic re-pair and Live channel re-apply), 0.20.2 at 22:37 (selfie recovery) and 0.21.0 at 22:52 (readable portal/emote effects, detector every 1.2 s while live) 0.21.1 at ~23:00 (raid banner kept inside the portrait frame), 0.21.3–0.21.5 (publisher session rebuild after 30 s stuck reconnecting, selfie world-origin check, ordered chat select/stop), 0.21.6 (on-stream "!join" caption) and 0.21.7–0.21.8 at 23:51 (daylight-adaptive bloom/flash and sparks). Full per-build notes: the Unity lead's overnight log. Later overnight builds are listed in the Unity lead's log; the newest known-good APK is named on the owner's dashboard page. No build has a phone pass yet. |
 | 0.20 contents | Selfie mode, three scan views (Mesh / Floor / Hidden), no per-pixel depth occlusion, floor smoothing, stronger CameraFeel, bigger Cartoon FX/emote bursts and world-space name tags, regrouped settings with Phosphor Fill icons. Selfie is untested on the device. |
 | Backend / Extension | Historical receipt: [extension-verification.json](../artifacts/extension-verification.json): 91 Node passes, one conditional PostgreSQL skip; four Extension browser passes per build. Tests use fixture authorization and a local EBS. |
 | Twitch input | Same receipt records an actual anonymous IRC acknowledgement from `#twitch`. It does not prove viewer commands, an incoming raid or a complete phone broadcast. |
@@ -46,7 +46,7 @@ The PC handles accounts, input ownership, bounded plans, world snapshots and det
 | `GET /v1/debug/pair` | Private debug harness only: obtains a capture token. Production uses a Creator Studio mobile token. |
 | `GET /v1/native/world` | Bearer-authenticated snapshot; the client waits about 150 ms after a successful reply before polling again. At most 12 heroes are imported; when the room has more, the server lists the most recently active first so real chatters are not hidden behind idle practice heroes. |
 | `POST /v1/native/tracks` | Up to 50 phone targets, about every 0.4 s; server timestamps receipt. |
-| `POST /v1/native/frame` | One downscaled displayed-camera JPEG about every 1.5 s while paired, landed and tracking; vision consent is checked on the server. |
+| `POST /v1/native/frame` | One downscaled displayed-camera JPEG about every 1.5 s (every 3 s while broadcasting, from 0.21.4) while paired, landed and tracking; vision consent is checked on the server. |
 | `POST /v1/live/channel`, `GET /v1/live/status`, `DELETE /v1/live/channel` | Select, inspect and stop the real Twitch IRC reader for the paired room. |
 | `POST /v1/native/chat` | Simulator input only. Live returns `VIEWER_CONTROLLER_REQUIRED`; the phone cannot impersonate a live viewer. |
 | `POST /v1/native/debug/event` | Private owner test events, including test raids. |
@@ -136,7 +136,7 @@ See [sidecar setup and recorded PC benchmarks](../services/ov-detector/README.md
 
 `RiftWorld` renders an original voxel world through a portal window. `RiftFx` adds charge, tear, floor shockwave, sparks, bouncing chips, smoke, ambient embers, command/emote feedback and arrival effects. `RiftMoths` adds ambient life. Kenney CC0 textures support the original particle systems.
 
-`CameraFeel` applies shake, zoom punch, chromatic pulse, flash, vignette and a small bloom to the **composited image**, keeping tracked camera pose unchanged. This affects phone and broadcast appearance. Reduced motion disables shake/zoom/fringe; flashes and bloom are not all disabled. It is not a photosensitivity guarantee.
+`CameraFeel` applies shake, zoom punch, chromatic pulse, flash, vignette and a small bloom to the **composited image**, keeping tracked camera pose unchanged. This affects phone and broadcast appearance. Reduced motion disables shake/zoom/fringe; flashes and bloom are not all disabled. From 0.21.7 bloom and flash scale down with ARCore's light estimate in bright daylight (bloom to ~30%, flash to ~50%), and from 0.21.8 sparks switch from additive glow to alpha-blended dots outdoors. It is not a photosensitivity guarantee.
 
 **Cartoon FX Remaster Free** by Jean Moreno is optional, imported through Asset Store/My Assets and excluded from git. `BuildTools` assigns its prefabs if available; otherwise original particles still work. Imported camera shake/lights should remain disabled; `RiftFx` also disables pack camera-shake behavior on spawn. Do not redistribute the pack source as repository assets.
 
@@ -165,8 +165,9 @@ Settings are one scrollable column:
 |---|---|
 | Go live: Twitch channel (chat + raids) | Channel login, without a URL; `#` is stripped, lowercased. Chooses IRC input, not Twitch authentication. |
 | Stream key · stays on this phone | Twitch Creator Dashboard → Settings → Stream key. App saves it in **PlayerPrefs**, not encrypted secure storage. Blank uses the saved key. Never send it to the RaidRift server. |
+| "!join" hint on stream | While live, draws "Type !join in chat to drop in a hero" (then the command menu once heroes are in) into the broadcast itself. On by default, remembered (0.21.6+). |
 | Quality | Cycles profiles below. Saved locally; a change takes effect on the **next** go-live. |
-| Go live | Stops active WebRTC, starts/pairs server input and asks publisher to connect to `rtmps://live.twitch.tv:443/app`. Always requests microphone. A stream can connect even if chat setup fails. |
+| Go live | Stops active WebRTC, starts/pairs server input and asks publisher to connect to `rtmps://live.twitch.tv:443/app`. Always requests microphone. A stream can connect even if chat setup fails. Tapping Go live while already live restarts the session cleanly (e.g. to apply a new quality). |
 | End stream · back to demo | Stops publisher and requests IRC reader stop. Does not clear the saved key or necessarily unpair the server. |
 | Room mesh (Scan view) | **Mesh:** visible full mesh + walkable floor. **Floor:** walkable floor only. **Hidden:** invisible mesh occlusion plus local rift paint where applicable. Mapping continues in all three. |
 | Selfie camera | Same flip action as the rail button. |
@@ -178,7 +179,7 @@ Settings are one scrollable column:
 | Pair with server | Saves URL/token and starts polling; the HUD remains Demo until direct Go live. |
 | Offline test room | Stops server polling, clears current heroes and selects local fixtures. It is **not the End stream button**; stop publishing separately. |
 | Server test raid | Debug harness only, requires pairing. Label the resulting event TEST RAID. |
-| Stream to PC (WebRTC) | Alternative **video-only** 720×1280 capture with `/v1/media` signaling. Pair first, open the configured receiver on PC. Do not enable alongside the direct publisher. |
+| Stream to PC (WebRTC) | Alternative **video-only** 720×1280 capture with `/v1/media` signaling. Pair first, open the configured receiver on PC. Refused while the direct publisher is live (0.21.3+). |
 | Diagnostics | Version, server state, map pieces, floor distance, NavMesh readiness, hero count and detector hints. Live info also includes publisher state, kbps, FPS, drops, channel connection and mic state. |
 
 | Quality profile | Start / minimum / maximum video kbps | FPS |
@@ -209,7 +210,7 @@ Video is GPU-converted to BT.709 limited-range **NV12**, packed into three async
 
 An AudioListener tap captures game PCM into a bounded ring, resamples to **48 kHz stereo**, and mixes it with a mono 48 kHz microphone duplicated into stereo. AAC-LC is **128 kbps**. Mic mute and programmatic game gain are independent (there is no game-gain slider in this HUD). Available echo cancellation is enabled; start A/V testing with a headset. Microphone permission denial fails go-live.
 
-Audio/video share a monotonic clock and session origin. Reconnect backs off approximately **1/2/4/8/16/30 s + jitter**, preserving encoder timestamps. Congestion cuts bitrate by 25%; healthy periods add 200 kbps up to the selected ceiling. SEVERE thermal status caps capture at 24 FPS; CRITICAL at 20 FPS. Dropped frames include local capture/readback and transport queue drops, not a count of network retransmissions.
+Audio/video share a monotonic clock and session origin. Reconnect backs off approximately **1/2/4/8/16/30 s + jitter**, preserving encoder timestamps. If the publisher is still not live 30 s into connecting/reconnecting (RootEncoder can block on a dead socket after a cell handover), the app rebuilds the whole session through the normal start path (0.21.3+; diagnostics "rebuilt Nx"). Congestion cuts bitrate by 25%; healthy periods add 200 kbps up to the selected ceiling. SEVERE thermal status caps capture at 24 FPS; CRITICAL at 20 FPS. Dropped frames include local capture/readback and transport queue drops, not a count of network retransmissions.
 
 App pause releases capture/audio/encoders; resume can start a fresh foreground session. Explicit stop cancels automatic resume. RootEncoder logging is stripped by configured R8 rules; retain custom templates and verify final APK logging behavior. **There is no background-broadcast guarantee, SRTLA or bonding.** Lower-level publisher supports RTMP/RTMPS and SRT caller mode, but this HUD exposes Twitch RTMPS only. SRT relay compatibility is untested. WebRTC remains a separate silent transport.
 
