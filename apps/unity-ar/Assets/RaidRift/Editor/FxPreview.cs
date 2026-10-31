@@ -99,15 +99,35 @@ namespace RaidRift.EditorTools
                             preview.ResetEffects();
                             preview.Event(Emotes[tile], () => RiftFx.Emote(preview.HeroPosition, Emotes[tile]));
                             preview.Advance(0.3f, false);
-                            var counts = new System.Text.StringBuilder();
-                            foreach (var ps in Object.FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None)) if (ps.particleCount > 0 || ps.name == "Sparks" || ps.name == "Rings") counts.Append($"{ps.name}={ps.particleCount} ");
-                            Debug.Log($"[RaidRift] fx preview counts {Emotes[tile]}: {counts}");
+
                             var frame = preview.Capture();
                             try { preview.PutTile(frame, preview.EmoteSheet, tile); }
                             finally { Object.DestroyImmediate(frame); }
                         });
                     }
                     Stage("fx-emotes.png", () => preview.Save(preview.EmoteSheet, "fx-emotes.png"));
+                    // Idle rift after 3 s: rune aura + embers + seam surges (what the stream shows most of the time).
+                    Stage("fx-ambient.png", () =>
+                    {
+                        preview.ResetEffects();
+                        RiftFx.SetAmbient(preview.Rift.transform);
+                        preview.Advance(3f, false);
+                        var frame = preview.Capture();
+                        try { preview.Save(frame, "fx-ambient.png"); }
+                        finally { Object.DestroyImmediate(frame); RiftFx.SetAmbient(null); }
+                    });
+                    // Raid banner as the app places it (2.15 m over the rift): must stay inside the 9:16 frame.
+                    Stage("fx-banner.png", () =>
+                    {
+                        preview.ResetEffects();
+                        WorldTags.Banner(preview.Rift.transform.position + Vector3.up * 2.15f, preview.camera, "RAID", "Streamer · 42 viewers", 2.4f);
+                        foreach (var mb in Object.FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None))
+                            if (mb.GetType().Name == "BannerLife")
+                                mb.GetType().GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(mb, null);
+                        var frame = preview.Capture();
+                        try { preview.Save(frame, "fx-banner.png"); }
+                        finally { Object.DestroyImmediate(frame); }
+                    });
                 }
             }
             catch (Exception e) { failed = true; Debug.LogError("[RaidRift] fx preview failed: " + e); }
@@ -151,7 +171,7 @@ namespace RaidRift.EditorTools
             readonly HashSet<int> knownParticles = new HashSet<int>();
             readonly HashSet<GameObject> environment = new HashSet<GameObject>();
             Scene scene, previousScene;
-            Camera camera, riftCamera;
+            public Camera camera, riftCamera;
             CameraFeel feel;
             RiftFx fx;
             RenderTexture raw, result;

@@ -86,14 +86,31 @@ namespace RaidRift
             var go = new GameObject("Banner");
             var text = go.AddComponent<TextMesh>();
             text.font = Resources.Load<Font>("Fonts/SpaceGrotesk-Bold") ?? _font;
-            go.GetComponent<MeshRenderer>().sharedMaterial = text.font.material;
+            // Own queue: after the rift window (else it draws over the plate) and after the plate.
+            go.GetComponent<MeshRenderer>().sharedMaterial = new Material(text.font.material) { renderQueue = 3110 };
             text.fontSize = 96;
-            text.characterSize = 0.012f;
+            text.characterSize = 0.018f; // fx-banner preview: 0.012 was too small for a 720p stream
             text.anchor = TextAnchor.MiddleCenter;
             text.alignment = TextAlignment.Center;
             text.richText = true;
-            text.text = $"<color=#f1c8ff>{Clean(title)}</color>\n<size=56><color=#92ffe0>{Clean(subtitle)}</color></size>";
+            text.text = $"<color=#ffffff>{Clean(title)}</color>\n<size=60><color=#92ffe0>{Clean(subtitle)}</color></size>";
             go.transform.position = at;
+            // Dark soft plate behind the text so it reads over the bright rift and busy rooms.
+            if (_back == null) _back = Resources.Load<Material>("Materials/BlobShadow");
+            var size = go.GetComponent<MeshRenderer>().bounds.size;
+            var plate = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            Object.Destroy(plate.GetComponent<Collider>());
+            plate.transform.SetParent(go.transform, false);
+            plate.transform.localPosition = new Vector3(0f, 0f, 0.02f);
+            plate.transform.localScale = new Vector3(Mathf.Max(size.x, 0.3f) * 1.5f + 0.12f, Mathf.Max(size.y, 0.1f) * 1.7f + 0.08f, 1f);
+            if (_back != null)
+            {
+                var pr = plate.GetComponent<Renderer>();
+                pr.sharedMaterial = new Material(_back) { renderQueue = 3100 };
+                var block = new MaterialPropertyBlock();
+                block.SetFloat("_Strength", 0.85f);
+                pr.SetPropertyBlock(block);
+            }
             go.AddComponent<BannerLife>().Init(cam, seconds);
         }
 
@@ -103,12 +120,18 @@ namespace RaidRift
             public void Init(Camera cam, float seconds) { _cam = cam; _born = Time.time; _until = Time.time + seconds; _base = transform.position; }
             void LateUpdate()
             {
-                if (Time.time > _until || _cam == null) { Destroy(gameObject); return; }
+                if (Time.time > _until || _cam == null)
+                {
+                    foreach (var r in GetComponentsInChildren<Renderer>()) Destroy(r.sharedMaterial); // per-banner instances
+                    Destroy(gameObject);
+                    return;
+                }
                 float age = Time.time - _born, left = _until - Time.time;
                 // Pop in (overshoot), float up gently, fade by shrinking out at the end.
                 float pop = age < 0.18f ? Mathf.SmoothStep(0.6f, 1.12f, age / 0.18f) : Mathf.Lerp(1.12f, 1f, Mathf.Clamp01((age - 0.18f) / 0.12f));
                 float outS = Mathf.Clamp01(left / 0.25f);
                 var p = _base + Vector3.up * (age * 0.04f);
+                p += (_cam.transform.position - p).normalized * 0.35f; // in front of the rift window's depth
                 // Portrait phone ~1.5 m from the rift: 2 m up is above the frame. Keep the banner on screen
                 // (upper part of the stream's 9:16 crop), at the same depth so it still sits in the scene.
                 var vp = _cam.WorldToViewportPoint(p);

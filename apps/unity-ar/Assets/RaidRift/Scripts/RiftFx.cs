@@ -96,8 +96,15 @@ namespace RaidRift
             if (rift != null && _i.runeAura != null)
             {
                 _i._aura = Instantiate(_i.runeAura, rift.position + Vector3.up * 0.01f, Quaternion.identity, rift);
-                foreach (var ps in _i._aura.GetComponentsInChildren<ParticleSystem>(true)) { var m = ps.main; m.scalingMode = ParticleSystemScalingMode.Hierarchy; m.loop = true; }
-                _i._aura.transform.localScale = Vector3.one * 0.9f;
+                // fx-ambient preview: the stock white runes + light pillars washed out heroes on the landing spot.
+                // Rift violet, translucent, a bit smaller.
+                var tint = new Color(Seam.r, Seam.g, Seam.b, 0.5f);
+                foreach (var ps in _i._aura.GetComponentsInChildren<ParticleSystem>(true))
+                {
+                    var m = ps.main; m.scalingMode = ParticleSystemScalingMode.Hierarchy; m.loop = true;
+                    m.startColor = new ParticleSystem.MinMaxGradient(tint);
+                }
+                _i._aura.transform.localScale = Vector3.one * 0.75f;
                 NoCameraShake(_i._aura);
             }
         }
