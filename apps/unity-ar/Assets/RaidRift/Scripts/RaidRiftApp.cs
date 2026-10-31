@@ -8,7 +8,7 @@ namespace RaidRift
     /// <summary>Director. Room scan → NavMesh (RoomNavigation) → landing spot → raid portal → one
     /// NavMeshAgent hero per viewer, driven by the server world or the offline test room. Heroes go
     /// to their stage spot, or walk with the streamer (follow-me), always on paths the NavMesh found.</summary>
-    public class RaidRiftApp : MonoBehaviour
+    public partial class RaidRiftApp : MonoBehaviour // SELFIE: isolated hooks in Selfie/RaidRiftApp.Selfie.cs.
     {
         public ARSession session;
         public Camera arCamera;
@@ -51,8 +51,12 @@ namespace RaidRift
         string _raidId;
         float _raidOpened = -100f;
         bool _follow;
-        bool _scanView = true;
+        // Room view: 0 = full mesh + walkable floor, 1 = walkable floor only (default while scanning),
         bool _live;
+        // Room view: 0 = full mesh + walkable floor, 1 = walkable floor only (default while scanning),
+        // 2 = hidden (invisible occluder; default after landing and live). The Scan button cycles them.
+        int _scanMode = 1;
+        void SetScanMode(int mode) { _scanMode = mode; room.showWalkable = mode <= 1; _nextMaterialPass = 0f; }
         Material _scanMaterial, _occluderMaterial;
         float _nextMaterialPass;
 
@@ -67,6 +71,7 @@ namespace RaidRift
             _occluderMaterial = Resources.Load<Material>("Materials/DepthOnly");
             hud.Build();
             hud.OnButton += Button;
+            InitSelfie(); // SELFIE: generated scene supplies the controller.
             hud.OnChat += SendChat;
             hud.OnServer += (url, token) =>
             {
@@ -111,7 +116,7 @@ namespace RaidRift
             });
             _liveMode = true;
             // A clean broadcast: the scan grid becomes the invisible occluder.
-            _scanView = false; room.showWalkable = false; _nextMaterialPass = 0f;
+            SetScanMode(2);
             hud.SetMode(true, "● LIVE");
             Sfx.Play("raid_stinger", 0.5f);
             RefreshButtons();
@@ -130,7 +135,7 @@ namespace RaidRift
 
         void LiveTick(WorldState world)
         {
-            string quality = "Quality · " + Qualities[_quality].name;
+            string quality = Qualities[_quality].name;
             if (!_liveMode || publisher == null)
             {
                 hud.SetLiveInfo("Streams the AR view (no buttons) + your mic + game sound straight to Twitch. Chat commands and raids come from your channel.", quality, PlayerPrefs.GetString(PrefChannel, ""));
@@ -149,11 +154,13 @@ namespace RaidRift
         // ---------------- buttons ----------------
         void Button(string id)
         {
+            if (SelfieBlocksButton(id)) return; // SELFIE: room tools wait until the rear camera returns.
             Sfx.Play("ui_tap", 0.45f);
             switch (id)
             {
+                case "selfie": selfie?.Toggle(); break; // SELFIE: HUD button id.
                 case "raid":
-                    if (_live) { server.DebugRaid((ok, text) => hud.Toast(ok ? "Server test raid sent" : "Raid failed · " + text)); break; }
+                    if (UseServer && server.Connected) { server.DebugRaid((ok, text) => hud.Toast(ok ? "Server test raid sent" : "Raid failed · " + text)); break; }
                     ClearHeroes();
                     _raidId = null;
                     _playground.Raid(NowMs);
@@ -169,8 +176,8 @@ namespace RaidRift
                     else { trail.Clear(); hud.Toast("Rift Trail stopped"); }
                     break;
                 case "scan":
-                    _scanView = !_scanView;
-                    room.showWalkable = _scanView;
+                    SetScanMode((_scanMode + 1) % 3);
+                    hud.Toast(_scanMode == 0 ? "Room mesh shown" : _scanMode == 1 ? "Floor only" : "Mesh hidden · clean view", 1.5f);
                     _nextMaterialPass = 0f;
                     break;
                 case "chat": hud.ToggleChat(); break;
@@ -199,7 +206,7 @@ namespace RaidRift
                 case "reset-room":
                     room.ResetRoom();
                     _landed = false; _candidate = null;
-                    _scanView = true; room.showWalkable = true;
+                    SetScanMode(1);
                     ClearHeroes();
                     if (_rift != null) Destroy(_rift.gameObject);
                     if (_marker != null) Destroy(_marker);
@@ -218,10 +225,14 @@ namespace RaidRift
 
         void RefreshButtons()
         {
+            RefreshSelfieButton(); // SELFIE
             hud.SetButton("raid", "Test raid", false);
             hud.SetButton("follow", _follow ? "Following" : "Follow me", _follow);
             hud.SetButton("trail", trail.Current == RiftTrail.Phase.Off ? "Trail" : "Trail on", trail.Current != RiftTrail.Phase.Off);
-            hud.SetButton("scan", _scanView ? "Scan on" : "Scan off", _scanView);
+            hud.SetButton("scan", _scanMode == 0 ? "Mesh" : _scanMode == 1 ? "Floor" : "Hidden", _scanMode < 2);
+            hud.SetSetting("scan", _scanMode == 0 ? "Mesh" : _scanMode == 1 ? "Floor only" : "Hidden");
+            hud.SetSetting("sound", Sfx.Muted ? "Off" : "On");
+            hud.SetSetting("motion", CameraFeel.ReducedMotion ? "On" : "Off");
             hud.SetButton("chat", "Chat", false);
             hud.SetButton("setup", "Setup", false);
             hud.SetButton("end-live", "End", false);
@@ -231,7 +242,7 @@ namespace RaidRift
         void SendChat(string text)
         {
             var actor = CurrentWorld().Heroes.FirstOrDefault()?.Id;
-            if (_live)
+            if (UseServer)
             {
                 AddServerLine("You", text, true);
                 server.Chat(text, actor, (ok, reply) => AddServerLine("RaidRift", reply, ok));
@@ -254,25 +265,30 @@ namespace RaidRift
                 case "restored": hud.Toast("Shrine restored · viewers, cheer!"); Sfx.Play("quest_complete"); break;
                 case "completed": hud.Toast("Rift Trail complete!", 4f); Sfx.Play("quest_complete"); break;
             }
-            if (!_live) _playground.React(kind, NowMs);
+            if (!UseServer) _playground.React(kind, NowMs);
             RefreshButtons();
         }
 
-        WorldState CurrentWorld() => _live && server.World != null ? server.World : _playground.World;
+        /// <summary>Server world when paired and reachable; otherwise the offline test room keeps running, so a stream
+        /// whose phone loses the tailnet still has heroes and a working Test raid.</summary>
+        bool UseServer => _live && server.World != null;
+        WorldState CurrentWorld() => UseServer ? server.World : _playground.World;
 
         // ---------------- frame ----------------
         void Update()
         {
+            if (UpdateSelfie()) return; // SELFIE: includes both transitions; world logic below is unchanged.
             bool tracking = ARSession.state == ARSessionState.SessionTracking;
             if (!_landed) UpdateLanding(tracking);
             else { AutoFollow(); RelocateRift(tracking); }
             RiftFx.FloorY = room.FloorY;
+            RiftFx.SetAmbient(_rift != null ? _rift.transform : null);
             if (moths != null)
             {
                 moths.FloorY = room.FloorY;
                 moths.Anchor = _follow && room.FloorUnderCamera(out var me) ? me : _rift != null ? _rift.transform.position : _origin;
             }
-            if (!_live) _playground.Tick(NowMs, tracking && _landed);
+            if (!UseServer) _playground.Tick(NowMs, tracking && _landed);
             var world = CurrentWorld();
             if (detector != null) detector.enabled = tracking && room.HasNavMesh;
             if (sceneTracks != null)
@@ -390,13 +406,24 @@ namespace RaidRift
         {
             var root = new GameObject("Landing marker");
             root.transform.position = spot + Vector3.up * 0.005f;
-            var disc = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            Destroy(disc.GetComponent<Collider>());
-            disc.transform.SetParent(root.transform, false);
-            disc.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            disc.transform.localScale = Vector3.one * 0.45f;
-            var mat = Resources.Load<Material>("Materials/PortalSwirl");
-            if (mat != null) disc.GetComponent<Renderer>().sharedMaterial = mat;
+            // Round additive rings (Kenney CC0 textures), not a square swirl quad (great.mp4 showed its edges).
+            var add = Resources.Load<Material>("Materials/FxAddTint") ?? Resources.Load<Material>("Materials/FxAdd");
+            foreach (var (tex, size, color, spin) in new[] { ("Fx/Ring", 0.5f, new Color(0.65f, 0.17f, 1f, 0.9f), 1f), ("Fx/Magic", 0.34f, new Color(0.35f, 0.95f, 0.78f, 0.7f), -1.6f) })
+            {
+                var disc = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                Destroy(disc.GetComponent<Collider>());
+                disc.transform.SetParent(root.transform, false);
+                disc.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+                disc.transform.localScale = Vector3.one * size;
+                if (add != null)
+                {
+                    var m = new Material(add) { mainTexture = Resources.Load<Texture2D>(tex) };
+                    m.SetColor("_TintColor", color);
+                    m.color = color;
+                    disc.GetComponent<Renderer>().sharedMaterial = m;
+                }
+                disc.AddComponent<SpinLocal>().speed = 50f * spin;
+            }
             var crystal = Resources.Load<Material>("Materials/Crystal");
             for (int i = 0; i < 4; i++)
             {
@@ -410,6 +437,12 @@ namespace RaidRift
             }
             root.AddComponent<Spin>();
             return root;
+        }
+
+        class SpinLocal : MonoBehaviour
+        {
+            public float speed;
+            void Update() => transform.Rotate(0f, 0f, speed * Time.deltaTime, Space.Self);
         }
 
         class Spin : MonoBehaviour
@@ -434,8 +467,7 @@ namespace RaidRift
             if (!world.Raid.Test) Sfx.Play("raid_stinger", 0.8f); // real raids get the trailer hit
             if (moths != null) moths.Burst(_rift.transform.position + Vector3.up * 1.0f, -_rift.Forward, 12);
             // The rift paints the room now: switch the scan grid to the invisible occluder + paint.
-            _scanView = false;
-            room.showWalkable = false;
+            SetScanMode(2);
             _nextMaterialPass = 0f;
             RefreshButtons();
             hud.Toast(banner + " · the rift is opening", 3f);
@@ -455,6 +487,7 @@ namespace RaidRift
                 }
                 hero.DisplayName = state.Name;
                 hero.Message = state.Message;
+                if (ReturnSelfieHero(hero, index)) { index++; continue; } // SELFIE: floor near rear camera.
                 if (hero.Entering) { index++; continue; } // still walking out of the rift
                 if (hero.Spawned && !hero.Placed)
                 {
@@ -478,7 +511,7 @@ namespace RaidRift
                     if (!hero.Place(spawn, face)) { index++; continue; }
                 }
                 bool newAction = state.Serial != hero.ActionSerial;
-                if (newAction && hero.ActionSerial != 0 && state.Animation != "idle") RiftFx.Command(hero.transform.position, true); // chat command landed
+                if (newAction && hero.ActionSerial != 0 && state.Animation != "idle") { RiftFx.Command(hero.transform.position, true); RiftFx.Emote(hero.transform.position, state.Animation); } // chat command landed
                 // Planner steps with a room target ("there", the chair, the bed top) walk there, then pose.
                 Vector3 targetPos = default;
                 bool targeted = state.Target != null && sceneTracks != null && sceneTracks.TryWorld(state.Target, out targetPos);
@@ -513,6 +546,7 @@ namespace RaidRift
             {
                 Destroy(_heroes[id].gameObject);
                 _heroes.Remove(id);
+                _selfieReturn.Remove(id); // SELFIE: a departed viewer must not retain a floor-placement retry.
             }
         }
 
@@ -650,8 +684,9 @@ namespace RaidRift
             var foot = rift.transform.position;
             var center = foot + Vector3.up * 0.95f * scale;
             RiftFx.Charge(center, rift.Forward, scale);
-            yield return new WaitForSeconds(0.6f);
-            if (rift == null) yield break;
+            // Rising rumble while it charges, then the tear hits.
+            for (float t0 = 0f; t0 < 0.6f; t0 += Time.deltaTime) { CameraFeel.Shake(0.15f + 0.45f * (t0 / 0.6f)); yield return null; }
+            if (rift == null || (selfie != null && selfie.WorldPaused)) yield break; // SELFIE: no delayed floor burst.
             RiftFx.Tear(center, rift.Forward, foot, scale, raid);
         }
 
@@ -726,6 +761,7 @@ namespace RaidRift
 
         void ClearHeroes()
         {
+            _selfieReturn.Clear(); // SELFIE: demo/server resets also clear deferred return placements.
             foreach (var h in _heroes.Values) Destroy(h.gameObject);
             _heroes.Clear();
             _cheerSerial.Clear();
@@ -741,7 +777,7 @@ namespace RaidRift
             if (_paintMaterial == null) _paintMaterial = Resources.Load<Material>("Materials/RiftPaint");
             // Scan view: glowing grid. Otherwise the mesh is invisible depth (hides heroes behind furniture)
             // plus the Rift paint, which only shows near an open rift (a second material redraws the mesh).
-            var mats = (_scanView || !_landed) ? new[] { _scanMaterial }
+            var mats = _scanMode == 0 ? new[] { _scanMaterial }
                 : _paintMaterial != null ? new[] { _occluderMaterial, _paintMaterial } : new[] { _occluderMaterial };
             foreach (var filter in meshManager.meshes)
             {
@@ -787,7 +823,7 @@ namespace RaidRift
             else if (!room.HasNavMesh) { progress = 0.1f + 0.5f * Mathf.Clamp01(room.MeshCount / 30f); label = "Scanning"; }
             else { progress = _candidate.HasValue ? 0.9f : 0.7f; label = _candidate.HasValue ? "Locking landing spot" : "Find open floor"; }
             hud.SetScan(progress, label);
-            hud.SetFeed(_live ? _serverLines : _playground.Messages);
+            hud.SetFeed(UseServer ? _serverLines : _playground.Messages);
             WorldTags.Update(arCamera, _heroes.Values); // in the 3D scene, so names are on the broadcast too
         }
     }

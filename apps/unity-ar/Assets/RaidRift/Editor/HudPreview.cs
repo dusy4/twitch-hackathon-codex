@@ -42,13 +42,24 @@ namespace RaidRift.EditorTools
                 Shot(dir, "hud-setup", hud => { hud.SetMode(false, "DEMO"); hud.SetStatus("Offline demo", "v0.19 · 3D map · 21 pieces · floor 1.3 m below", ""); hud.SetScan(1f, ""); hud.ToggleSetup("https://raidrift-pc.tail7252b4.ts.net"); hud.SetLiveInfo("Streams the AR view (no buttons) + mic + game sound to Twitch.", "Quality · HD · 4.5 Mbps", "dusyaaaaaaaa"); });
             }
             catch (System.Exception e) { Debug.LogError("[RaidRift] hud preview failed: " + e); code = 2; }
+            try
+            {
+                var dir = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Builds", "preview"));
+                _w = 1080; _h = 2340; // portrait, as the owner streams
+                Shot(dir, "hud-portrait-demo", hud => { hud.SetMode(false, "DEMO"); hud.SetStatus("Test raid · 3 heroes", "diag", ""); hud.SetScan(1f, ""); hud.SetFeed(new[] { new ChatLine { Speaker = "pixelknight", Text = "go go go!" }, new ChatLine { Speaker = "mothmage", Text = "!jump on 3" } }); });
+                Shot(dir, "hud-portrait-setup", hud => { hud.SetMode(false, "DEMO"); hud.SetStatus("Offline demo", "v0.20 · 3D map · 21 pieces · floor 1.3 m below", ""); hud.SetScan(1f, ""); hud.ToggleSetup("https://raidrift-pc.tail7252b4.ts.net"); hud.SetLiveInfo("Streams the AR view (no buttons) + mic + game sound to Twitch.", "HD · 4.5 Mbps", "dusyaaaaaaaa"); hud.SetSetting("scan", "Hidden"); hud.SetSetting("sound", "On"); hud.SetSetting("motion", "Off"); });
+                Shot(dir, "hud-portrait-live", hud => { hud.SetMode(true, "● LIVE 24:17"); hud.SetLiveStats(5, 4200); hud.SetStatus("Live", "diag", ""); hud.SetScan(1f, ""); hud.Toast("RAID from Streamer · 42 viewers", 10f); });
+            }
+            catch (System.Exception e) { Debug.LogError("[RaidRift] hud preview failed: " + e); code = 2; }
             if (Application.isBatchMode) EditorApplication.Exit(code);
         }
+
+        static int _w = 2340, _h = 1080;
 
         static void Shot(string dir, string name, System.Action<Hud> setup)
         {
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            const int w = 2340, h = 1080;
+            int w = _w, h = _h;
             var camGo = new GameObject("Cam");
             var cam = camGo.AddComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
@@ -67,7 +78,13 @@ namespace RaidRift.EditorTools
             {
                 var tex = new Texture2D(2, 2);
                 tex.LoadImage(File.ReadAllBytes(photo));
-                hud.SetBackdrop(tex);
+                // The photo is an old phone screenshot: keep only the middle band so its old HUD panels
+                // (title card top, button row bottom) don't read as overlaps in the preview.
+                int y0 = Mathf.RoundToInt(tex.height * 0.15f), y1 = Mathf.RoundToInt(tex.height * 0.87f);
+                var band = new Texture2D(tex.width, y1 - y0, TextureFormat.RGB24, false);
+                band.SetPixels(tex.GetPixels(0, y0, tex.width, y1 - y0));
+                band.Apply();
+                hud.SetBackdrop(band);
             }
             setup(hud);
             Canvas.ForceUpdateCanvases();

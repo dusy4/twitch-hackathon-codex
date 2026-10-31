@@ -49,6 +49,9 @@ Shader "RaidRift/RiftPaint"
                 float3 col = lerp(stone, moss, up);
                 float lowEnough = 1 - smoothstep(0.7, 1.1, w.y - _RiftCenter.y);
                 float front = smoothstep(reach - 0.14, reach - 0.03, d) * (1 - smoothstep(reach - 0.03, reach + 0.04, d)) * lowEnough;
+                // The glowing front sells the spread; once the paint stops (reach ~1.3 m) it fades out, and it only
+                // runs over flat surfaces — on a noisy bed/wall mesh it smeared into mint bands (great.mp4).
+                front *= (1 - smoothstep(0.85, 1.25, reach)) * up;
                 col += float3(0.5, 1.0, 0.85) * front * 1.2;
                 float sparkle = step(0.995, hash(floor(w.xz * 40) + floor(_Time.y * 3))) * a;
                 col += sparkle;

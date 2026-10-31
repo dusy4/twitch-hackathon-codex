@@ -49,6 +49,7 @@ namespace RaidRift
         {
             Token = (token ?? "").Trim();
             PlayerPrefs.SetString(PrefToken, Token);
+            PlayerPrefs.SetInt(PrefDebugToken, 0);
             PlayerPrefs.Save();
         }
 
@@ -60,9 +61,17 @@ namespace RaidRift
             Status = "Offline · local test room";
         }
 
-        public void Pair() => StartCoroutine(PairRoutine());
+        /// <summary>Debug pairing (empty token field) can be redone silently: the private rehearsal server keeps
+        /// pairing in memory, so a server restart turns the saved token into a 401 mid-stream.</summary>
+        const string PrefDebugToken = "raidrift.token.debug";
+        bool DebugToken => PlayerPrefs.GetInt(PrefDebugToken, 0) == 1;
 
-        IEnumerator PairRoutine()
+        /// <summary>The Twitch channel live mode wants read. Re-applied whenever the server's world doesn't
+        /// show it (server restart, re-pair), so a street stream never silently loses chat.</summary>
+        public string DesiredChannel { get; private set; }
+        float _nextChannelAttempt;
+
+        IEnumerator PairOnce(bool quiet)
         {
             Status = "Pairing with " + Server + "…";
             using (var req = UnityWebRequest.Get(Server + "/v1/debug/pair"))
@@ -71,27 +80,27 @@ namespace RaidRift
                 yield return req.SendWebRequest();
                 if (req.result != UnityWebRequest.Result.Success)
                 {
-                    Status = req.responseCode == 404 ? "Server has no test room · start one in Creator Studio" : "Pairing failed · " + req.error;
-                    OnNotice?.Invoke(Status, false);
+                    Status = (req.responseCode == 404 ? "Server has no test room · start one in Creator Studio" : "Pairing failed · " + req.error) + " · retrying";
+                    if (!quiet) OnNotice?.Invoke(Status, false);
                     yield break;
                 }
                 JObject json;
                 try { json = JObject.Parse(req.downloadHandler.text); }
-                catch (Exception e) { Status = "Pairing reply unreadable · " + e.Message; OnNotice?.Invoke(Status, false); yield break; }
+                catch (Exception e) { Status = "Pairing reply unreadable · " + e.Message; if (!quiet) OnNotice?.Invoke(Status, false); yield break; }
                 Token = (string)json["token"] ?? "";
-                if (Token.Length == 0) { Status = "Pairing reply had no token"; OnNotice?.Invoke(Status, false); yield break; }
+                if (Token.Length == 0) { Status = "Pairing reply had no token"; if (!quiet) OnNotice?.Invoke(Status, false); yield break; }
                 PlayerPrefs.SetString(PrefToken, Token);
+                PlayerPrefs.SetInt(PrefDebugToken, 1);
                 PlayerPrefs.Save();
+                _nextChannelAttempt = 0f;
                 OnNotice?.Invoke("Paired with room " + (string)json["room"], true);
-                Begin();
             }
         }
 
         public void Begin()
         {
-            if (!HasToken) { Pair(); return; }
             Stop();
-            _loop = StartCoroutine(Poll());
+            _loop = StartCoroutine(Run());
         }
 
         public void Stop()
@@ -102,7 +111,34 @@ namespace RaidRift
             World = null;
         }
 
-        IEnumerator Poll()
+        /// <summary>Pair (debug) if needed, then poll; never gives up while wanted. Only a pasted Creator Studio
+        /// token that gets revoked stops the loop (re-pairing could silently switch rooms).</summary>
+        IEnumerator Run()
+        {
+            int failures = 0;
+            while (true)
+            {
+                if (!HasToken)
+                {
+                    yield return PairOnce(failures > 0);
+                    if (!HasToken) { failures++; yield return new WaitForSecondsRealtime(Mathf.Min(2f + failures, 6f)); continue; }
+                    failures = 0;
+                }
+                bool unauthorized = false;
+                yield return Poll(() => unauthorized = true);
+                if (!unauthorized) yield break;
+                if (!DebugToken)
+                {
+                    Status = "Pairing revoked or expired · pair again";
+                    OnNotice?.Invoke(Status, false);
+                    yield break;
+                }
+                OnNotice?.Invoke("Server restarted · pairing again", false);
+                yield return new WaitForSecondsRealtime(0.5f);
+            }
+        }
+
+        IEnumerator Poll(Action unauthorized)
         {
             while (true)
             {
@@ -117,8 +153,7 @@ namespace RaidRift
                         PlayerPrefs.DeleteKey(PrefToken);
                         Connected = false;
                         World = null;
-                        Status = "Pairing revoked or expired · pair again";
-                        OnNotice?.Invoke(Status, false);
+                        unauthorized();
                         yield break;
                     }
                     if (req.result == UnityWebRequest.Result.Success)
@@ -128,6 +163,7 @@ namespace RaidRift
                             World = ParseWorld(JObject.Parse(req.downloadHandler.text));
                             Connected = true;
                             Status = "Live · " + World.Mode;
+                            EnsureChannel();
                         }
                         catch (Exception e) { Status = "Bad world reply · " + e.Message; }
                         yield return new WaitForSecondsRealtime(0.15f);
@@ -140,6 +176,18 @@ namespace RaidRift
                     }
                 }
             }
+        }
+
+        void EnsureChannel()
+        {
+            if (string.IsNullOrEmpty(DesiredChannel) || Time.realtimeSinceStartup < _nextChannelAttempt) return;
+            if (World.LiveChannel != null && string.Equals(World.LiveChannel.TrimStart('#'), DesiredChannel, StringComparison.OrdinalIgnoreCase)) return;
+            _nextChannelAttempt = Time.realtimeSinceStartup + 8f;
+            var channel = DesiredChannel;
+            StartCoroutine(Post("/v1/live/channel", new JObject { ["channel"] = channel }, 10, (ok, reply) =>
+            {
+                if (ok) OnNotice?.Invoke($"Reconnected #{channel} chat", true);
+            }));
         }
 
         static WorldState ParseWorld(JObject j)
@@ -227,11 +275,20 @@ namespace RaidRift
         }
 
         /// <summary>Live mode: the server reads this real Twitch channel's chat (anonymous, read-only) and raids.</summary>
-        public void SetLiveChannel(string channel, Action<bool, string> done) =>
-            StartCoroutine(Post("/v1/live/channel", new JObject { ["channel"] = channel }, 10, done));
+        public void SetLiveChannel(string channel, Action<bool, string> done)
+        {
+            DesiredChannel = (channel ?? "").Trim().TrimStart('#');
+            // Not paired yet (or pairing in flight): the poll loop applies it as soon as a world arrives.
+            if (!HasToken) { _nextChannelAttempt = 0f; return; }
+            _nextChannelAttempt = Time.realtimeSinceStartup + 8f;
+            StartCoroutine(Post("/v1/live/channel", new JObject { ["channel"] = DesiredChannel }, 10, done));
+        }
 
-        public void StopLiveChannel(Action<bool, string> done = null) =>
-            StartCoroutine(Post("/v1/live/channel", new JObject(), 10, done, "DELETE"));
+        public void StopLiveChannel(Action<bool, string> done = null)
+        {
+            DesiredChannel = null;
+            if (HasToken) StartCoroutine(Post("/v1/live/channel", new JObject(), 10, done, "DELETE"));
+        }
 
         public void DebugRaid(Action<bool, string> done) =>
             StartCoroutine(Post("/v1/native/debug/event", new JObject { ["type"] = "raid", ["from"] = "TestRaider", ["viewers"] = 6, ["chatters"] = 6 }, 8, done));

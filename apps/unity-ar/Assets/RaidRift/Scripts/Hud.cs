@@ -27,10 +27,12 @@ namespace RaidRift
         static readonly Color LiveRed = new Color(1f, 0.25f, 0.33f);
         static readonly Color Dim = new Color(1f, 1f, 1f, 0.62f);
 
-        // Lucide codepoints (lucide-static info.json)
-        const string IconUsers = "", IconScan = "", IconChat = "", IconMap = "", IconSettings = "",
-            IconMic = "", IconMicOff = "", IconEnd = "", IconReset = "", IconZap = "", IconWifi = "",
-            IconSwords = "", IconX = "", IconSparkles = "", IconFootprints = "";
+        // Phosphor Fill codepoints (solid icons, MIT; @phosphor-icons/web fill/style.css)
+        const string IconUsers = "\ue68e", IconScan = "\uebb6", IconChat = "\ue168", IconMap = "\ue31a", IconSettings = "\ue272",
+            IconMic = "\ue326", IconMicOff = "\ue328", IconEnd = "\ue46e", IconReset = "\ue038", IconZap = "\ue2de", IconWifi = "\ue4ea",
+            IconSwords = "\ue5ba", IconX = "\ue4f6", IconSparkles = "\ue6a2", IconFootprints = "\ue73a", IconSelfie = "\ue7a4",
+            IconBroadcast = "\ue0f2", IconTwitch = "\ue5ce", IconKey = "\ue2d6", IconGauge = "\ue628", IconLink = "\ue2e2", IconPlug = "\ue946",
+            IconMonitor = "\ue32e", IconSpeaker = "\ue44a", IconCube = "\ue1da", IconFlask = "\ue79e", IconInfo = "\ue2ce", IconEyeSlash = "\ue224";
 
         Font _font, _bold, _display, _icons;
         RectTransform _root, _safe;
@@ -50,8 +52,8 @@ namespace RaidRift
         public event Action<string, string> OnServer;
         public event Action<string, string> OnGoLive;
 
-        static readonly string[] DemoRail = { "follow", "scan", "chat", "trail", "setup" };
-        static readonly string[] LiveRail = { "follow", "scan", "chat", "setup" };
+        static readonly string[] DemoRail = { "follow", "scan", "chat", "trail", "selfie", "setup" };
+        static readonly string[] LiveRail = { "follow", "scan", "chat", "selfie", "setup" };
 
         public bool Typing => Focused(_chatInput) || Focused(_serverInput) || Focused(_tokenInput) || Focused(_channelInput) || Focused(_keyInput);
         static bool Focused(InputField f) => f != null && f.isFocused;
@@ -216,7 +218,7 @@ namespace RaidRift
             _font = Resources.Load<Font>("Fonts/Inter-Regular") ?? builtin;
             _bold = Resources.Load<Font>("Fonts/Inter-SemiBold") ?? _font;
             _display = Resources.Load<Font>("Fonts/SpaceGrotesk-Bold") ?? _bold;
-            _icons = Resources.Load<Font>("Fonts/Lucide") ?? _bold;
+            _icons = Resources.Load<Font>("Fonts/PhosphorFill") ?? Resources.Load<Font>("Fonts/Lucide") ?? _bold;
             if (FindFirstObjectByType<EventSystem>() == null)
             {
                 var es = new GameObject("EventSystem");
@@ -331,7 +333,7 @@ namespace RaidRift
         void BuildRail()
         {
             var rail = Rect("Rail", _safe);
-            Anchor(rail, new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-104, -330), new Vector2(0, 330));
+            Anchor(rail, new Vector2(1, 0.5f), new Vector2(1, 0.5f), new Vector2(-104, -400), new Vector2(0, 400));
             var v = rail.gameObject.AddComponent<VerticalLayoutGroup>();
             v.spacing = 22; v.childAlignment = TextAnchor.MiddleCenter;
             v.childControlWidth = false; v.childControlHeight = false; v.childForceExpandHeight = false; v.childForceExpandWidth = false;
@@ -339,6 +341,7 @@ namespace RaidRift
             RoundButton("scan", rail, IconScan, 104, Glass);
             RoundButton("chat", rail, IconChat, 104, Glass);
             RoundButton("trail", rail, IconMap, 104, Glass);
+            RoundButton("selfie", rail, IconSelfie, 104, Glass);
             RoundButton("setup", rail, IconSettings, 104, Glass);
         }
 
@@ -414,38 +417,113 @@ namespace RaidRift
 
         void BuildSetup()
         {
+            // Settings sheet: one scrollable column of grouped cards (works in portrait and landscape). Each row is
+            // an icon tile + label + current value; tapping cycles/acts. Inputs sit in their own rows.
             _setup = Box("Setup", _safe, GlassStrong, true).gameObject;
-            var setupRect = _setup.GetComponent<RectTransform>();
-            Anchor(setupRect, new Vector2(0.02f, 0.02f), new Vector2(0.98f, 0.98f), Vector2.zero, Vector2.zero);
-            Border(setupRect);
-            var close = RoundButton("close-setup", setupRect, IconX, 80, Glass);
-            close.anchorMin = close.anchorMax = new Vector2(1, 1); close.anchoredPosition = new Vector2(-56, -56);
+            var sheet = _setup.GetComponent<RectTransform>();
+            Anchor(sheet, new Vector2(0.03f, 0.02f), new Vector2(0.97f, 0.98f), Vector2.zero, Vector2.zero);
+            Border(sheet);
+            var title = Label(sheet, "Settings", 40, FontStyle.Bold, Color.white, TextAnchor.UpperLeft, new Vector2(40, -40), new Vector2(-140, -30));
+            title.font = _display;
+            var close = RoundButton("close-setup", sheet, IconX, 80, Glass);
+            close.anchorMin = close.anchorMax = new Vector2(1, 1); close.anchoredPosition = new Vector2(-60, -64);
             close.GetComponent<Button>().onClick.RemoveAllListeners();
             close.GetComponent<Button>().onClick.AddListener(() => _setup.SetActive(false));
 
-            var liveCol = Column(setupRect, 0f, 0.5f);
-            var demoCol = Column(setupRect, 0.5f, 1f);
+            var viewport = Rect("Viewport", sheet);
+            Anchor(viewport, Vector2.zero, Vector2.one, new Vector2(28, 24), new Vector2(-28, -120));
+            viewport.gameObject.AddComponent<RectMask2D>();
+            var content = Rect("Content", viewport);
+            content.anchorMin = new Vector2(0f, 1); content.anchorMax = new Vector2(1f, 1); content.pivot = new Vector2(0.5f, 1);
+            content.sizeDelta = new Vector2(0, 0); // full viewport width (portrait and landscape)
+            var v = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            v.spacing = 10; v.padding = new RectOffset(0, 0, 0, 40);
+            v.childControlHeight = true; v.childControlWidth = true; v.childForceExpandHeight = false; v.childForceExpandWidth = true;
+            content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            var scroll = sheet.gameObject.AddComponent<ScrollRect>();
+            scroll.viewport = viewport; scroll.content = content; scroll.horizontal = false; scroll.movementType = ScrollRect.MovementType.Clamped;
+            scroll.scrollSensitivity = 40;
 
-            Heading(liveCol, "GO LIVE ON TWITCH", LiveRed);
-            _channelInput = Row(Input(liveCol, "your Twitch channel (chat + raids)", Vector2.zero, Vector2.zero, true).GetComponent<RectTransform>()).GetComponent<InputField>();
-            _keyInput = Row(Input(liveCol, "stream key · stays on this phone", Vector2.zero, Vector2.zero, true).GetComponent<RectTransform>()).GetComponent<InputField>();
+            Section(content, "GO LIVE ON TWITCH", LiveRed);
+            _channelInput = InputRow(content, IconTwitch, "Twitch channel (chat + raids)");
+            _keyInput = InputRow(content, IconKey, "Stream key · stays on this phone");
             _keyInput.contentType = InputField.ContentType.Password;
-            var quality = SheetButton(liveCol, "Quality", "quality", false);
-            _quality = quality.GetComponentInChildren<Text>();
-            var go = SheetButton(liveCol, "Go live", null, true);
-            go.onClick.AddListener(() => { OnGoLive?.Invoke(_channelInput.text.Trim().TrimStart('#').ToLowerInvariant(), _keyInput.text.Trim()); _setup.SetActive(false); });
-            SheetButton(liveCol, "End live · back to demo", "end-live", false);
-            _liveInfo = Label(Row(Rect("Info", liveCol), 110), "", 22, FontStyle.Normal, Dim, TextAnchor.UpperLeft, Vector2.zero, Vector2.zero);
+            _quality = SettingRow(content, IconGauge, "Quality", "quality", "HD");
+            var go = Row(Box("Go live", content, new Color(LiveRed.r, LiveRed.g, LiveRed.b, 0.95f), true), 104);
+            var goIcon = Icon(go, IconBroadcast, 40, Color.white);
+            Anchor(goIcon.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 1), new Vector2(-120, 0), new Vector2(-70, 0));
+            Label(go, "Go live", 34, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter, new Vector2(30, 0), Vector2.zero);
+            go.gameObject.AddComponent<Button>().onClick.AddListener(() => { OnGoLive?.Invoke(_channelInput.text.Trim().TrimStart('#').ToLowerInvariant(), _keyInput.text.Trim()); _setup.SetActive(false); });
+            SettingRow(content, IconEnd, "End stream · back to demo", "end-live", null);
+            _liveInfo = Label(Row(Rect("Info", content), 70), "", 22, FontStyle.Normal, Dim, TextAnchor.UpperLeft, new Vector2(8, 0), Vector2.zero);
 
-            Heading(demoCol, "DEMO & DEV", Violet);
-            _serverInput = Row(Input(demoCol, ServerConnection.DefaultServer, Vector2.zero, Vector2.zero, true).GetComponent<RectTransform>()).GetComponent<InputField>();
-            _tokenInput = Row(Input(demoCol, "pairing token · empty = debug pairing", Vector2.zero, Vector2.zero, true).GetComponent<RectTransform>()).GetComponent<InputField>();
+            Section(content, "ROOM", Mint);
+            _settingValues["scan"] = SettingRow(content, IconCube, "Room mesh", "scan", "Floor");
+            SettingRow(content, IconSelfie, "Selfie camera", "selfie", null);
+            SettingRow(content, IconReset, "Reset room scan", "reset-room", null);
+
+            Section(content, "COMFORT", Violet);
+            _settingValues["sound"] = SettingRow(content, IconSpeaker, "Sound", "sound", "On");
+            _settingValues["motion"] = SettingRow(content, IconEyeSlash, "Reduced motion", "motion", "Off");
+
+            Section(content, "SERVER & TESTING", Dim);
+            _serverInput = InputRow(content, IconLink, ServerConnection.DefaultServer);
+            _tokenInput = InputRow(content, IconKey, "Pairing token · empty = debug pairing");
             _tokenInput.contentType = InputField.ContentType.Password;
-            string[] actions = { "pair", "offline", "server-raid", "stream", "sound", "motion" };
-            string[] titles = { "Pair with server", "Offline test room", "Server test raid", "Stream to PC (WebRTC)", "Sound on/off", "Reduced motion on/off" };
-            for (int i = 0; i < actions.Length; i++) SheetButton(demoCol, titles[i], actions[i], false);
-            _diag = Label(Row(Rect("Diagnostics", demoCol), 130), "", 20, FontStyle.Normal, new Color(1, 1, 1, 0.45f), TextAnchor.UpperLeft, Vector2.zero, Vector2.zero);
+            SettingRow(content, IconPlug, "Pair with server", "pair", null);
+            SettingRow(content, IconFlask, "Offline test room", "offline", null);
+            SettingRow(content, IconZap, "Server test raid", "server-raid", null);
+            SettingRow(content, IconMonitor, "Stream to PC (WebRTC)", "stream", null);
+            var diagRow = Row(Rect("Diagnostics", content), 110);
+            var di = Icon(diagRow, IconInfo, 26, new Color(1, 1, 1, 0.4f));
+            Anchor(di.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(8, -40), new Vector2(44, -4));
+            _diag = Label(diagRow, "", 20, FontStyle.Normal, new Color(1, 1, 1, 0.45f), TextAnchor.UpperLeft, new Vector2(52, 0), Vector2.zero);
             _setup.SetActive(false);
+        }
+
+        readonly Dictionary<string, Text> _settingValues = new Dictionary<string, Text>();
+
+        /// <summary>Right-hand value of a settings row (e.g. "scan" → "Hidden", "sound" → "Off").</summary>
+        public void SetSetting(string id, string value)
+        {
+            if (_settingValues.TryGetValue(id, out var t) && t != null) t.text = value;
+        }
+
+        void Section(RectTransform content, string text, Color color)
+        {
+            var t = Label(Row(Rect("Section", content), 64), text, 24, FontStyle.Bold, color, TextAnchor.LowerLeft, new Vector2(8, 6), Vector2.zero);
+            t.font = _display;
+        }
+
+        /// <summary>Icon tile + label + optional value + chevron. Tapping invokes the action.</summary>
+        Text SettingRow(RectTransform content, string icon, string title, string action, string value)
+        {
+            var r = Row(Box("Row " + title, content, new Color(1f, 1f, 1f, 0.06f), true), 88);
+            Border(r);
+            var tile = Box("Tile", r, new Color(Hot.r, Hot.g, Hot.b, 0.28f), true);
+            tile.anchorMin = tile.anchorMax = new Vector2(0, 0.5f); tile.sizeDelta = new Vector2(60, 60); tile.anchoredPosition = new Vector2(48, 0);
+            Icon(tile, icon, 30, Color.white);
+            Label(r, title, 28, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft, new Vector2(98, 0), new Vector2(-220, 0));
+            Text val = null;
+            if (value != null) val = Label(r, value, 26, FontStyle.Normal, Mint, TextAnchor.MiddleRight, new Vector2(300, 0), new Vector2(-34, 0));
+            var b = r.gameObject.AddComponent<Button>();
+            b.onClick.AddListener(() =>
+            {
+                if (action == "pair") { OnServer?.Invoke(_serverInput.text, _tokenInput.text.Trim()); _tokenInput.text = ""; }
+                OnButton?.Invoke(action);
+                // Toggles stay open so the new value is visible; actions close the sheet.
+                if (value == null) _setup.SetActive(false);
+            });
+            return val;
+        }
+
+        InputField InputRow(RectTransform content, string icon, string placeholder)
+        {
+            var r = Row(Box("Input row", content, new Color(1f, 1f, 1f, 0.06f), true), 88);
+            Border(r);
+            var ic = Icon(r, icon, 30, Dim);
+            Anchor(ic.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(26, 0), new Vector2(72, 0));
+            return Input(r, placeholder, new Vector2(82, 6), new Vector2(-12, -6), false);
         }
 
         void Press(string id)

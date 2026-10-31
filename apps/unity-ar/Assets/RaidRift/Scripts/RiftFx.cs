@@ -20,7 +20,7 @@ namespace RaidRift
         public static float? FloorY { get; set; }
 
         // Cartoon FX Remaster Free (owner's Asset Store license), assigned by BuildTools. Scaled to 30 cm heroes.
-        public GameObject impactGlow, groundHit, magicPoof, hitLight, comicWow, firework;
+        public GameObject impactGlow, groundHit, magicPoof, hitLight, comicWow, firework, runeAura, souls, fallingStars;
 
         static void Spawn(GameObject prefab, Vector3 pos, float scale, Vector3? face = null)
         {
@@ -79,9 +79,49 @@ namespace RaidRift
             rot.x = new ParticleSystem.MinMaxCurve(-6f, 6f); rot.y = new ParticleSystem.MinMaxCurve(-6f, 6f); rot.z = new ParticleSystem.MinMaxCurve(-6f, 6f);
         }
 
+        // ---------------- ambient life on an open rift ----------------
+        Transform _ambient;
+        GameObject _aura;
+        float _emberClock, _seamClock;
+
+        /// <summary>Set by the app to the open rift's transform (null when closed): a rune circle glows under it and
+        /// embers drift up from the opening, so the portal stays alive after the opening burst.</summary>
+        public static void SetAmbient(Transform rift)
+        {
+            if (_i == null || _i._ambient == rift) return;
+            _i._ambient = rift;
+            if (_i._aura != null) Destroy(_i._aura);
+            if (rift != null && _i.runeAura != null)
+            {
+                _i._aura = Instantiate(_i.runeAura, rift.position + Vector3.up * 0.01f, Quaternion.identity, rift);
+                foreach (var ps in _i._aura.GetComponentsInChildren<ParticleSystem>(true)) { var m = ps.main; m.scalingMode = ParticleSystemScalingMode.Hierarchy; m.loop = true; }
+                _i._aura.transform.localScale = Vector3.one * 0.9f;
+                NoCameraShake(_i._aura);
+            }
+        }
+
         void Update()
         {
             if (FloorY.HasValue) _floorPlane.position = new Vector3(0f, FloorY.Value + 0.004f, 0f);
+            if (_ambient == null) return;
+            var side = _ambient.right;
+            _emberClock += Time.deltaTime * 14f; // ~14 embers/s
+            while (_emberClock >= 1f)
+            {
+                _emberClock -= 1f;
+                var p = _ambient.position + side * Random.Range(-0.6f, 0.6f) + Vector3.up * Random.Range(0.05f, 1.7f);
+                Emit(_sparks, p, Vector3.up * Random.Range(0.15f, 0.45f) - _ambient.forward * Random.Range(0.05f, 0.25f), Random.Range(0.012f, 0.03f), Random.Range(0.8f, 1.6f), Pick());
+            }
+            _seamClock -= Time.deltaTime;
+            if (_seamClock <= 0f)
+            {
+                _seamClock = Random.Range(2.5f, 4f);
+                // Seam surge: a quick flare and a puff of streaks out of the opening.
+                var c = _ambient.position + Vector3.up * 0.95f;
+                Emit(_flares, c, Vector3.zero, 0.9f, 0.35f, new Color(Seam.r, Seam.g, Seam.b, 0.45f));
+                for (int n = 0; n < 10; n++)
+                    Emit(_streaks, c + Random.insideUnitSphere * 0.3f, (-_ambient.forward + Random.insideUnitSphere * 0.6f) * Random.Range(0.4f, 1f), 0.02f, 0.4f, Pick());
+            }
         }
 
         ParticleSystem Make(string name, Material baseMat, string texture, int max, float gravity, float grow = 1f, bool shrinkOut = false)
@@ -158,13 +198,13 @@ namespace RaidRift
             Emit(_i._rings, floor + Vector3.up * 0.008f, Vector3.zero, 0.16f * scale, 0.36f, new Color(Seam.r, Seam.g, Seam.b, 0.65f));
             if (raid) _i.StartCoroutine(Echo(floor, scale));
             Sfx.PlayAt("crunch", center, raid ? 0.75f : 0.55f, 0.06f);
-            Spawn(_i.impactGlow, center, 0.6f * scale);
-            Spawn(_i.groundHit, floor + Vector3.up * 0.01f, 0.5f * scale);
+            Spawn(_i.impactGlow, center, 1.4f * scale);
+            Spawn(_i.groundHit, floor + Vector3.up * 0.01f, 1.2f * scale);
             if (raid)
             {
-                Spawn(_i.firework, center + Vector3.up * 0.9f * scale, 0.5f * scale);
+                Spawn(_i.firework, center + Vector3.up * 0.9f * scale, 1.0f * scale);
                 var cam = Camera.main;
-                Spawn(_i.comicWow, center + Vector3.up * 0.5f * scale, 0.45f * scale, cam != null ? cam.transform.position - center : (Vector3?)null);
+                Spawn(_i.comicWow, center + Vector3.up * 0.5f * scale, 0.8f * scale, cam != null ? cam.transform.position - center : (Vector3?)null);
             }
             _i.StartCoroutine(Clatter(floor));
             int sparks = raid ? 72 : 48, chips = raid ? 24 : 16, smoke = raid ? 8 : 6;
@@ -222,7 +262,7 @@ namespace RaidRift
         {
             if (_i == null) return;
             if (first) CameraFeel.Shake(0.25f);
-            Spawn(_i.magicPoof, pos + Vector3.up * 0.08f, 0.25f);
+            Spawn(_i.magicPoof, pos + Vector3.up * 0.1f, 0.55f);
             for (int n = 0; n < 12; n++)
                 Emit(_i._sparks, pos + Vector3.up * 0.06f, (outward * 0.6f + Random.insideUnitSphere * 0.6f + Vector3.up * 0.3f), Random.Range(0.012f, 0.025f), Random.Range(0.25f, 0.45f), Pick());
             for (int n = 0; n < 2; n++)
@@ -233,7 +273,7 @@ namespace RaidRift
         public static void Land(Vector3 pos, bool heavy)
         {
             if (_i == null) return;
-            if (heavy) { CameraFeel.Shake(0.35f); Spawn(_i.groundHit, pos + Vector3.up * 0.005f, 0.18f); }
+            if (heavy) { CameraFeel.Shake(0.35f); Spawn(_i.groundHit, pos + Vector3.up * 0.005f, 0.4f); }
             Emit(_i._rings, pos + Vector3.up * 0.006f, Vector3.zero, 0.05f, 0.22f, new Color(Crack.r, Crack.g, Crack.b, 0.5f));
             for (int n = 0; n < 8; n++)
             {
@@ -244,12 +284,39 @@ namespace RaidRift
                 Emit(_i._sparks, pos + Vector3.up * 0.02f, Random.insideUnitSphere * 0.5f + Vector3.up * 0.4f, 0.012f, 0.3f, Pick());
         }
 
+        /// <summary>A viewer's emote lands: a distinct, readable burst per action above the hero (stream-visible).</summary>
+        public static void Emote(Vector3 pos, string action)
+        {
+            if (_i == null) return;
+            var head = pos + Vector3.up * 0.38f;
+            switch (action)
+            {
+                case "cheer":
+                    Spawn(_i.firework, head + Vector3.up * 0.15f, 0.3f);
+                    break;
+                case "dance":
+                    Spawn(_i.fallingStars, head + Vector3.up * 0.2f, 0.3f);
+                    for (int n = 0; n < 10; n++) Emit(_i._sparks, head, Random.insideUnitSphere * 0.5f + Vector3.up * 0.4f, 0.02f, 0.6f, Pick());
+                    break;
+                case "jump":
+                    for (int n = 0; n < 12; n++) Emit(_i._streaks, pos + Vector3.up * 0.02f, new Vector3(Random.Range(-0.4f, 0.4f), Random.Range(0.6f, 1.2f), Random.Range(-0.4f, 0.4f)), 0.02f, 0.35f, Pick());
+                    break;
+                case "spell":
+                    Spawn(_i.impactGlow, head, 0.45f);
+                    break;
+                case "wave":
+                case "greet":
+                    Spawn(_i.hitLight, head, 0.3f);
+                    break;
+            }
+        }
+
         /// <summary>Chat command accepted (mint) or refused (red): local ring + a few sparks, never a screen effect.</summary>
         public static void Command(Vector3 pos, bool accepted)
         {
             if (_i == null) return;
             var c = accepted ? Hex(0x59F1C8) : Hex(0xFF6A83);
-            if (accepted) Spawn(_i.hitLight, pos + Vector3.up * 0.15f, 0.15f);
+            if (accepted) Spawn(_i.hitLight, pos + Vector3.up * 0.15f, 0.35f);
             Emit(_i._rings, pos + Vector3.up * 0.007f, Vector3.zero, 0.04f, 0.18f, new Color(c.r, c.g, c.b, 0.7f));
             for (int n = 0; n < 4; n++)
                 Emit(_i._sparks, pos + Vector3.up * 0.12f, Random.insideUnitSphere * 0.35f + Vector3.up * 0.3f, 0.014f, 0.3f, c);

@@ -24,8 +24,8 @@ namespace RaidRift.EditorTools
         const string Resources = Root + "/Resources";
         const string ScenePath = Root + "/Scenes/Main.unity";
         const string ChunkPrefab = Root + "/Prefabs/RoomMeshChunk.prefab";
-        public const string Version = "0.19.0";
-        public const int VersionCode = 14;
+        public const string Version = "0.20.1";
+        public const int VersionCode = 15;
 
         [MenuItem("RaidRift/Set up project")]
         public static void SetupMenu() => Setup();
@@ -149,6 +149,7 @@ namespace RaidRift.EditorTools
             Mat("CameraFeel", "RaidRift/CameraFeel", m => { });
             Mat("FxAdd", "Mobile/Particles/Additive", m => { });         // RiftFx sparks/rings/flares (Kenney CC0 textures)
             Mat("FxAlpha", "Mobile/Particles/Alpha Blended", m => { });  // RiftFx dust/smoke
+            Mat("FxAddTint", "Legacy Shaders/Particles/Additive", m => { }); // tinted rings on plain quads (landing marker)
             Mat("Obsidian", "RaidRift/Toon", m => { m.SetColor("_Color", new Color(0.13f, 0.08f, 0.22f)); m.SetColor("_Emission", new Color(0.05f, 0.01f, 0.1f)); m.SetColor("_Rim", new Color(0.7f, 0.45f, 1f)); });
             Mat("Crystal", "RaidRift/Toon", m => { m.SetColor("_Color", new Color(0.35f, 0.95f, 0.85f)); m.SetColor("_Emission", new Color(0.12f, 0.45f, 0.4f)); m.SetColor("_Rim", Color.white); });
             Mat("Gold", "RaidRift/Toon", m => { m.SetColor("_Color", new Color(1f, 0.8f, 0.35f)); m.SetColor("_Emission", new Color(0.3f, 0.2f, 0.02f)); m.SetColor("_Rim", new Color(1f, 0.95f, 0.7f)); });
@@ -360,6 +361,9 @@ namespace RaidRift.EditorTools
             riftFx.hitLight = Cfxr("Light/CFXR3 Hit Light B (Air)");
             riftFx.comicWow = Cfxr("Texts/CFXR3 _WOW_");
             riftFx.firework = Cfxr("Explosions/CFXR4 Firework 1 Cyan-Purple (HDR)");
+            riftFx.runeAura = Cfxr("Magic Misc/CFXR3 Magic Aura A (Runic)");
+            riftFx.souls = Cfxr("Eerie/CFXR2 Souls Escape");
+            riftFx.fallingStars = Cfxr("Magic Misc/CFXR4 Falling Stars");
             if (riftFx.impactGlow == null) Debug.LogWarning("[RaidRift] Cartoon FX Remaster not imported; RiftFx uses its own particles only");
             var moths = new GameObject("Rift Moths").AddComponent<RiftMoths>();
             var hud = appGo.AddComponent<Hud>();
@@ -394,6 +398,25 @@ namespace RaidRift.EditorTools
             sceneTracks.labels = labels;
             app.detector = detector;
             app.surfaceLabels = labels;
+
+            // SELFIE: opt-in controller; world starts with face tracking disabled. No visible face prefab.
+            var faces = originGo.AddComponent<ARFaceManager>();
+            faces.enabled = false;
+            faces.requestedMaximumFaceCount = 1;
+            var selfie = appGo.AddComponent<SelfieMode>();
+            selfie.session = session;
+            selfie.arCamera = cam;
+            selfie.cameraManager = cameraManager;
+            selfie.faceManager = faces;
+            selfie.poseDriver = tpd; // SELFIE: front ARCore pose is identity; restore driver for room mode.
+            selfie.meshManager = meshes;
+            selfie.planeManager = planes;
+            selfie.room = room;
+            var selfieConsumers = new System.Collections.Generic.List<Behaviour> { detector, sceneTracks, labels, trail, moths };
+            // SELFIE: pause NSDK's configuration component alongside ARMeshManager's subsystem Stop.
+            if (ext != null && meshGo.GetComponent(ext) is Behaviour meshExtension) selfieConsumers.Add(meshExtension);
+            selfie.worldConsumers = selfieConsumers.ToArray();
+            app.selfie = selfie;
 
             EditorSceneManager.SaveScene(scene, ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };

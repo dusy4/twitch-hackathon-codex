@@ -9,16 +9,17 @@ namespace RaidRift
     /// composited image, never on the tracked camera pose, so AR registration and tracking are untouched.
     /// Calls are static so any system can add impact: CameraFeel.Impact(0.6f) on a portal tear.
     /// </summary>
+    [ExecuteAlways]
     [RequireComponent(typeof(Camera))]
     public class CameraFeel : MonoBehaviour
     {
         static CameraFeel _instance;
 
         [Header("Shake")]
-        public float maxOffset = 0.012f;    // uv at trauma 1 ≈ 9 px at 720p (VFX plan cap 7 px, x1.3 for impact)
-        public float maxAngle = 0.36f;      // degrees at trauma 1 (plan 0.28°)
+        public float maxOffset = 0.024f;    // uv at trauma 1 ≈ 9 px at 720p (VFX plan cap 7 px, x1.3 for impact)
+        public float maxAngle = 1.1f;      // degrees at trauma 1 (plan 0.28°)
         public float frequency = 15f;       // Hz of the noise
-        public float traumaDecay = 1.9f;    // per second: a 0.65 tear is gone in ~0.35 s
+        public float traumaDecay = 1.15f;    // per second: a 0.65 tear is gone in ~0.35 s
         [Header("Bloom")]
         public float bloomThreshold = 0.9f;
         public float bloomKnee = 0.35f;
@@ -68,10 +69,10 @@ namespace RaidRift
         public static void Impact(float strength, Color? flash = null)
         {
             Shake(0.9f * strength);
-            Punch(0.025f * strength);
-            Chroma(0.003f * strength);
-            if (_instance != null) _instance._bloomPulse = Mathf.Max(_instance._bloomPulse, 0.6f * strength);
-            Flash(flash ?? new Color(0.91f, 0.78f, 1f), 0.14f * strength); // #E8C7FF single-frame peak
+            Punch(0.05f * strength);
+            Chroma(0.007f * strength);
+            if (_instance != null) _instance._bloomPulse = Mathf.Max(_instance._bloomPulse, 1.1f * strength);
+            Flash(flash ?? new Color(0.91f, 0.78f, 1f), 0.3f * strength); // #E8C7FF peak
         }
 
         // ---------------- runtime ----------------
@@ -110,7 +111,7 @@ namespace RaidRift
             _mat.SetVector("_Shake", new Vector4(offset.x, offset.y, angle, zoom));
             _mat.SetFloat("_Aspect", (float)src.width / Mathf.Max(1, src.height));
             _mat.SetFloat("_Chroma", _chroma * m);
-            _mat.SetVector("_FlashColor", new Vector4(_flashColor.r, _flashColor.g, _flashColor.b, Mathf.Min(0.18f, _flash) * k));
+            _mat.SetVector("_FlashColor", new Vector4(_flashColor.r, _flashColor.g, _flashColor.b, Mathf.Min(0.35f, _flash) * k));
             _mat.SetFloat("_Vignette", _vignette * k);
             _mat.SetColor("_VignetteColor", _vignetteColor);
 
@@ -138,8 +139,8 @@ namespace RaidRift
 
         void ReleaseChain()
         {
-            for (int i = 0; i < _chain.Length; i++) { if (_chain[i] != null) { _chain[i].Release(); Destroy(_chain[i]); } _chain[i] = null; }
-            if (_mat != null) Destroy(_mat);
+            for (int i = 0; i < _chain.Length; i++) { if (_chain[i] != null) { _chain[i].Release(); if (Application.isPlaying) Destroy(_chain[i]); else DestroyImmediate(_chain[i]); } _chain[i] = null; }
+            if (_mat != null) { if (Application.isPlaying) Destroy(_mat); else DestroyImmediate(_mat); }
         }
     }
 }

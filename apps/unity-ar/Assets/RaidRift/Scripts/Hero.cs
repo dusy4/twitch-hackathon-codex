@@ -8,7 +8,7 @@ namespace RaidRift
     /// The director gives it a destination (stage spot or follow-me slot); the agent finds the path
     /// around furniture. Chat actions (jump, sit, dance…) play on top. Never teleports once placed.</summary>
     [RequireComponent(typeof(NavMeshAgent))]
-    public class Hero : MonoBehaviour
+    public partial class Hero : MonoBehaviour // SELFIE: perch support lives in Selfie/Hero.Selfie.cs.
     {
         public const float Height = 0.30f;
         const float ModelHeight = 2.19f; // KayKit rig, same constant as the Kotlin client
@@ -144,7 +144,7 @@ namespace RaidRift
         void UpdateShadow(float height)
         {
             if (_shadow == null) return;
-            bool show = Spawned && _layer != RiftWorld.Layer;
+            bool show = Spawned && _layer != RiftWorld.Layer && !SelfiePerched; // SELFIE: no floor shadow on a face.
             if (_shadow.gameObject.activeSelf != show) _shadow.gameObject.SetActive(show);
             if (!show) return;
             _shadow.position = new Vector3(transform.position.x, _groundY + 0.004f, transform.position.z);
@@ -157,6 +157,7 @@ namespace RaidRift
         void Land(float strength)
         {
             _squash = 0.22f * strength;
+            if (SelfiePerched) return; // SELFIE: squash without room-sized dust/shockwaves beside a face.
             Fx.Dust(transform.position, strength);
             RiftFx.Land(transform.position, strength > 0.9f);
             Sfx.PlayAt("land", transform.position, 0.55f * strength);

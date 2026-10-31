@@ -45,6 +45,12 @@ namespace RaidRift
 
         void Awake() => Init();
 
+        // SELFIE: the walkable renderer lives outside this hierarchy; retain its mesh while paused.
+        public void SetSelfieViewHidden(bool hidden)
+        {
+            if (_walkableView != null) _walkableView.SetActive(!hidden && showWalkable && HasNavMesh);
+        }
+
         /// <summary>Synchronous bake from explicit sources, for the editor self-test (RoomSelfTest.cs).</summary>
         public int TestBake(List<NavMeshBuildSource> sources, Bounds bounds, float floorY)
         {

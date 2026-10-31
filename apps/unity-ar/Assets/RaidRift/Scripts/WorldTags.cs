@@ -15,7 +15,7 @@ namespace RaidRift
         static Font _font;
         static Material _back;
 
-        public static void Update(Camera cam, IEnumerable<Hero> heroes)
+        public static void Update(Camera cam, IEnumerable<Hero> heroes, bool selfie = false) // SELFIE: default preserves world callers.
         {
             var seen = new HashSet<string>();
             foreach (var hero in heroes)
@@ -33,13 +33,15 @@ namespace RaidRift
                     float w = Mathf.Max(0.6f, b.size.x / Mathf.Max(1e-4f, tag.root.lossyScale.x) + 0.25f);
                     tag.backing.localScale = new Vector3(Mathf.Min(w, 3.4f), string.IsNullOrEmpty(msg) ? 0.42f : 0.78f, 1f);
                 }
-                var top = hero.transform.position + Vector3.up * (Hero.Height + 0.07f);
+                var top = hero.transform.position + (selfie ? cam.transform.up : Vector3.up) * (hero.DisplayHeight + (selfie ? 0.014f : 0.07f)); // SELFIE: scaled perch label.
                 tag.root.position = top;
                 var to = top - cam.transform.position;
-                tag.root.rotation = Quaternion.LookRotation(to, Vector3.up);
+                tag.root.rotation = Quaternion.LookRotation(to, cam.transform.up); // screen-aligned: no tilt with phone roll
                 // Constant apparent size: scale with distance, clamped so far tags don't become billboards.
-                float s = Mathf.Clamp(to.magnitude, 0.25f, 4f) * 0.042f;
+                float s = Mathf.Clamp(to.magnitude, 0.25f, 4f) * 0.06f;
                 tag.root.localScale = Vector3.one * s;
+                // SELFIE: compensate glyphs for provider projection reflection; never mirror the stream/HUD.
+                tag.text.transform.localScale = new Vector3(selfie && cam.projectionMatrix.m00 < 0f ? -1f : 1f, 1f, 1f);
                 tag.root.gameObject.SetActive(Vector3.Dot(to, cam.transform.forward) > 0.05f);
             }
             var stale = new List<string>();

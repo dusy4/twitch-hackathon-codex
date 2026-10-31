@@ -1,0 +1,153 @@
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+namespace RaidRift
+{
+    public partial class RaidRiftApp
+    {
+        public SelfieMode selfie;
+        bool _selfiePaused;
+        readonly Dictionary<GameObject, bool> _selfieHidden = new Dictionary<GameObject, bool>();
+        readonly HashSet<string> _selfieReturn = new HashSet<string>();
+
+        void InitSelfie()
+        {
+            if (selfie == null) return;
+            selfie.Notice += SelfieNotice;
+            selfie.Changed += SelfieChanged;
+            selfie.RoomLost += SelfieRoomLost;
+        }
+
+        void SelfieRoomLost() => Button("reset-room");
+
+        void SelfieNotice(string message) { if (hud != null) hud.Toast(message, 3f); }
+        void SelfieChanged(bool active) => RefreshSelfieButton();
+        bool SelfieBlocksButton(string id)
+        {
+            if (selfie == null || !selfie.WorldPaused) return false;
+            if (id != "scan" && id != "trail" && id != "follow" && id != "reset-room") return false;
+            hud.Toast("Return to the room camera to use room tools");
+            return true;
+        }
+        void RefreshSelfieButton()
+        {
+            if (hud != null) hud.SetButton("selfie", selfie != null && selfie.IsSelfie ? "Room camera" : "Selfie", selfie != null && selfie.IsSelfie);
+        }
+
+        void HideForSelfie(GameObject go)
+        {
+            if (go == null || _selfieHidden.ContainsKey(go)) return;
+            _selfieHidden.Add(go, go.activeSelf);
+            go.SetActive(false);
+        }
+
+        // Called before the world director. Retains scan settings, raid ids and server state.
+        bool UpdateSelfie()
+        {
+            if (selfie == null) return false;
+            if (!selfie.WorldPaused)
+            {
+                if (_selfiePaused)
+                {
+                    _selfiePaused = false;
+                    foreach (var pair in _selfieHidden) if (pair.Key != null) pair.Key.SetActive(pair.Value);
+                    _selfieHidden.Clear();
+                    foreach (var hero in _heroes.Values)
+                    {
+                        if (!hero.SelfiePerched) continue;
+                        hero.LeaveSelfie();
+                        _selfieReturn.Add(hero.Id);
+                    }
+                    _roam.Clear();
+                    _steer.Clear();
+                    _tapGoal = null;
+                    _candidate = null;
+                    _nextMaterialPass = 0f;
+                }
+                return false;
+            }
+
+            if (!_selfiePaused)
+            {
+                _selfiePaused = true;
+                if (sceneTracks != null) { sceneTracks.active = false; sceneTracks.ResetScene(); }
+                HideForSelfie(_rift != null ? _rift.gameObject : null);
+                HideForSelfie(_marker);
+                HideForSelfie(moths != null ? moths.gameObject : null);
+                HideForSelfie(trail != null && trail.Site != null ? trail.Site.gameObject : null);
+                if (_heroRoot != null) HideForSelfie(_heroRoot.gameObject);
+                WorldTags.Clear();
+            }
+
+            if (!UseServer) _playground.Tick(NowMs, selfie.IsSelfie && !selfie.IsSwitching);
+            var world = CurrentWorld();
+            if (selfie.IsSelfie && !selfie.IsSwitching)
+            {
+                _heroRoot.gameObject.SetActive(true);
+                SyncSelfieHeroes(world);
+                WorldTags.Update(arCamera, _heroes.Values, true);
+            }
+            else
+            {
+                _heroRoot.gameObject.SetActive(false);
+                WorldTags.Clear();
+            }
+            hud.SetStatus($"Selfie party · {_heroes.Count} heroes", "Room scan and navigation paused",
+                selfie.IsSwitching ? "Switching cameras…" : !selfie.IsSelfie ? "Point at the room · tap selfie to retry" : selfie.HasFace ? "Chat can jump, dance, wave or sit" : "Look into the camera · party waits below");
+            hud.SetScan(1f, "");
+            hud.SetFeed(UseServer ? _serverLines : _playground.Messages);
+            LiveTick(world); // Publisher retains the same Camera.targetTexture.
+            return true;
+        }
+
+        void SyncSelfieHeroes(WorldState world)
+        {
+            var alive = new HashSet<string>();
+            int index = 0;
+            foreach (var state in world.Heroes)
+            {
+                alive.Add(state.Id);
+                if (!_heroes.TryGetValue(state.Id, out var hero))
+                {
+                    hero = Hero.Create(state.Id, HeroModels.For(state.Id), room.AgentTypeId, _heroRoot);
+                    _heroes[state.Id] = hero;
+                }
+                hero.DisplayName = state.Name;
+                hero.Message = state.Message;
+                if (selfie.TryGetPerch(index++, out var position, out var rotation))
+                    hero.SetSelfiePerch(position, rotation, selfie.HeroScale);
+                // Room-targeted sit/dance plays immediately at the perch, without stale room targets.
+                hero.Act(state.Animation, state.Serial);
+            }
+            foreach (var id in _heroes.Keys.Where(k => !alive.Contains(k)).ToList())
+            {
+                Destroy(_heroes[id].gameObject);
+                _heroes.Remove(id);
+                _selfieReturn.Remove(id);
+            }
+        }
+
+        // Retry after subsequent world frames if the floor is not scanned yet. Never spawn at zero.
+        bool ReturnSelfieHero(Hero hero, int index)
+        {
+            if (!_selfieReturn.Contains(hero.Id)) return false;
+            if (!room.HasNavMesh || !room.FloorUnderCamera(out var floor)) return true;
+            var flat = Vector3.ProjectOnPlane(arCamera.transform.forward, Vector3.up).normalized;
+            var probe = Slot(floor + flat * 0.65f, index);
+            if (!room.Sample(probe, 0.6f, out var spot) || Mathf.Abs(spot.y - floor.y) > 0.20f) return true;
+            var toward = Vector3.ProjectOnPlane(arCamera.transform.position - spot, Vector3.up);
+            if (!hero.Place(spot, Quaternion.LookRotation(toward.sqrMagnitude > 1e-4f ? toward.normalized : Vector3.back))) return true;
+            _selfieReturn.Remove(hero.Id);
+            return false;
+        }
+
+        void OnDestroy()
+        {
+            if (selfie == null) return;
+            selfie.Notice -= SelfieNotice;
+            selfie.Changed -= SelfieChanged;
+            selfie.RoomLost -= SelfieRoomLost;
+        }
+    }
+}
