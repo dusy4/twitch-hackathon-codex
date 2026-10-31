@@ -24,7 +24,7 @@ namespace RaidRift.EditorTools
         const string Resources = Root + "/Resources";
         const string ScenePath = Root + "/Scenes/Main.unity";
         const string ChunkPrefab = Root + "/Prefabs/RoomMeshChunk.prefab";
-        public const string Version = "0.18.1";
+        public const string Version = "0.19.0";
         public const int VersionCode = 14;
 
         [MenuItem("RaidRift/Set up project")]
@@ -328,20 +328,10 @@ namespace RaidRift.EditorTools
                 meshing.ApplyModifiedPropertiesWithoutUndo();
             }
 
-            // Live depth occlusion (Niantic depth, fused with the room mesh): real things hide the heroes per pixel.
-            var occlusion = camGo.AddComponent<AROcclusionManager>();
-            occlusion.requestedEnvironmentDepthMode = UnityEngine.XR.ARSubsystems.EnvironmentDepthMode.Medium;
-            occlusion.environmentDepthTemporalSmoothingRequested = true;
-            var occExt = FindType("NianticSpatial.NSDK.AR.Occlusion.NsdkOcclusionExtension");
-            if (occExt != null)
-            {
-                var oe = new SerializedObject(camGo.AddComponent(occExt));
-                var mm = oe.FindProperty("_meshManager");
-                if (mm != null) mm.objectReferenceValue = meshes;
-                var fr = oe.FindProperty("_targetFrameRate");
-                if (fr != null) fr.longValue = 20; // GPU budget shared with meshing and the detector
-                oe.ApplyModifiedPropertiesWithoutUndo();
-            }
+            // REMOVED in 0.18.2: per-pixel depth occlusion (AROcclusionManager + NSDK occlusion) made the floor
+            // flicker and cut heroes' feet so they looked underground (owner test of 0.18.1), and it shares the
+            // depth pipeline with meshing. The scanned room mesh (depth-only occluder) already hides heroes
+            // behind furniture, as in 0.17.
 
             var lightGo = new GameObject("Sun");
             var light = lightGo.AddComponent<Light>();

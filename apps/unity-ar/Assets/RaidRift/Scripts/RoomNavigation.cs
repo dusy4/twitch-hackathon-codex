@@ -92,7 +92,7 @@ namespace RaidRift
             _instance = NavMesh.AddNavMeshData(_data);
             HasNavMesh = false;
             FloorY = null;
-            _planeFloor = _meshFloor = null;
+            _planeFloor = _meshFloor = _published = null;
             _floorCandidate = null; _floorVotes = 0;
             foreach (var l in _links) NavMesh.RemoveLink(l);
             _links.Clear();
@@ -193,11 +193,20 @@ namespace RaidRift
         /// <summary>With a room mesh the floor comes from the mesh's own walkable surfaces; planes only otherwise.</summary>
         float _planeSeen = -100f;
 
+        float? _published;
+
         float? CurrentFloor()
         {
             // ARCore's floor plane is precise when it agrees with the mesh's floor band; otherwise trust the mesh.
-            if (_meshFloor.HasValue && _planeFloor.HasValue && Mathf.Abs(_meshFloor.Value - _planeFloor.Value) < 0.03f) return _planeFloor;
-            return MeshCount > 0 ? (_meshFloor ?? _planeFloor) : (_planeFloor ?? _meshFloor);
+            float? target;
+            if (_meshFloor.HasValue && _planeFloor.HasValue && Mathf.Abs(_meshFloor.Value - _planeFloor.Value) < 0.03f) target = _planeFloor;
+            else target = MeshCount > 0 ? (_meshFloor ?? _planeFloor) : (_planeFloor ?? _meshFloor);
+            // Never jump between the plane and mesh values (0.18.0 flicker): glide ≤ 1 cm per update, snap only on a
+            // real change of floor (> 15 cm, e.g. walked downstairs).
+            if (!target.HasValue) return _published;
+            if (!_published.HasValue || Mathf.Abs(target.Value - _published.Value) > 0.15f) _published = target;
+            else _published = Mathf.MoveTowards(_published.Value, target.Value, 0.01f);
+            return _published;
         }
 
         Mesh PlaneMesh(ARPlane plane)
@@ -390,6 +399,15 @@ namespace RaidRift
             var filter = new NavMeshQueryFilter { agentTypeID = _settings.agentTypeID, areaMask = NavMesh.AllAreas };
             if (NavMesh.SamplePosition(p, out var hit, radius, filter))
             {
+                // Mesh noise under the floor (reflections, holes, scan spikes) is walkable to the baker but never a
+                // place to stand: retry on the floor itself, or refuse — heroes must never spawn underground.
+                if (FloorY.HasValue && hit.position.y < FloorY.Value - 0.06f)
+                {
+                    var onFloor = new Vector3(hit.position.x, FloorY.Value, hit.position.z);
+                    if (NavMesh.SamplePosition(onFloor, out var up, 0.12f, filter) && up.position.y >= FloorY.Value - 0.06f) { result = up.position; return true; }
+                    result = p;
+                    return false;
+                }
                 result = hit.position;
                 return true;
             }

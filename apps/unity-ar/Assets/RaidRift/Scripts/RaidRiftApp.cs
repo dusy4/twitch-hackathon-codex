@@ -140,6 +140,7 @@ namespace RaidRift
             var up = System.TimeSpan.FromSeconds(publisher.UptimeSeconds);
             string chip = publisher.IsLive ? $"● LIVE {(int)up.TotalMinutes:00}:{up.Seconds:00}" : publisher.State.StartsWith("error") ? "● OFFLINE" : "● " + publisher.State.ToUpperInvariant();
             hud.SetMode(true, chip);
+            hud.SetLiveStats(_heroes.Count, publisher.BitrateKbps);
             string chat = world?.LiveChannel != null ? (world.LiveConnected ? $"#{world.LiveChannel} chat connected" : $"#{world.LiveChannel} chat reconnecting…") : "no channel chat";
             hud.SetLiveInfo($"{publisher.State} · {publisher.BitrateKbps} kbps · {publisher.SendFps:0} fps · dropped {publisher.DroppedFrames}\n{chat} · mic {(publisher.MicMuted ? "muted" : "on")}", quality, "");
             hud.SetButton("mic", publisher.MicMuted ? "Mic off" : "Mic on", !publisher.MicMuted);
@@ -772,10 +773,20 @@ namespace RaidRift
             else if (!_landed) hint = _candidate.HasValue ? "Landing spot found · hold still" : "Point at open floor ~1 m ahead · or tap the floor";
             else if (trail.Current != RiftTrail.Phase.Off) hint = $"Rift Trail {trail.Collected}/3 · {trail.Hint}";
             else if (_heroes.Values.Any(h => h.Stuck)) hint = "A hero can't reach its spot · scan the floor between";
-            else if (world.Heroes.Count == 0) hint = "Tap Test raid";
+            else if (world.Heroes.Count == 0) hint = "Tap the orb to start a test raid";
             else hint = "";
-            var title = "RAIDRIFT " + Application.version + (world.Raid != null ? (world.Raid.Test ? " · TEST RAID" : " · RAID FROM " + world.Raid.From.ToUpperInvariant()) : "");
-            hud.SetStatus(title, status, hint);
+            // Short context line for the account chip; the long diagnostics go to the Setup sheet.
+            string where = world.Raid != null ? (world.Raid.Test ? "Test raid" : "Raid from " + world.Raid.From) : (_live ? "Paired · demo" : "Offline demo");
+            var title = $"{where} · {_heroes.Count} {(_heroes.Count == 1 ? "hero" : "heroes")}";
+            hud.SetStatus(title, $"v{Application.version} · {status}", hint);
+            // Mapping progress chip: tracking → mesh pieces → walkable map → landing spot.
+            float progress;
+            string label;
+            if (_landed) { progress = 1f; label = ""; }
+            else if (!tracking) { progress = 0.05f; label = "Finding your room"; }
+            else if (!room.HasNavMesh) { progress = 0.1f + 0.5f * Mathf.Clamp01(room.MeshCount / 30f); label = "Scanning"; }
+            else { progress = _candidate.HasValue ? 0.9f : 0.7f; label = _candidate.HasValue ? "Locking landing spot" : "Find open floor"; }
+            hud.SetScan(progress, label);
             hud.SetFeed(_live ? _serverLines : _playground.Messages);
             WorldTags.Update(arCamera, _heroes.Values); // in the 3D scene, so names are on the broadcast too
         }
