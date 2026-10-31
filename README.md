@@ -22,7 +22,7 @@ This repository now contains a persistent server, original 3D overlay, browser w
 - [Release scorecard](docs/RELEASE_SCORECARD.md)
 - [Social play and consent](docs/SOCIAL.md)
 
-`npm test` runs domain and HTTP/WebSocket integration tests. `npm run test:e2e` automatically launches an isolated QA server on port 3401. See setup for licensed video/model fixtures. Simulator identities and scores are always labelled. Version 0.10 used owner-authorized ElevenLabs allowance for five assets and an independent reviewer consultation; no public deployment or plan upgrade was performed.
+`npm test` runs domain and HTTP/WebSocket integration tests. `npm run test:e2e` automatically launches an isolated QA server on port 3401. See setup for licensed video/model fixtures. Simulator identities and scores are always labelled. Version 0.10 used owner-authorized ElevenLabs allowance for five assets and an independent review; no public deployment or plan upgrade was performed.
 
 ---
 

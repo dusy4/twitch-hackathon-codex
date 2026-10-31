@@ -1,6 +1,6 @@
 # Phone MR reference review and measured routes — 0.11.0
 
-Reviewed 2026-10-31. The owner supplied `VR. One by raidrift others references.zip` in Documents. The three MP4s were extracted to ignored local storage; contact sheets at four-second intervals plus a one-second sequence of the first 12 seconds of the phone clip were inspected. This is sampled visual review, not instrumented tracking measurements or an audio assessment. No private recording was uploaded to independent review or bundled in the app.
+Reviewed 2026-10-31. The owner supplied `VR. One by raidrift others references.zip` in Documents. The three MP4s were extracted to ignored local storage; contact sheets at four-second intervals plus a one-second sequence of the first 12 seconds of the phone clip were inspected. This is sampled visual review, not instrumented tracking measurements or an audio assessment. No private recording was uploaded for external review or bundled in the app.
 
 ## What the actual recordings show
 

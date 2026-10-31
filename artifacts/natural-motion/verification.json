@@ -28,7 +28,7 @@
     "liveServerRestarted": false
   },
   "consultant": {
-    "tool": "an independent reviewer CLI",
+    "tool": "independent review",
     "model": "independent review",
     "effort": "high",
     "mode": "read-only",

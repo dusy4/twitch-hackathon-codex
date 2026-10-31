@@ -1,6 +1,6 @@
 # ADR-009: Native expedition and audiovisual immersion
 
-2026-10-30. Owner prioritizes the existing Android app. Document current state first (`CURRENT_STATE.md`); defer IRL Pro/other capture compatibility. Consult an independent reviewer, then implement and validate.
+2026-10-30. Owner prioritizes the existing Android app. Document current state first (`CURRENT_STATE.md`); defer IRL Pro/other capture compatibility. Obtain an independent review, then implement and validate.
 
 ## Experience
 

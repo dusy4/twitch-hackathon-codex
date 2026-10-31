@@ -1,0 +1,208 @@
+{
+  "scope": "Offline workstation CPU, cropped visible camera area of owner recording; no AR pose/depth and no device FPS evidence. Private footage stays in .data. No ground-truth recall claim.",
+  "samples": [
+    {
+      "model": "efficientdet_lite0.tflite",
+      "threshold": 0.5,
+      "recordingSecond": 2,
+      "workstationCpuMs": 42.7,
+      "detections": [
+        {
+          "class": "teddy bear",
+          "score": 0.583,
+          "box": [
+            191,
+            265,
+            110,
+            158
+          ]
+        },
+        {
+          "class": "teddy bear",
+          "score": 0.574,
+          "box": [
+            328,
+            269,
+            110,
+            145
+          ]
+        }
+      ]
+    },
+    {
+      "model": "efficientdet_lite0.tflite",
+      "threshold": 0.5,
+      "recordingSecond": 6,
+      "workstationCpuMs": 38.4,
+      "detections": [
+        {
+          "class": "bed",
+          "score": 0.536,
+          "box": [
+            0,
+            231,
+            631,
+            263
+          ]
+        },
+        {
+          "class": "couch",
+          "score": 0.505,
+          "box": [
+            103,
+            2,
+            537,
+            267
+          ]
+        }
+      ]
+    },
+    {
+      "model": "efficientdet_lite0.tflite",
+      "threshold": 0.5,
+      "recordingSecond": 18,
+      "workstationCpuMs": 39.0,
+      "detections": []
+    },
+    {
+      "model": "efficientdet_lite0.tflite",
+      "threshold": 0.5,
+      "recordingSecond": 22,
+      "workstationCpuMs": 37.7,
+      "detections": [
+        {
+          "class": "teddy bear",
+          "score": 0.55,
+          "box": [
+            65,
+            103,
+            88,
+            154
+          ]
+        }
+      ]
+    },
+    {
+      "model": "efficientdet_lite2_int8.tflite",
+      "threshold": 0.32,
+      "recordingSecond": 2,
+      "workstationCpuMs": 283.5,
+      "detections": [
+        {
+          "class": "teddy bear",
+          "score": 0.434,
+          "box": [
+            135,
+            233,
+            57,
+            109
+          ]
+        },
+        {
+          "class": "teddy bear",
+          "score": 0.41,
+          "box": [
+            264,
+            267,
+            34,
+            52
+          ]
+        },
+        {
+          "class": "tv",
+          "score": 0.41,
+          "box": [
+            54,
+            15,
+            397,
+            335
+          ]
+        }
+      ]
+    },
+    {
+      "model": "efficientdet_lite2_int8.tflite",
+      "threshold": 0.32,
+      "recordingSecond": 6,
+      "workstationCpuMs": 168.8,
+      "detections": [
+        {
+          "class": "bed",
+          "score": 0.434,
+          "box": [
+            0,
+            194,
+            447,
+            196
+          ]
+        }
+      ]
+    },
+    {
+      "model": "efficientdet_lite2_int8.tflite",
+      "threshold": 0.32,
+      "recordingSecond": 18,
+      "workstationCpuMs": 161.4,
+      "detections": [
+        {
+          "class": "bed",
+          "score": 0.543,
+          "box": [
+            36,
+            277,
+            413,
+            117
+          ]
+        },
+        {
+          "class": "person",
+          "score": 0.348,
+          "box": [
+            344,
+            50,
+            87,
+            92
+          ]
+        }
+      ]
+    },
+    {
+      "model": "efficientdet_lite2_int8.tflite",
+      "threshold": 0.32,
+      "recordingSecond": 22,
+      "workstationCpuMs": 157.3,
+      "detections": [
+        {
+          "class": "teddy bear",
+          "score": 0.457,
+          "box": [
+            46,
+            118,
+            59,
+            90
+          ]
+        },
+        {
+          "class": "teddy bear",
+          "score": 0.391,
+          "box": [
+            174,
+            141,
+            47,
+            63
+          ]
+        },
+        {
+          "class": "teddy bear",
+          "score": 0.348,
+          "box": [
+            135,
+            111,
+            66,
+            111
+          ]
+        }
+      ]
+    }
+  ]
+}

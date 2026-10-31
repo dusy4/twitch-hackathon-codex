@@ -18,8 +18,6 @@ apps/android/**/build/
 apps/android/local.properties
 artifacts/*.apk
 artifacts/recovery/before-*.jpg
-artifacts/review-notes.json
-artifacts/review-recovery-consult.stderr.txt
 tests/android-arcore-probe/.gradle/
 tests/android-arcore-probe/**/build/
 tests/android-arcore-probe/local.properties

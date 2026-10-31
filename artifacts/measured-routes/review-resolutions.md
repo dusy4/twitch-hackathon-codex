@@ -1,6 +1,6 @@
-# independent review review resolutions — 0.11.0
+# Independent review resolutions — 0.11.0
 
-Requested consultant actually ran through an independent reviewer CLI with independent review`, read-only tools. Design and code-review outputs are retained beside this file. The code review inspected a changing worktree; findings are evaluated against the final source rather than accepted as a test pass.
+The requested independent design and code reviews used read-only tools with high effort. Review findings and their resolutions are recorded below. The code review inspected a changing worktree; findings are evaluated against the final source rather than accepted as a test pass.
 
 - Infinite-floor and high follow-goal defects: removed movement extrapolation; follow uses current support layer. Manual anchor seeding is separate from walking support. No automatic recall is invoked (the earlier design review's reference to recall is not evidence that the app teleports).
 - Moving-goal budget and stale queue: continue a currently validated leg toward the new goal while queued, cancel on stop/opposite direction, expire missing requesters after two callback generations, clear navigation with every motor clear. Twelve moving-goal actors, stale requester and stop tests cover these behaviors.

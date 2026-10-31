@@ -22,7 +22,7 @@
     "nativeLoadSegment16KiB": "PASS (16 libraries; structural only)"
   },
   "consultant": {
-    "cli": "an independent reviewer 2.1.309",
+    "cli": "independent review",
     "model": "independent review",
     "effort": "high",
     "readOnlyReviews": 2,

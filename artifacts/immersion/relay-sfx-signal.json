@@ -1,0 +1,914 @@
+{
+  "source": "Actual final-logic native AAC relay; microphone unchecked and RECORD_AUDIO permission denied, camera-off synthetic trail",
+  "seconds": 180.01066666666668,
+  "peakDbfs": -13.17,
+  "audibleSeconds": 37,
+  "clippedSamples": 0,
+  "windows": [
+    {
+      "second": 0.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 1.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 2.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 3.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 4.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 5.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 6.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 7.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 8.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 9.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 10.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 11.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 12.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 13.0,
+      "peakDbfs": -19.71,
+      "rmsDbfs": -36.04
+    },
+    {
+      "second": 14.0,
+      "peakDbfs": -25.49,
+      "rmsDbfs": -41.9
+    },
+    {
+      "second": 15.0,
+      "peakDbfs": -40.65,
+      "rmsDbfs": -60.16
+    },
+    {
+      "second": 16.0,
+      "peakDbfs": -40.57,
+      "rmsDbfs": -62.04
+    },
+    {
+      "second": 17.0,
+      "peakDbfs": -40.51,
+      "rmsDbfs": -61.99
+    },
+    {
+      "second": 18.0,
+      "peakDbfs": -40.43,
+      "rmsDbfs": -58.9
+    },
+    {
+      "second": 19.0,
+      "peakDbfs": -40.37,
+      "rmsDbfs": -61.8
+    },
+    {
+      "second": 20.0,
+      "peakDbfs": -40.37,
+      "rmsDbfs": -61.82
+    },
+    {
+      "second": 21.0,
+      "peakDbfs": -39.68,
+      "rmsDbfs": -59.76
+    },
+    {
+      "second": 22.0,
+      "peakDbfs": -23.73,
+      "rmsDbfs": -40.34
+    },
+    {
+      "second": 23.0,
+      "peakDbfs": -19.48,
+      "rmsDbfs": -35.17
+    },
+    {
+      "second": 24.0,
+      "peakDbfs": -39.76,
+      "rmsDbfs": -56.0
+    },
+    {
+      "second": 25.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 26.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 27.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 28.0,
+      "peakDbfs": -35.03,
+      "rmsDbfs": -58.74
+    },
+    {
+      "second": 29.0,
+      "peakDbfs": -39.63,
+      "rmsDbfs": -61.09
+    },
+    {
+      "second": 30.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 31.0,
+      "peakDbfs": -37.74,
+      "rmsDbfs": -62.26
+    },
+    {
+      "second": 32.0,
+      "peakDbfs": -38.14,
+      "rmsDbfs": -62.45
+    },
+    {
+      "second": 33.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 34.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 35.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 36.0,
+      "peakDbfs": -28.35,
+      "rmsDbfs": -57.56
+    },
+    {
+      "second": 37.0,
+      "peakDbfs": -22.14,
+      "rmsDbfs": -37.6
+    },
+    {
+      "second": 38.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 39.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 40.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 41.0,
+      "peakDbfs": -32.95,
+      "rmsDbfs": -56.68
+    },
+    {
+      "second": 42.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 43.0,
+      "peakDbfs": -36.79,
+      "rmsDbfs": -58.27
+    },
+    {
+      "second": 44.0,
+      "peakDbfs": -37.02,
+      "rmsDbfs": -56.64
+    },
+    {
+      "second": 45.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 46.0,
+      "peakDbfs": -32.48,
+      "rmsDbfs": -56.18
+    },
+    {
+      "second": 47.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 48.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 49.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 50.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 51.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 52.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 53.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 54.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 55.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 56.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 57.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 58.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 59.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 60.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 61.0,
+      "peakDbfs": -19.79,
+      "rmsDbfs": -36.75
+    },
+    {
+      "second": 62.0,
+      "peakDbfs": -25.61,
+      "rmsDbfs": -42.11
+    },
+    {
+      "second": 63.0,
+      "peakDbfs": -73.41,
+      "rmsDbfs": -105.96
+    },
+    {
+      "second": 64.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 65.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 66.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 67.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 68.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 69.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 70.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 71.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 72.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 73.0,
+      "peakDbfs": -22.15,
+      "rmsDbfs": -38.61
+    },
+    {
+      "second": 74.0,
+      "peakDbfs": -27.23,
+      "rmsDbfs": -44.25
+    },
+    {
+      "second": 75.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 76.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 77.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 78.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 79.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 80.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 81.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 82.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 83.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 84.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 85.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 86.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 87.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 88.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 89.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 90.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 91.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 92.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 93.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 94.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 95.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 96.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 97.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 98.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 99.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 100.0,
+      "peakDbfs": -19.79,
+      "rmsDbfs": -35.64
+    },
+    {
+      "second": 101.0,
+      "peakDbfs": -51.13,
+      "rmsDbfs": -67.92
+    },
+    {
+      "second": 102.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 103.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 104.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 105.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 106.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 107.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 108.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 109.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 110.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 111.0,
+      "peakDbfs": -22.1,
+      "rmsDbfs": -37.99
+    },
+    {
+      "second": 112.0,
+      "peakDbfs": -34.65,
+      "rmsDbfs": -48.26
+    },
+    {
+      "second": 113.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 114.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 115.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 116.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 117.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 118.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 119.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 120.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 121.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 122.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 123.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 124.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 125.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 126.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 127.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 128.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 129.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 130.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 131.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 132.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 133.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 134.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 135.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 136.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 137.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 138.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 139.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 140.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 141.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 142.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 143.0,
+      "peakDbfs": -19.56,
+      "rmsDbfs": -35.68
+    },
+    {
+      "second": 144.0,
+      "peakDbfs": -31.31,
+      "rmsDbfs": -48.04
+    },
+    {
+      "second": 145.0,
+      "peakDbfs": -74.75,
+      "rmsDbfs": -106.42
+    },
+    {
+      "second": 146.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 147.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 148.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 149.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 150.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 151.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 152.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 153.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 154.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 155.0,
+      "peakDbfs": -14.96,
+      "rmsDbfs": -30.69
+    },
+    {
+      "second": 156.0,
+      "peakDbfs": -22.84,
+      "rmsDbfs": -45.22
+    },
+    {
+      "second": 157.0,
+      "peakDbfs": -22.15,
+      "rmsDbfs": -38.03
+    },
+    {
+      "second": 158.0,
+      "peakDbfs": -13.17,
+      "rmsDbfs": -29.87
+    },
+    {
+      "second": 159.0,
+      "peakDbfs": -33.02,
+      "rmsDbfs": -49.95
+    },
+    {
+      "second": 160.0,
+      "peakDbfs": -42.53,
+      "rmsDbfs": -65.9
+    },
+    {
+      "second": 161.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 162.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 163.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 164.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 165.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 166.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 167.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 168.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 169.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 170.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 171.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 172.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 173.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 174.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 175.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 176.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 177.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 178.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 179.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    },
+    {
+      "second": 180.0,
+      "peakDbfs": -180.0,
+      "rmsDbfs": -180.0
+    }
+  ]
+}

@@ -82,14 +82,14 @@
     "manifest": "apps/android/app/src/main/assets/audio/manifest.json"
   },
   "consultation": {
-    "provider": "an independent reviewer CLI",
+    "provider": "independent review",
     "model": "independent review",
     "effort": "high",
     "readOnly": true,
     "subagentsSpawned": false,
     "reviews": [
-      "review-notes.txt",
-      "review-notes.txt"
+      "design",
+      "code"
     ],
     "resolutions": "review-resolutions.md"
   },

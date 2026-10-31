@@ -20,7 +20,7 @@
     "previousVerifiedResult": "84 pass, one conditional PostgreSQL skip"
   },
   "consultant": {
-    "tool": "an independent reviewer CLI",
+    "tool": "independent review",
     "model": "independent review",
     "effort": "high",
     "mode": "read-only",

@@ -1,6 +1,6 @@
-# an independent reviewer review resolutions
+# Independent review resolutions
 
-Consulted owner-requested an independent reviewer`, read-only, no delegation. Full design and code reviews are retained beside this file. Some fixes landed during the review, so its line numbers describe intermediate source.
+Completed the owner-requested independent review, read-only, without delegation. Review findings and their resolutions are recorded below. Some fixes landed during the review, so its line numbers describe intermediate source.
 
 1. Depth/pickup fragility: leaky dwell, radius hysteresis, bounded 500 ms unknown-depth grace following actual clear evidence, immediate collection block for obstacles, two-of-three visual hide consensus. Placement still requires current depth on capable devices.
 2. Exploration spacing: movement baseline moved to **pickup**, requiring 1.5 m newly counted travel and 1.25 m net displacement; recent sites at least 1.2 m apart. Chosen for room-scale practice rather than the review's longer outdoor route.

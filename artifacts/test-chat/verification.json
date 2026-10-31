@@ -17,7 +17,7 @@
     "changedTypeScriptFormatting": "pass",
     "identityAndTransport": "Count-only raid, three identified chatters, repeated join, WASD and ownership checks through actual backend EventSub inbox; no live Twitch request"
   },
-  "consultant": { "cli": "an independent reviewer", "model": "independent review", "effort": "high", "readOnly": true },
+  "consultant": { "cli": "independent review", "model": "independent review", "effort": "high", "readOnly": true },
   "scenario": {
     "input": "Device-only scheduled incoming chat stub, not render transform scripting",
     "viewers": ["Alice", "Bob", "Charlie"],
