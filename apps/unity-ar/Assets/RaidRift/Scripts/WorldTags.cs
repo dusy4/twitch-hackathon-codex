@@ -87,7 +87,9 @@ namespace RaidRift
             var text = go.AddComponent<TextMesh>();
             text.font = Resources.Load<Font>("Fonts/SpaceGrotesk-Bold") ?? _font;
             // Own queue: after the rift window (else it draws over the plate) and after the plate.
-            go.GetComponent<MeshRenderer>().sharedMaterial = new Material(text.font.material) { renderQueue = 3110 };
+            var textMat = new Material(text.font.material) { renderQueue = 3110 };
+            Material plateMat = null;
+            go.GetComponent<MeshRenderer>().sharedMaterial = textMat;
             text.fontSize = 96;
             text.characterSize = 0.018f; // fx-banner preview: 0.012 was too small for a 720p stream
             text.anchor = TextAnchor.MiddleCenter;
@@ -106,26 +108,21 @@ namespace RaidRift
             if (_back != null)
             {
                 var pr = plate.GetComponent<Renderer>();
-                pr.sharedMaterial = new Material(_back) { renderQueue = 3100 };
+                pr.sharedMaterial = plateMat = new Material(_back) { renderQueue = 3100 };
                 var block = new MaterialPropertyBlock();
                 block.SetFloat("_Strength", 0.85f);
                 pr.SetPropertyBlock(block);
             }
-            go.AddComponent<BannerLife>().Init(cam, seconds);
+            go.AddComponent<BannerLife>().Init(cam, seconds, textMat, plateMat);
         }
 
         class BannerLife : MonoBehaviour
         {
-            Camera _cam; float _until, _born; Vector3 _base;
-            public void Init(Camera cam, float seconds) { _cam = cam; _born = Time.time; _until = Time.time + seconds; _base = transform.position; }
+            Camera _cam; float _until, _born; Vector3 _base; Material[] _owned;
+            public void Init(Camera cam, float seconds, params Material[] owned) { _owned = owned; _cam = cam; _born = Time.time; _until = Time.time + seconds; _base = transform.position; }
             void LateUpdate()
             {
-                if (Time.time > _until || _cam == null)
-                {
-                    foreach (var r in GetComponentsInChildren<Renderer>()) Destroy(r.sharedMaterial); // per-banner instances
-                    Destroy(gameObject);
-                    return;
-                }
+                if (Time.time > _until || _cam == null) { Destroy(gameObject); return; }
                 float age = Time.time - _born, left = _until - Time.time;
                 // Pop in (overshoot), float up gently, fade by shrinking out at the end.
                 float pop = age < 0.18f ? Mathf.SmoothStep(0.6f, 1.12f, age / 0.18f) : Mathf.Lerp(1.12f, 1f, Mathf.Clamp01((age - 0.18f) / 0.12f));
@@ -145,6 +142,8 @@ namespace RaidRift
                 transform.rotation = Quaternion.LookRotation(transform.position - _cam.transform.position, Vector3.up);
                 transform.localScale = Vector3.one * pop * outS;
             }
+
+            void OnDestroy() { if (_owned != null) foreach (var m in _owned) if (m != null) Destroy(m); } // only Banner()'s own instances
         }
 
         static string Clean(string s) => (s ?? "").Replace("<", "‹").Replace(">", "›");

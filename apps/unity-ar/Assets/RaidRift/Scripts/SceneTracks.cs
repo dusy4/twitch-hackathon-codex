@@ -107,13 +107,17 @@ namespace RaidRift
             RemoveCaptureCommands();
         }
 
+        /// <summary>Seconds between camera JPEGs for the server detector. RaidRiftApp raises it while broadcasting
+        /// so the uploads don't compete with the Twitch uplink on mobile data.</summary>
+        public float frameInterval = 1.5f;
+
         void Update()
         {
             while (_encoded.TryDequeue(out var e))
                 if (e.gen == _generation && server != null) server.PostFrame(e.frame, e.jpg, e.w, e.h);
             if (!active || server == null || !server.Connected || arCamera == null) return;
             if (Time.time >= _nextPost) { _nextPost = Time.time + 0.4f; PublishTracks(); }
-            if (Time.time >= _nextFrame) { _nextFrame = Time.time + 1.5f; SendFrame(); }
+            if (Time.time >= _nextFrame) { _nextFrame = Time.time + frameInterval; SendFrame(); }
         }
 
         void PublishTracks()
@@ -277,7 +281,7 @@ namespace RaidRift
             var disc = GameObject.CreatePrimitive(PrimitiveType.Quad);
             Destroy(disc.GetComponent<Collider>());
             disc.transform.SetParent(badge.transform, false);
-            disc.transform.localScale = Vector3.one * 0.075f;
+            disc.transform.localScale = Vector3.one * 0.1f;
             disc.transform.localPosition = new Vector3(0f, 0f, 0.002f);
             var dr = disc.GetComponent<Renderer>();
             dr.sharedMaterial = Resources.Load<Material>("Materials/BlobShadow");
@@ -290,7 +294,7 @@ namespace RaidRift
             text.text = label == null ? n.ToString() : $"{n}\n<size=40>{label}</size>";
             text.richText = true;
             text.fontSize = 96;
-            text.characterSize = 0.0045f;
+            text.characterSize = 0.006f; // viewers must read it on a 720p stream to type "!go to 3"
             text.anchor = TextAnchor.MiddleCenter;
             text.alignment = TextAlignment.Center;
             text.fontStyle = FontStyle.Bold;
@@ -311,7 +315,10 @@ namespace RaidRift
                 var cam = Camera.main;
                 if (cam == null || badge == null) return;
                 badge.rotation = Quaternion.LookRotation(badge.position - cam.transform.position, Vector3.up);
-                badge.localPosition = new Vector3(0f, 0.17f + Mathf.Sin(Time.time * 2f + _seed) * 0.012f, 0f);
+                // Far spots keep a readable size on stream (like name tags), capped so near ones stay small.
+                float dist = (badge.position - cam.transform.position).magnitude;
+                badge.localScale = Vector3.one * Mathf.Clamp(dist / 1.4f, 1f, 2.6f);
+                badge.localPosition = new Vector3(0f, 0.11f + 0.06f * badge.localScale.y + Mathf.Sin(Time.time * 2f + _seed) * 0.012f, 0f);
                 transform.GetChild(0).localScale = Vector3.one * (0.15f + Mathf.Sin(Time.time * 3f + _seed) * 0.015f);
             }
         }

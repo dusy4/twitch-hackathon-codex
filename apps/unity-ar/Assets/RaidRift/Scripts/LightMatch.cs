@@ -13,6 +13,8 @@ namespace RaidRift
     {
         public ARCameraManager cameraManager;
         Light _light;
+        /// <summary>Smoothed scene brightness from the AR light estimate (0 dim … 1 sunny street).</summary>
+        public static float Brightness01 { get; private set; }
 
         void Awake()
         {
@@ -32,6 +34,8 @@ namespace RaidRift
             if (e.mainLightColor.HasValue) _light.color = e.mainLightColor.Value;
             if (e.mainLightIntensityLumens.HasValue) _light.intensity = Mathf.Clamp(e.mainLightIntensityLumens.Value / 1000f, 0.3f, 1.6f);
             else if (e.averageBrightness.HasValue) _light.intensity = Mathf.Clamp(e.averageBrightness.Value * 2f, 0.3f, 1.6f);
+            // 0 = indoor/dim … 1 = bright daylight (intensity is clamped 0.3–1.6 above). CameraFeel tames bloom/flash.
+            Brightness01 = Mathf.MoveTowards(Brightness01, Mathf.InverseLerp(0.8f, 1.6f, _light.intensity), 0.05f);
             if (e.ambientSphericalHarmonics.HasValue)
             {
                 RenderSettings.ambientMode = AmbientMode.Skybox;

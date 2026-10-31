@@ -119,7 +119,7 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &327761038
+--- !u!1 &448007335
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -127,31 +127,59 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 327761039}
+  - component: {fileID: 448007338}
+  - component: {fileID: 448007336}
+  - component: {fileID: 448007337}
   m_Layer: 0
-  m_Name: Camera Offset
+  m_Name: AR Session
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &327761039
+--- !u!114 &448007336
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 448007335}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3859a92a05d4f5d418cb6ca605290e74, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARSession
+  m_AttemptUpdate: 1
+  m_MatchFrameRate: 1
+  m_TrackingMode: 2
+--- !u!114 &448007337
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 448007335}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa850fbd5b8aded44846f96e35f1a9f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARInputManager
+--- !u!4 &448007338
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 327761038}
+  m_GameObject: {fileID: 448007335}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 443120435}
-  m_Father: {fileID: 1973896035}
+  m_Children: []
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &443120434
+--- !u!1 &652391739
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -159,13 +187,13 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 443120435}
-  - component: {fileID: 443120441}
-  - component: {fileID: 443120438}
-  - component: {fileID: 443120437}
-  - component: {fileID: 443120440}
-  - component: {fileID: 443120436}
-  - component: {fileID: 443120439}
+  - component: {fileID: 652391740}
+  - component: {fileID: 652391746}
+  - component: {fileID: 652391743}
+  - component: {fileID: 652391742}
+  - component: {fileID: 652391745}
+  - component: {fileID: 652391741}
+  - component: {fileID: 652391744}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -173,28 +201,28 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &443120435
+--- !u!4 &652391740
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 443120434}
+  m_GameObject: {fileID: 652391739}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 327761039}
+  m_Father: {fileID: 1665053837}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &443120436
+--- !u!114 &652391741
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 443120434}
+  m_GameObject: {fileID: 652391739}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 816b289ef451e094f9ae174fb4cf8db0, type: 3}
@@ -202,13 +230,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARCameraBackground
   m_UseCustomMaterial: 0
   m_CustomMaterial: {fileID: 0}
---- !u!114 &443120437
+--- !u!114 &652391742
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 443120434}
+  m_GameObject: {fileID: 652391739}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 367b462c456f72a4c9c435d3dfe96020, type: 3}
@@ -222,21 +250,21 @@ MonoBehaviour:
   bloomKnee: 0.35
   bloomIntensity: 0.12
   intensity: 1
---- !u!81 &443120438
+--- !u!81 &652391743
 AudioListener:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 443120434}
+  m_GameObject: {fileID: 652391739}
   m_Enabled: 1
---- !u!114 &443120439
+--- !u!114 &652391744
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 443120434}
+  m_GameObject: {fileID: 652391739}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2fadf230d1919748a9aa21d40f74619, type: 3}
@@ -251,12 +279,12 @@ MonoBehaviour:
       m_Name: Position
       m_Type: 0
       m_ExpectedControlType: Vector3
-      m_Id: 2525066f-2749-4f80-91cb-f651823f25f8
+      m_Id: 4442e972-8f4a-403e-b777-d39538f61626
       m_Processors: 
       m_Interactions: 
       m_SingletonActionBindings:
       - m_Name: 
-        m_Id: 678dd88e-91b6-4cc9-b924-73782e1dec94
+        m_Id: 2a6a2c1f-fe4a-48bd-8452-a90c5a1e1227
         m_Path: <HandheldARInputDevice>/devicePosition
         m_Interactions: 
         m_Processors: 
@@ -264,7 +292,7 @@ MonoBehaviour:
         m_Action: Position
         m_Flags: 0
       - m_Name: 
-        m_Id: 9094ce57-1089-402e-a07a-1e8b7776f8d4
+        m_Id: d63479ef-a256-4a4f-8b8d-8f02da665886
         m_Path: <XRHMD>/centerEyePosition
         m_Interactions: 
         m_Processors: 
@@ -280,12 +308,12 @@ MonoBehaviour:
       m_Name: Rotation
       m_Type: 0
       m_ExpectedControlType: Quaternion
-      m_Id: 354632fc-fcbf-4c8e-a546-7474f52f197b
+      m_Id: d66f441f-be14-43d7-9da9-5cb4a12a29d9
       m_Processors: 
       m_Interactions: 
       m_SingletonActionBindings:
       - m_Name: 
-        m_Id: 260a6bb0-9f68-495d-afd3-1f8e52de8798
+        m_Id: a5c33189-7f84-4caa-92c0-7a97ffdf0a90
         m_Path: <HandheldARInputDevice>/deviceRotation
         m_Interactions: 
         m_Processors: 
@@ -293,7 +321,7 @@ MonoBehaviour:
         m_Action: Rotation
         m_Flags: 0
       - m_Name: 
-        m_Id: 7c7b4490-3b64-44c7-8a8c-c0b806c5892a
+        m_Id: 27ee4c79-0683-4814-8e24-bf2774213aa0
         m_Path: <XRHMD>/centerEyeRotation
         m_Interactions: 
         m_Processors: 
@@ -309,7 +337,7 @@ MonoBehaviour:
       m_Name: Tracking State
       m_Type: 0
       m_ExpectedControlType: Integer
-      m_Id: b507bd70-a660-49e3-b9eb-1124b62583a4
+      m_Id: cb183e8d-16ac-4206-8aaf-b3d48bbcf991
       m_Processors: 
       m_Interactions: 
       m_SingletonActionBindings: []
@@ -320,7 +348,7 @@ MonoBehaviour:
     m_Name: 
     m_Type: 0
     m_ExpectedControlType: 
-    m_Id: 06ce2a3a-6b42-4d53-afed-64ec27d35767
+    m_Id: a7b0251a-e281-497c-abe6-886093b0a2e7
     m_Processors: 
     m_Interactions: 
     m_SingletonActionBindings: []
@@ -330,19 +358,19 @@ MonoBehaviour:
     m_Name: 
     m_Type: 0
     m_ExpectedControlType: 
-    m_Id: 6d054736-6af1-4fac-a9f4-73862bd63f62
+    m_Id: f03e3ea8-1a0e-4be2-b712-a88ab50595de
     m_Processors: 
     m_Interactions: 
     m_SingletonActionBindings: []
     m_Flags: 0
     m_Priority: 0
---- !u!114 &443120440
+--- !u!114 &652391745
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 443120434}
+  m_GameObject: {fileID: 652391739}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4966719baa26e4b0e8231a24d9bd491a, type: 3}
@@ -355,13 +383,13 @@ MonoBehaviour:
   m_LightEstimation: 0
   m_FacingDirection: 1
   m_RenderMode: 0
---- !u!20 &443120441
+--- !u!20 &652391746
 Camera:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 443120434}
+  m_GameObject: {fileID: 652391739}
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
@@ -406,7 +434,7 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
---- !u!1 &608572943
+--- !u!1 &701251528
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -414,59 +442,86 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 608572946}
-  - component: {fileID: 608572944}
-  - component: {fileID: 608572945}
+  - component: {fileID: 701251529}
+  - component: {fileID: 701251532}
+  - component: {fileID: 701251530}
+  - component: {fileID: 701251531}
   m_Layer: 0
-  m_Name: AR Session
+  m_Name: XR Origin
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &608572944
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 608572943}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3859a92a05d4f5d418cb6ca605290e74, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARSession
-  m_AttemptUpdate: 1
-  m_MatchFrameRate: 1
-  m_TrackingMode: 2
---- !u!114 &608572945
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 608572943}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fa850fbd5b8aded44846f96e35f1a9f5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARInputManager
---- !u!4 &608572946
+--- !u!4 &701251529
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 608572943}
+  m_GameObject: {fileID: 701251528}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1665053837}
+  - {fileID: 1140512212}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &923258332
+--- !u!114 &701251530
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 701251528}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1760703bbd54c04488a8d10600262ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARPlaneManager
+  <trackablesChanged>k__BackingField:
+    m_PersistentCalls:
+      m_Calls: []
+  m_PlanePrefab: {fileID: 0}
+  m_DetectionMode: 1
+--- !u!114 &701251531
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 701251528}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: caeceacb624484daf8e379c2252fd246, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARFaceManager
+  <trackablesChanged>k__BackingField:
+    m_PersistentCalls:
+      m_Calls: []
+  m_FacePrefab: {fileID: 0}
+  m_MaximumFaceCount: 1
+--- !u!114 &701251532
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 701251528}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0cb9aa70a22847b5925ee5f067c10a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.XR.CoreUtils::Unity.XR.CoreUtils.XROrigin
+  m_Camera: {fileID: 652391746}
+  m_OriginBaseGameObject: {fileID: 701251528}
+  m_CameraFloorOffsetObject: {fileID: 1665053836}
+  m_RequestedTrackingOriginMode: 0
+  m_CameraYOffset: 0
+--- !u!1 &884876535
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -474,8 +529,8 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 923258334}
-  - component: {fileID: 923258333}
+  - component: {fileID: 884876537}
+  - component: {fileID: 884876536}
   m_Layer: 0
   m_Name: Rift Moths
   m_TagString: Untagged
@@ -483,25 +538,25 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &923258333
+--- !u!114 &884876536
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 923258332}
+  m_GameObject: {fileID: 884876535}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bcb2086403b08c149b85988613ce4fbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RaidRift.RiftMoths
---- !u!4 &923258334
+--- !u!4 &884876537
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 923258332}
+  m_GameObject: {fileID: 884876535}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -510,7 +565,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1002597947
+--- !u!1 &1007495646
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -518,367 +573,9 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1002597949}
-  - component: {fileID: 1002597950}
-  - component: {fileID: 1002597948}
-  m_Layer: 0
-  m_Name: Room Meshing
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1002597948
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1002597947}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 86b456713bd4d4c31b3cb04c67d82381, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: NianticSpatial.NSDK.AR::NianticSpatial.NSDK.AR.Meshing.NsdkMeshingExtension
-  _targetFrameRate: 10
-  _fuseKeyframesOnly: 0
-  _maximumIntegrationDistance: 5
-  _voxelSize: 0.025
-  _enableDistanceBasedVolumetricCleanup: 1
-  _meshBlockSize: 1.4
-  _meshCullingDistance: 25
-  _enableMeshDecimation: 1
-  _isMeshFilteringEnabled: 0
-  _sceneSegmentationManager: {fileID: 0}
-  _isFilteringAllowListEnabled: 0
-  _allowList: 
-  _isFilteringBlockListEnabled: 0
-  _blockList: 
-  _enableLevelsOfDetail: 0
-  _levelsOfDetail: 1
---- !u!4 &1002597949
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1002597947}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 10, y: 10, z: 10}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1973896035}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1002597950
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1002597947}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 968053edfd89749c48f4ea5d444abf64, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARMeshManager
-  m_MeshPrefab: {fileID: 2685489074523368752, guid: 996766d6b86bf114d94fb01d2e5542c6, type: 3}
-  m_Density: 0.5
-  m_Normals: 1
-  m_Tangents: 0
-  m_TextureCoordinates: 0
-  m_Colors: 0
-  m_ConcurrentQueueSize: 4
-  meshInfosChanged:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!1 &1040085167
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1040085182}
-  - component: {fileID: 1040085181}
-  - component: {fileID: 1040085180}
-  - component: {fileID: 1040085179}
-  - component: {fileID: 1040085178}
-  - component: {fileID: 1040085177}
-  - component: {fileID: 1040085176}
-  - component: {fileID: 1040085175}
-  - component: {fileID: 1040085174}
-  - component: {fileID: 1040085173}
-  - component: {fileID: 1040085172}
-  - component: {fileID: 1040085171}
-  - component: {fileID: 1040085170}
-  - component: {fileID: 1040085169}
-  - component: {fileID: 1040085168}
-  m_Layer: 0
-  m_Name: RaidRift
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1040085168
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040085167}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: de092490d5faf944f8e23de018f11536, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.SelfieMode
-  session: {fileID: 608572944}
-  arCamera: {fileID: 443120441}
-  cameraManager: {fileID: 443120440}
-  faceManager: {fileID: 1973896037}
-  poseDriver: {fileID: 443120439}
-  meshManager: {fileID: 1002597950}
-  planeManager: {fileID: 1973896036}
-  room: {fileID: 1040085181}
-  worldConsumers:
-  - {fileID: 1040085170}
-  - {fileID: 1040085172}
-  - {fileID: 1040085169}
-  - {fileID: 1040085179}
-  - {fileID: 923258333}
-  - {fileID: 1002597948}
---- !u!114 &1040085169
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040085167}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6df30c00de061234284ee40c0375507b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.SurfaceLabels
-  room: {fileID: 1040085181}
-  detector: {fileID: 1040085170}
---- !u!114 &1040085170
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040085167}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aaa299f03c718b7439ecf5a0cafb6f64, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.ObjectDetector
-  arCamera: {fileID: 443120441}
-  interval: 0.5
---- !u!114 &1040085171
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040085167}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a2460b251e2df094fbc6d3d44bd18344, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.LivePublisher
-  arCamera: {fileID: 443120441}
-  flipVideoY: 0
---- !u!114 &1040085172
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040085167}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66793c3edbeae3a46a931e9461edc5c7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.SceneTracks
-  arCamera: {fileID: 443120441}
-  server: {fileID: 1040085180}
-  room: {fileID: 1040085181}
-  labels: {fileID: 1040085169}
-  active: 0
-  showSpots: 1
---- !u!114 &1040085173
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040085167}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa0a9f6adf03f5547bc6273a4cf1a0ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.StreamOutput
-  arCamera: {fileID: 443120441}
-  server: {fileID: 1040085180}
-  hud: {fileID: 1040085175}
---- !u!114 &1040085174
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040085167}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8bad7fa9a38bb2f4ebb6aeb205fd120a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.RaidRiftApp
-  session: {fileID: 608572944}
-  arCamera: {fileID: 443120441}
-  meshManager: {fileID: 1002597950}
-  room: {fileID: 1040085181}
-  server: {fileID: 1040085180}
-  trail: {fileID: 1040085179}
-  hud: {fileID: 1040085175}
-  stream: {fileID: 1040085173}
-  moths: {fileID: 923258333}
-  sceneTracks: {fileID: 1040085172}
-  surfaceLabels: {fileID: 1040085169}
-  detector: {fileID: 1040085170}
-  publisher: {fileID: 1040085171}
-  selfie: {fileID: 1040085168}
---- !u!114 &1040085175
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040085167}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 625aca714b0ee824fb1c04519598a39f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.Hud
---- !u!114 &1040085176
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040085167}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3cf51c05c61e5984fa1de4ec221464e9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.RiftFx
-  impactGlow: {fileID: 2708598583397607911, guid: 6398d43fe79ea0140913dc5530c646af, type: 3}
-  groundHit: {fileID: 3432958286849152088, guid: 87ee7299dd44ed747af24dbb91bcd33b, type: 3}
-  magicPoof: {fileID: 9157105887711914197, guid: c4f829cb7dd4b864caf8832ec5b1ee55, type: 3}
-  hitLight: {fileID: 8771972552311404799, guid: bbf9e36a48d6c5648a13889afab076fd, type: 3}
-  comicWow: {fileID: 2883797502249945402, guid: 1e54877675f6e4a46ad7ca7c4d7a5bf6, type: 3}
-  firework: {fileID: 8791802859087666345, guid: ae07f2a45f14a82428409cfe410e6002, type: 3}
-  runeAura: {fileID: 3280519133390621005, guid: a71be3e7990efb040a07565c43cbb198, type: 3}
-  souls: {fileID: 5642766282230003982, guid: b5c8ca7ed10b61e499cce8ec3b6e2e4c, type: 3}
-  fallingStars: {fileID: 7305185502956871417, guid: 85b062a5517cf8345bb6784ffbed4877, type: 3}
---- !u!114 &1040085177
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040085167}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c37ed7c4c0fbefb47b76dadba1cd2391, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.Fx
---- !u!114 &1040085178
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040085167}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 44b618c6dc592f243b9acc0ea04db5e4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.Sfx
---- !u!114 &1040085179
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040085167}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0c0cb576eec447d4987092202f04214b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.RiftTrail
-  room: {fileID: 1040085181}
-  cameraTransform: {fileID: 443120435}
---- !u!114 &1040085180
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040085167}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 373fdc46ea78b7e46a3f20c75dd406f2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.ServerConnection
---- !u!114 &1040085181
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040085167}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6ae4592b46137ec41bb9e9e18ceb3b50, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.RoomNavigation
-  meshManager: {fileID: 1002597950}
-  planeManager: {fileID: 1973896036}
-  cameraTransform: {fileID: 443120435}
-  bakeExtents: {x: 7, y: 2.5, z: 7}
-  meshRange: 20
-  rebakeInterval: 0.8
-  showWalkable: 1
---- !u!4 &1040085182
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1040085167}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1572625752
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1572625755}
-  - component: {fileID: 1572625754}
-  - component: {fileID: 1572625753}
+  - component: {fileID: 1007495649}
+  - component: {fileID: 1007495648}
+  - component: {fileID: 1007495647}
   m_Layer: 0
   m_Name: Sun
   m_TagString: Untagged
@@ -886,26 +583,26 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1572625753
+--- !u!114 &1007495647
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1572625752}
+  m_GameObject: {fileID: 1007495646}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 11467ad449fae744a8dc62041effd983, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RaidRift.LightMatch
-  cameraManager: {fileID: 443120440}
---- !u!108 &1572625754
+  cameraManager: {fileID: 652391745}
+--- !u!108 &1007495648
 Light:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1572625752}
+  m_GameObject: {fileID: 1007495646}
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 1
@@ -964,13 +661,13 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
---- !u!4 &1572625755
+--- !u!4 &1007495649
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1572625752}
+  m_GameObject: {fileID: 1007495646}
   serializedVersion: 2
   m_LocalRotation: {x: 0.40821794, y: -0.23456973, z: 0.10938166, w: 0.8754261}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -979,7 +676,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1973896034
+--- !u!1 &1140512210
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -987,91 +684,395 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1973896035}
-  - component: {fileID: 1973896038}
-  - component: {fileID: 1973896036}
-  - component: {fileID: 1973896037}
+  - component: {fileID: 1140512212}
+  - component: {fileID: 1140512213}
+  - component: {fileID: 1140512211}
   m_Layer: 0
-  m_Name: XR Origin
+  m_Name: Room Meshing
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1973896035
+--- !u!114 &1140512211
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1140512210}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86b456713bd4d4c31b3cb04c67d82381, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: NianticSpatial.NSDK.AR::NianticSpatial.NSDK.AR.Meshing.NsdkMeshingExtension
+  _targetFrameRate: 10
+  _fuseKeyframesOnly: 0
+  _maximumIntegrationDistance: 5
+  _voxelSize: 0.025
+  _enableDistanceBasedVolumetricCleanup: 1
+  _meshBlockSize: 1.4
+  _meshCullingDistance: 25
+  _enableMeshDecimation: 1
+  _isMeshFilteringEnabled: 0
+  _sceneSegmentationManager: {fileID: 0}
+  _isFilteringAllowListEnabled: 0
+  _allowList: 
+  _isFilteringBlockListEnabled: 0
+  _blockList: 
+  _enableLevelsOfDetail: 0
+  _levelsOfDetail: 1
+--- !u!4 &1140512212
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1973896034}
+  m_GameObject: {fileID: 1140512210}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 10, y: 10, z: 10}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 701251529}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1140512213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1140512210}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 968053edfd89749c48f4ea5d444abf64, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARMeshManager
+  m_MeshPrefab: {fileID: 2685489074523368752, guid: 996766d6b86bf114d94fb01d2e5542c6, type: 3}
+  m_Density: 0.5
+  m_Normals: 1
+  m_Tangents: 0
+  m_TextureCoordinates: 0
+  m_Colors: 0
+  m_ConcurrentQueueSize: 4
+  meshInfosChanged:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!1 &1250082248
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1250082263}
+  - component: {fileID: 1250082262}
+  - component: {fileID: 1250082261}
+  - component: {fileID: 1250082260}
+  - component: {fileID: 1250082259}
+  - component: {fileID: 1250082258}
+  - component: {fileID: 1250082257}
+  - component: {fileID: 1250082256}
+  - component: {fileID: 1250082255}
+  - component: {fileID: 1250082254}
+  - component: {fileID: 1250082253}
+  - component: {fileID: 1250082252}
+  - component: {fileID: 1250082251}
+  - component: {fileID: 1250082250}
+  - component: {fileID: 1250082249}
+  m_Layer: 0
+  m_Name: RaidRift
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1250082249
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250082248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de092490d5faf944f8e23de018f11536, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.SelfieMode
+  session: {fileID: 448007336}
+  arCamera: {fileID: 652391746}
+  cameraManager: {fileID: 652391745}
+  faceManager: {fileID: 701251531}
+  poseDriver: {fileID: 652391744}
+  meshManager: {fileID: 1140512213}
+  planeManager: {fileID: 701251530}
+  room: {fileID: 1250082262}
+  worldConsumers:
+  - {fileID: 1250082251}
+  - {fileID: 1250082253}
+  - {fileID: 1250082250}
+  - {fileID: 1250082260}
+  - {fileID: 884876536}
+  - {fileID: 1140512211}
+--- !u!114 &1250082250
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250082248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6df30c00de061234284ee40c0375507b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.SurfaceLabels
+  room: {fileID: 1250082262}
+  detector: {fileID: 1250082251}
+--- !u!114 &1250082251
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250082248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aaa299f03c718b7439ecf5a0cafb6f64, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.ObjectDetector
+  arCamera: {fileID: 652391746}
+  interval: 0.5
+--- !u!114 &1250082252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250082248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a2460b251e2df094fbc6d3d44bd18344, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.LivePublisher
+  arCamera: {fileID: 652391746}
+  flipVideoY: 0
+--- !u!114 &1250082253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250082248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 66793c3edbeae3a46a931e9461edc5c7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.SceneTracks
+  arCamera: {fileID: 652391746}
+  server: {fileID: 1250082261}
+  room: {fileID: 1250082262}
+  labels: {fileID: 1250082250}
+  active: 0
+  frameInterval: 1.5
+  showSpots: 1
+--- !u!114 &1250082254
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250082248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa0a9f6adf03f5547bc6273a4cf1a0ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.StreamOutput
+  arCamera: {fileID: 652391746}
+  server: {fileID: 1250082261}
+  hud: {fileID: 1250082256}
+--- !u!114 &1250082255
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250082248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bad7fa9a38bb2f4ebb6aeb205fd120a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.RaidRiftApp
+  session: {fileID: 448007336}
+  arCamera: {fileID: 652391746}
+  meshManager: {fileID: 1140512213}
+  room: {fileID: 1250082262}
+  server: {fileID: 1250082261}
+  trail: {fileID: 1250082260}
+  hud: {fileID: 1250082256}
+  stream: {fileID: 1250082254}
+  moths: {fileID: 884876536}
+  sceneTracks: {fileID: 1250082253}
+  surfaceLabels: {fileID: 1250082250}
+  detector: {fileID: 1250082251}
+  publisher: {fileID: 1250082252}
+  selfie: {fileID: 1250082249}
+--- !u!114 &1250082256
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250082248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 625aca714b0ee824fb1c04519598a39f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.Hud
+--- !u!114 &1250082257
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250082248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3cf51c05c61e5984fa1de4ec221464e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.RiftFx
+  impactGlow: {fileID: 2708598583397607911, guid: 6398d43fe79ea0140913dc5530c646af, type: 3}
+  groundHit: {fileID: 3432958286849152088, guid: 87ee7299dd44ed747af24dbb91bcd33b, type: 3}
+  magicPoof: {fileID: 9157105887711914197, guid: c4f829cb7dd4b864caf8832ec5b1ee55, type: 3}
+  hitLight: {fileID: 8771972552311404799, guid: bbf9e36a48d6c5648a13889afab076fd, type: 3}
+  comicWow: {fileID: 2883797502249945402, guid: 1e54877675f6e4a46ad7ca7c4d7a5bf6, type: 3}
+  firework: {fileID: 8791802859087666345, guid: ae07f2a45f14a82428409cfe410e6002, type: 3}
+  runeAura: {fileID: 3280519133390621005, guid: a71be3e7990efb040a07565c43cbb198, type: 3}
+  souls: {fileID: 5642766282230003982, guid: b5c8ca7ed10b61e499cce8ec3b6e2e4c, type: 3}
+  fallingStars: {fileID: 7305185502956871417, guid: 85b062a5517cf8345bb6784ffbed4877, type: 3}
+--- !u!114 &1250082258
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250082248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c37ed7c4c0fbefb47b76dadba1cd2391, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.Fx
+--- !u!114 &1250082259
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250082248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44b618c6dc592f243b9acc0ea04db5e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.Sfx
+--- !u!114 &1250082260
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250082248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c0cb576eec447d4987092202f04214b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.RiftTrail
+  room: {fileID: 1250082262}
+  cameraTransform: {fileID: 652391740}
+--- !u!114 &1250082261
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250082248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 373fdc46ea78b7e46a3f20c75dd406f2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.ServerConnection
+--- !u!114 &1250082262
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250082248}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6ae4592b46137ec41bb9e9e18ceb3b50, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RaidRift.RoomNavigation
+  meshManager: {fileID: 1140512213}
+  planeManager: {fileID: 701251530}
+  cameraTransform: {fileID: 652391740}
+  bakeExtents: {x: 7, y: 2.5, z: 7}
+  meshRange: 20
+  rebakeInterval: 0.8
+  showWalkable: 1
+--- !u!4 &1250082263
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250082248}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1665053836
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1665053837}
+  m_Layer: 0
+  m_Name: Camera Offset
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1665053837
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1665053836}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 327761039}
-  - {fileID: 1002597949}
-  m_Father: {fileID: 0}
+  - {fileID: 652391740}
+  m_Father: {fileID: 701251529}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1973896036
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1973896034}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e1760703bbd54c04488a8d10600262ab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARPlaneManager
-  <trackablesChanged>k__BackingField:
-    m_PersistentCalls:
-      m_Calls: []
-  m_PlanePrefab: {fileID: 0}
-  m_DetectionMode: 1
---- !u!114 &1973896037
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1973896034}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: caeceacb624484daf8e379c2252fd246, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARFaceManager
-  <trackablesChanged>k__BackingField:
-    m_PersistentCalls:
-      m_Calls: []
-  m_FacePrefab: {fileID: 0}
-  m_MaximumFaceCount: 1
---- !u!114 &1973896038
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1973896034}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e0cb9aa70a22847b5925ee5f067c10a9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.XR.CoreUtils::Unity.XR.CoreUtils.XROrigin
-  m_Camera: {fileID: 443120441}
-  m_OriginBaseGameObject: {fileID: 1973896034}
-  m_CameraFloorOffsetObject: {fileID: 327761038}
-  m_RequestedTrackingOriginMode: 0
-  m_CameraYOffset: 0
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 608572946}
-  - {fileID: 1973896035}
-  - {fileID: 1572625755}
-  - {fileID: 1040085182}
-  - {fileID: 923258334}
+  - {fileID: 448007338}
+  - {fileID: 701251529}
+  - {fileID: 1007495649}
+  - {fileID: 1250082263}
+  - {fileID: 884876537}

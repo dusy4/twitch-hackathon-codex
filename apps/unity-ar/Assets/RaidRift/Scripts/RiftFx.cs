@@ -56,6 +56,9 @@ namespace RaidRift
             // a solid hot dot reads on a phone and at 720p; stretched along velocity it is the streak too.
             _sparks = Make("Sparks", add, "dot", 400, 0.35f);
             _streaks = Make("Streaks", add, "dot", 160, 0.3f);
+            // Daylight twin: additive light vanishes on a sunny pavement; alpha-blended dots stay visible there.
+            _dayDots = alpha != null ? new Material(alpha) { mainTexture = Dot(), name = "Fx dot day" } : null;
+            _nightDots = new[] { _sparks.GetComponent<ParticleSystemRenderer>().sharedMaterial, _streaks.GetComponent<ParticleSystemRenderer>().sharedMaterial };
             _streaks.GetComponent<ParticleSystemRenderer>().renderMode = ParticleSystemRenderMode.Stretch;
             var sr = _streaks.GetComponent<ParticleSystemRenderer>(); sr.velocityScale = 0.06f; sr.lengthScale = 1.2f;
             _flares = Make("Flares", add, "Fx/Flare", 16, 0f);
@@ -109,9 +112,21 @@ namespace RaidRift
             }
         }
 
+        Material _dayDots;
+        Material[] _nightDots;
+        bool _daylight;
+
         void Update()
         {
             if (FloorY.HasValue) _floorPlane.position = new Vector3(0f, FloorY.Value + 0.004f, 0f);
+            // Hysteresis so a cloud doesn't flip the look back and forth.
+            bool day = _daylight ? LightMatch.Brightness01 > 0.45f : LightMatch.Brightness01 > 0.65f;
+            if (day != _daylight && _dayDots != null)
+            {
+                _daylight = day;
+                _sparks.GetComponent<ParticleSystemRenderer>().sharedMaterial = day ? _dayDots : _nightDots[0];
+                _streaks.GetComponent<ParticleSystemRenderer>().sharedMaterial = day ? _dayDots : _nightDots[1];
+            }
             if (_ambient == null) return;
             var side = _ambient.right;
             _emberClock += Time.deltaTime * 14f; // ~14 embers/s

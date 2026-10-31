@@ -133,8 +133,14 @@ namespace RaidRift
             RefreshButtons();
         }
 
+        StreamCaption _caption;
+        const string PrefCaption = "rr.live.caption";
+        static bool StreamCaptionOn { get => PlayerPrefs.GetInt(PrefCaption, 1) == 1; set { PlayerPrefs.SetInt(PrefCaption, value ? 1 : 0); PlayerPrefs.Save(); } }
+
         void LiveTick(WorldState world)
         {
+            if (_caption == null && arCamera != null) _caption = StreamCaption.Create(arCamera);
+            if (_caption != null) _caption.Tick(_liveMode && StreamCaptionOn, _heroes.Count); // in the broadcast, not the HUD
             string quality = Qualities[_quality].name;
             if (!_liveMode || publisher == null)
             {
@@ -146,8 +152,10 @@ namespace RaidRift
             string chip = publisher.IsLive ? $"● LIVE {(int)up.TotalMinutes:00}:{up.Seconds:00}" : publisher.State.StartsWith("error") ? "● OFFLINE" : "● " + publisher.State.ToUpperInvariant();
             hud.SetMode(true, chip);
             hud.SetLiveStats(_heroes.Count, publisher.BitrateKbps);
-            string chat = world?.LiveChannel != null ? (world.LiveConnected ? $"#{world.LiveChannel} chat connected" : $"#{world.LiveChannel} chat reconnecting…") : "no channel chat";
-            hud.SetLiveInfo($"{publisher.State} · {publisher.BitrateKbps} kbps · {publisher.SendFps:0} fps · dropped {publisher.DroppedFrames}\n{chat} · mic {(publisher.MicMuted ? "muted" : "on")}", quality, "");
+            // The world can be a stale snapshot while the tailnet is down: say so instead of "chat connected".
+            string chat = _live && !server.Connected ? "game server unreachable · retrying (stream continues)"
+                : world?.LiveChannel != null ? (world.LiveConnected ? $"#{world.LiveChannel} chat connected" : $"#{world.LiveChannel} chat reconnecting…") : "no channel chat";
+            hud.SetLiveInfo($"{publisher.State} · {publisher.BitrateKbps} kbps · {publisher.SendFps:0} fps · dropped {publisher.DroppedFrames}{(publisher.Restarts > 0 ? $" · rebuilt {publisher.Restarts}x" : "")}\n{chat} · mic {(publisher.MicMuted ? "muted" : "on")}", quality, "");
             hud.SetButton("mic", publisher.MicMuted ? "Mic off" : "Mic on", !publisher.MicMuted);
         }
 
@@ -160,7 +168,9 @@ namespace RaidRift
             {
                 case "selfie": selfie?.Toggle(); break; // SELFIE: HUD button id.
                 case "raid":
-                    if (UseServer && server.Connected) { server.DebugRaid((ok, text) => hud.Toast(ok ? "Server test raid sent" : "Raid failed · " + text)); break; }
+                    // Server heroes on screen but the tailnet is down: a local raid would only fight the stale snapshot.
+                    if (UseServer && !server.Connected) { hud.Toast("Game server unreachable · retrying · heroes stay", 2.5f); break; }
+                    if (UseServer) { server.DebugRaid((ok, text) => hud.Toast(ok ? "Server test raid sent" : "Raid failed · " + text)); break; }
                     ClearHeroes();
                     _raidId = null;
                     _playground.Raid(NowMs);
@@ -182,6 +192,7 @@ namespace RaidRift
                     break;
                 case "chat": hud.ToggleChat(); break;
                 case "end-live": if (_liveMode) EndLive(); break;
+                case "caption": StreamCaptionOn = !StreamCaptionOn; hud.Toast(StreamCaptionOn ? "Stream shows how to !join" : "No hint on stream"); break;
                 case "motion": CameraFeel.ReducedMotion = !CameraFeel.ReducedMotion; hud.Toast(CameraFeel.ReducedMotion ? "Reduced motion: no screen shake" : "Full camera effects"); break;
                 case "mic": if (publisher != null) { publisher.MicMuted = !publisher.MicMuted; hud.Toast(publisher.MicMuted ? "Mic muted on stream" : "Mic live"); } break;
                 case "quality":
@@ -193,6 +204,8 @@ namespace RaidRift
                 case "pair": _live = true; server.Begin(); break;
                 case "stream":
                     if (stream == null) break;
+                    // One owner of the camera texture: WebRTC would take it from the Twitch publisher mid-broadcast.
+                    if (_liveMode && !stream.Active) { hud.Toast("End the Twitch stream first · PC streaming uses the same camera"); break; }
                     stream.Toggle();
                     hud.Toast(stream.Active ? "Streaming · open the receiver page on the PC" : "Stream stopped");
                     break;
@@ -233,6 +246,7 @@ namespace RaidRift
             hud.SetSetting("scan", _scanMode == 0 ? "Mesh" : _scanMode == 1 ? "Floor only" : "Hidden");
             hud.SetSetting("sound", Sfx.Muted ? "Off" : "On");
             hud.SetSetting("motion", CameraFeel.ReducedMotion ? "On" : "Off");
+            hud.SetSetting("caption", StreamCaptionOn ? "On" : "Off");
             hud.SetButton("chat", "Chat", false);
             hud.SetButton("setup", "Setup", false);
             hud.SetButton("end-live", "End", false);
@@ -299,6 +313,7 @@ namespace RaidRift
             if (sceneTracks != null)
             {
                 sceneTracks.active = _live && _landed && tracking;
+                sceneTracks.frameInterval = _liveMode ? 3f : 1.5f; // live: leave mobile uplink to the stream
                 sceneTracks.Portal = _rift != null ? _rift.Foot(0) : (Vector3?)null;
                 if (_live) sceneTracks.Ingest(server.World);
             }
@@ -514,6 +529,10 @@ namespace RaidRift
                     if (!room.Sample(at, 0.5f, out var spawn)) { index++; continue; }
                     var face = Quaternion.LookRotation(Vector3.ProjectOnPlane(arCamera.transform.position - spawn, Vector3.up).normalized + Vector3.forward * 1e-4f);
                     if (!hero.Place(spawn, face)) { index++; continue; }
+                    // No rift open (a viewer !joins before any raid): still a visible arrival on stream, not a pop-in.
+                    RiftFx.Arrival(spawn, face * Vector3.forward, true);
+                    Fx.Sparkle(spawn + Vector3.up * 0.12f, new Color(0.35f, 0.95f, 0.78f), 18, 0.7f);
+                    Sfx.PlayAt("teleport_in", spawn, 0.55f);
                 }
                 bool newAction = state.Serial != hero.ActionSerial;
                 if (newAction && hero.ActionSerial != 0 && state.Animation != "idle") { RiftFx.Command(hero.transform.position, true); RiftFx.Emote(hero.transform.position, state.Animation); } // chat command landed
@@ -549,7 +568,13 @@ namespace RaidRift
             }
             foreach (var id in _heroes.Keys.Where(k => !alive.Contains(k)).ToList())
             {
-                Destroy(_heroes[id].gameObject);
+                var gone = _heroes[id];
+                if (gone.Spawned && gone.gameObject.activeInHierarchy) // a viewer left: poof, not a silent vanish
+                {
+                    Fx.Sparkle(gone.transform.position + Vector3.up * 0.15f, new Color(0.7f, 0.45f, 1f), 18, 0.8f);
+                    Sfx.PlayAt("teleport_out", gone.transform.position, 0.5f);
+                }
+                Destroy(gone.gameObject);
                 _heroes.Remove(id);
                 _selfieReturn.Remove(id); // SELFIE: a departed viewer must not retain a floor-placement retry.
             }
@@ -814,7 +839,7 @@ namespace RaidRift
             else if (!_landed) hint = _candidate.HasValue ? "Landing spot found · hold still" : "Point at open floor ~1 m ahead · or tap the floor";
             else if (trail.Current != RiftTrail.Phase.Off) hint = $"Rift Trail {trail.Collected}/3 · {trail.Hint}";
             else if (_heroes.Values.Any(h => h.Stuck)) hint = "A hero can't reach its spot · scan the floor between";
-            else if (world.Heroes.Count == 0) hint = "Tap the orb to start a test raid";
+            else if (world.Heroes.Count == 0) hint = _liveMode ? "Live · waiting for viewers to type !join" : "Tap the orb to start a test raid"; // no orb while live
             else hint = "";
             // Short context line for the account chip; the long diagnostics go to the Setup sheet.
             string where = world.Raid != null ? (world.Raid.Test ? "Test raid" : "Raid from " + world.Raid.From) : (_live ? "Paired · demo" : "Offline demo");

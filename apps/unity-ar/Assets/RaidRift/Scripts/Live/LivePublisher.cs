@@ -33,6 +33,8 @@ namespace RaidRift
         public float SendFps { get; private set; }
         public int DroppedFrames => _localDrops + _networkDrops;
         public float UptimeSeconds { get; private set; }
+        /// <summary>Sessions rebuilt by the stuck-reconnect watchdog (shown in Setup diagnostics).</summary>
+        public int Restarts { get; private set; }
         public event Action<string> StateChanged;
         public RenderTexture View => _view;
         bool _micMuted;
@@ -56,7 +58,7 @@ namespace RaidRift
         bool _ownsSleep;
         int _previousSleep = SleepTimeout.SystemSetting;
 #if UNITY_ANDROID && !UNITY_EDITOR
-        double _nextFrame, _nextStats;
+        double _nextFrame, _nextStats, _lastPump, _stuckSince;
         int _width, _height;
         AndroidJavaObject _bridge;
         IntPtr _submit, _audioPush;
@@ -130,7 +132,11 @@ namespace RaidRift
                 if (arCamera == null || arCamera.targetTexture != null) { Fail("camera already captured"); return; }
                 var listener = FindFirstObjectByType<AudioListener>();
                 if (listener == null || !listener.isActiveAndEnabled) { Fail("active AudioListener required"); return; }
-                if (listener.GetComponent<LiveAudioTap>() != null) { Fail("audio already captured"); return; }
+                var oldTap = listener.GetComponent<LiveAudioTap>();
+                // Go live again while live: the previous session's tap is disabled but its Destroy is deferred to the
+                // end of the frame. Remove it now instead of failing the new session with "audio already captured".
+                if (oldTap != null && !oldTap.enabled) { DestroyImmediate(oldTap); oldTap = null; }
+                if (oldTap != null) { Fail("audio already captured"); return; }
                 bool landscape = Screen.width > 0 && Screen.height > 0
                     ? Screen.width > Screen.height : _settings.landscape;
                 _width = landscape ? 1280 : 720; _height = landscape ? 720 : 1280;
@@ -185,8 +191,9 @@ namespace RaidRift
         {
             if (camera != arCamera || _bridge == null || _view == null || _settings == null) return;
             double time = Time.realtimeSinceStartupAsDouble;
-            if (time < _nextFrame) return;
             double period = 1.0 / Math.Max(1, _targetFps);
+            // Vsync jitter: a frame a hair early must not be skipped (that turns 30 fps into uneven 15/30 judder).
+            if (time < _nextFrame - period * 0.25) return;
             _nextFrame = _nextFrame == 0 || time - _nextFrame > period * 2
                 ? time + period : _nextFrame + period;
             Slot slot = null;
@@ -243,6 +250,21 @@ namespace RaidRift
                 string state = _bridge.Call<string>("getState");
                 if (state.StartsWith("error:", StringComparison.Ordinal)) { StopInternal(); SetState(state); }
                 else SetState(state);
+                // Street safety: a blackholed cell connection can leave RootEncoder's reconnect blocked in a socket
+                // write for minutes. After 30 s without going live, rebuild the whole session (fresh bridge,
+                // encoders and socket) through the normal start path instead of waiting on the stuck transport.
+                bool stuck = !IsLive && (state == "connecting" || state.StartsWith("reconnecting", StringComparison.Ordinal));
+                double t = Time.realtimeSinceStartupAsDouble;
+                if (!stuck) _stuckSince = 0;
+                else if (_stuckSince == 0) _stuckSince = t;
+                else if (t - _stuckSince > 30 && _settings != null)
+                {
+                    var again = _settings;
+                    _stuckSince = 0;
+                    Restarts++;
+                    StartLive(again);
+                    return;
+                }
             }
             catch (Exception) { Fail("Android publisher failed"); }
 #endif
@@ -252,7 +274,11 @@ namespace RaidRift
         void PumpGameAudio()
         {
             var ring = _audioTap.Ring;
-            ring.Trim(3840); // Main-thread stalls must not replay stale game sound.
+            // Main-thread stalls must not replay stale game sound. After a long stall the ring is full of OLD
+            // samples (overflow drops the new ones), so keeping its tail would still be ~1 s late: drop it all.
+            double now = Time.realtimeSinceStartupAsDouble;
+            if (now - _lastPump > 0.2) ring.Trim(0); else ring.Trim(3840);
+            _lastPump = now;
             for (int chunk = 0; chunk < 4 && ring.Available > 0; chunk++)
             {
                 int frames = Math.Min(960, ring.Available);
@@ -292,6 +318,7 @@ namespace RaidRift
             _generation++; _settings = null;
 #if UNITY_ANDROID && !UNITY_EDITOR
             Camera.onPostRender -= Capture;
+            _stuckSince = 0; _lastPump = 0; // a new session gets its own connect window and audio clock
             // Java's copy barrier releases ALL direct memory before NativeArrays.
             if (_bridge != null) { _bridge.Call("stop"); _bridge.Dispose(); _bridge = null; }
             for (int i = 0; i < _slots.Length; i++)

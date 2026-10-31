@@ -21,6 +21,37 @@ namespace RaidRift
 
         void SelfieRoomLost() => Button("reset-room");
 
+        /// <summary>ARCore may reset its world origin when the physical camera changes, and the rear camera can come
+        /// back without positional tracking. Never keep a room in the wrong frame: once tracking is steady, compare
+        /// the pose with the one saved before the flip (the streamer holds still for selfie). A jump bigger than a
+        /// handheld flip, or no tracking within 10 s, resets the room (and the session if tracking never came).</summary>
+        System.Collections.IEnumerator VerifyRoomAfterSelfie()
+        {
+            float start = Time.realtimeSinceStartup;
+            int steady = 0;
+            while (steady < 15)
+            {
+                if (selfie == null || selfie.WorldPaused) yield break; // flipped again: the next return re-checks
+                steady = UnityEngine.XR.ARFoundation.ARSession.state == UnityEngine.XR.ARFoundation.ARSessionState.SessionTracking ? steady + 1 : 0;
+                if (Time.realtimeSinceStartup - start > 10f)
+                {
+                    if (session != null) session.Reset();
+                    Button("reset-room");
+                    hud.Toast("Room tracking restarted · point at the floor to land again", 4f);
+                    yield break;
+                }
+                yield return null;
+            }
+            var cam = arCamera.transform;
+            float moved = (cam.localPosition - selfie.SavedCameraPosition).magnitude;
+            float yaw = Mathf.Abs(Mathf.DeltaAngle(cam.localEulerAngles.y, selfie.SavedCameraRotation.eulerAngles.y));
+            if (moved > 0.6f || yaw > 40f)
+            {
+                Button("reset-room");
+                hud.Toast("Room realigned after selfie · point at the floor to land again", 4f);
+            }
+        }
+
         void SelfieNotice(string message) { if (hud != null) hud.Toast(message, 3f); }
         void SelfieChanged(bool active) => RefreshSelfieButton();
         bool SelfieBlocksButton(string id)
@@ -64,6 +95,7 @@ namespace RaidRift
                     _tapGoal = null;
                     _candidate = null;
                     _nextMaterialPass = 0f;
+                    StartCoroutine(VerifyRoomAfterSelfie());
                 }
                 return false;
             }

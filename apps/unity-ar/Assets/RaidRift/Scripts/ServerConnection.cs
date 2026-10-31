@@ -183,12 +183,30 @@ namespace RaidRift
         {
             if (string.IsNullOrEmpty(DesiredChannel) || Time.realtimeSinceStartup < _nextChannelAttempt) return;
             if (World.LiveChannel != null && string.Equals(World.LiveChannel.TrimStart('#'), DesiredChannel, StringComparison.OrdinalIgnoreCase)) return;
+            if (_channelBusy) return;
             _nextChannelAttempt = Time.realtimeSinceStartup + 8f;
             var channel = DesiredChannel;
-            StartCoroutine(Post("/v1/live/channel", new JObject { ["channel"] = channel }, 10, (ok, reply) =>
+            StartCoroutine(ChannelOp(channel, (ok, reply) =>
             {
-                if (ok) OnNotice?.Invoke($"Reconnected #{channel} chat", true);
+                if (ok && DesiredChannel == channel) OnNotice?.Invoke($"Reconnected #{channel} chat", true);
             }));
+        }
+
+        /// <summary>Channel select/stop requests run one at a time, in order, so a slow automatic re-apply can never
+        /// land after End's DELETE and switch chat back on. channel null = DELETE (stop reading).</summary>
+        bool _channelBusy;
+        IEnumerator ChannelOp(string channel, Action<bool, string> done)
+        {
+            while (_channelBusy) yield return null;
+            // A select that waited behind a stop (or a newer select) is obsolete: don't send it.
+            if (channel != null && DesiredChannel != channel) { done?.Invoke(false, "superseded"); yield break; }
+            _channelBusy = true;
+            try
+            {
+                if (channel != null) yield return Post("/v1/live/channel", new JObject { ["channel"] = channel }, 10, done);
+                else yield return Post("/v1/live/channel", new JObject(), 10, done, "DELETE");
+            }
+            finally { _channelBusy = false; }
         }
 
         static WorldState ParseWorld(JObject j)
@@ -282,13 +300,13 @@ namespace RaidRift
             // Not paired yet (or pairing in flight): the poll loop applies it as soon as a world arrives.
             if (!HasToken) { _nextChannelAttempt = 0f; return; }
             _nextChannelAttempt = Time.realtimeSinceStartup + 8f;
-            StartCoroutine(Post("/v1/live/channel", new JObject { ["channel"] = DesiredChannel }, 10, done));
+            StartCoroutine(ChannelOp(DesiredChannel, done));
         }
 
         public void StopLiveChannel(Action<bool, string> done = null)
         {
             DesiredChannel = null;
-            if (HasToken) StartCoroutine(Post("/v1/live/channel", new JObject(), 10, done, "DELETE"));
+            if (HasToken) StartCoroutine(ChannelOp(null, done));
         }
 
         public void DebugRaid(Action<bool, string> done) =>

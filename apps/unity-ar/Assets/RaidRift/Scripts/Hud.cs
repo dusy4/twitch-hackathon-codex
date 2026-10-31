@@ -136,7 +136,10 @@ namespace RaidRift
                 if (li < 0) { t.text = ""; continue; }
                 var l = lines[li];
                 var color = l.System ? (l.Ok ? "#c79bff" : "#ff8a9a") : NameColor(l.Speaker);
-                t.text = $"<color={color}>{Escape(l.Speaker)}</color>  {Escape(l.Text)}";
+                // At most ~2 wrapped lines per message so the card can't grow over the chat composer / view.
+                var said = l.Text ?? "";
+                if (said.Length > 64) said = said.Substring(0, 63) + "…";
+                t.text = $"<color={color}>{Escape(l.Speaker)}</color>  {Escape(said)}";
                 // Older lines fade out like a stream chat overlay.
                 t.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.35f, 1f, (float)(i + 1) / n));
             }
@@ -402,6 +405,7 @@ namespace RaidRift
             v.childControlHeight = true; v.childControlWidth = true; v.childForceExpandHeight = false; v.childForceExpandWidth = true;
             feed.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
             _feedCard = feed.gameObject;
+            feed.GetComponent<Image>().raycastTarget = false; // decorative: taps go through to the floor
             for (int i = 0; i < 5; i++)
             {
                 var t = Label(feed, "", 26, FontStyle.Normal, Color.white, TextAnchor.LowerLeft, Vector2.zero, Vector2.zero);
@@ -462,6 +466,7 @@ namespace RaidRift
             Label(go, "Go live", 34, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter, new Vector2(30, 0), Vector2.zero);
             go.gameObject.AddComponent<Button>().onClick.AddListener(() => { OnGoLive?.Invoke(_channelInput.text.Trim().TrimStart('#').ToLowerInvariant(), _keyInput.text.Trim()); _setup.SetActive(false); });
             SettingRow(content, IconEnd, "End stream · back to demo", "end-live", null);
+            _settingValues["caption"] = SettingRow(content, IconChat, "\"!join\" hint on stream", "caption", "On");
             _liveInfo = Label(Row(Rect("Info", content), 70), "", 22, FontStyle.Normal, Dim, TextAnchor.UpperLeft, new Vector2(8, 0), Vector2.zero);
 
             Section(content, "ROOM", Mint);

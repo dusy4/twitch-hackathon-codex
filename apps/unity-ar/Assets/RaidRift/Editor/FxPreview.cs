@@ -116,6 +116,19 @@ namespace RaidRift.EditorTools
                         try { preview.Save(frame, "fx-ambient.png"); }
                         finally { Object.DestroyImmediate(frame); RiftFx.SetAmbient(null); }
                     });
+                    // In-stream "!join" caption (StreamCaption): drawn by the AR camera, so it is in the broadcast.
+                    Stage("fx-caption.png", () =>
+                    {
+                        preview.ResetEffects();
+                        var caption = StreamCaption.Create(preview.camera);
+                        caption.Tick(true, 0);
+                        caption.GetComponent<CanvasGroup>().alpha = 1f;
+                        caption.GetComponent<Canvas>().enabled = true;
+                        Canvas.ForceUpdateCanvases();
+                        var frame = preview.Capture();
+                        try { preview.Save(frame, "fx-caption.png"); }
+                        finally { Object.DestroyImmediate(frame); Object.DestroyImmediate(caption.gameObject); }
+                    });
                     // Raid banner as the app places it (2.15 m over the rift): must stay inside the 9:16 frame.
                     Stage("fx-banner.png", () =>
                     {
@@ -193,7 +206,7 @@ namespace RaidRift.EditorTools
                 SceneManager.SetActiveScene(scene);
                 var shader = Shader.Find("Unlit/Color");
                 if (shader == null) throw new InvalidOperationException("Unlit/Color shader is missing.");
-                var plain = Own(new Material(shader) { color = new Color(0.55f, 0.52f, 0.48f) });
+                var plain = Own(new Material(shader) { color = System.Environment.GetEnvironmentVariable("FX_DAYLIGHT") == "1" ? new Color(0.84f, 0.83f, 0.8f) : new Color(0.55f, 0.52f, 0.48f) });
                 var bed = Own(new Material(shader) { color = new Color(0.78f, 0.8f, 0.85f) });
                 var paint = AssetDatabase.LoadAssetAtPath<Material>("Assets/RaidRift/Resources/Materials/RiftPaint.mat");
                 void Room(Vector3 position, Vector3 scale, Material material)
@@ -303,6 +316,9 @@ namespace RaidRift.EditorTools
                 fx.fallingStars = Cfxr("Magic Misc/CFXR4 Falling Stars");
                 if (fx.impactGlow == null) Debug.LogWarning("[RaidRift] Cartoon FX Remaster not imported; RiftFx uses its own particles only");
                 RiftFx.FloorY = 0f;
+                // FX_DAYLIGHT=1: bright floor + a sunny light estimate (daylight particle/bloom paths).
+                typeof(LightMatch).GetProperty("Brightness01").GetSetMethod(true)
+                    .Invoke(null, new object[] { System.Environment.GetEnvironmentVariable("FX_DAYLIGHT") == "1" ? 1f : 0f });
                 Invoke(fx, "Update"); // Align the collision plane; no ambient rift means no Time.deltaTime dependency.
                 PrepareParticles(); // Seed pools before Charge manually emits particles.
                 // The first Simulate on a never-simulated system restarts it, wiping Emit()s made before it

@@ -273,8 +273,9 @@ namespace RaidRift
                     _groundY = _exit.y;
                     Land(0.6f);
                     Fx.Sparkle(_exit + Vector3.up * 0.12f, SparkMint, 14, 0.6f);
-            RiftFx.Arrival(_exit, Vector3.ProjectOnPlane(_exit - transform.position, Vector3.up).normalized, Time.time - _lastArrival > 2f);
-            _lastArrival = Time.time;
+                    // Out of the rift = the way the hero walked (position already equals _exit here).
+                    RiftFx.Arrival(_exit, Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized, Time.time - _lastArrival > 2f);
+                    _lastArrival = Time.time;
                     Sfx.PlayAt("teleport_in", _exit, 0.5f);
                 }
                 return;

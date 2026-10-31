@@ -111,7 +111,11 @@ namespace RaidRift
             _mat.SetVector("_Shake", new Vector4(offset.x, offset.y, angle, zoom));
             _mat.SetFloat("_Aspect", (float)src.width / Mathf.Max(1, src.height));
             _mat.SetFloat("_Chroma", _chroma * m);
-            _mat.SetVector("_FlashColor", new Vector4(_flashColor.r, _flashColor.g, _flashColor.b, Mathf.Min(0.35f, _flash) * k));
+            // Sunny street: the whole camera image is near the bloom threshold, so bloom/flash would white out the
+            // frame (fx-sheet with a daylight floor). Scale them by the AR light estimate.
+            float day = LightMatch.Brightness01;
+            float bloomScale = Mathf.Lerp(1f, 0.3f, day), flashScale = Mathf.Lerp(1f, 0.5f, day);
+            _mat.SetVector("_FlashColor", new Vector4(_flashColor.r, _flashColor.g, _flashColor.b, Mathf.Min(0.35f, _flash) * k * flashScale));
             _mat.SetFloat("_Vignette", _vignette * k);
             _mat.SetColor("_VignetteColor", _vignetteColor);
 
@@ -131,7 +135,7 @@ namespace RaidRift
             for (int i = 1; i < _chain.Length; i++) Graphics.Blit(_chain[i - 1], _chain[i], _mat, 1);
             for (int i = _chain.Length - 1; i > 0; i--) Graphics.Blit(_chain[i], _chain[i - 1], _mat, 2);
             _mat.SetTexture(BloomTex, _chain[0]);
-            _mat.SetFloat("_BloomIntensity", bloomIntensity + _bloomPulse * k);
+            _mat.SetFloat("_BloomIntensity", (bloomIntensity + _bloomPulse * k) * bloomScale);
             Graphics.Blit(src, dst, _mat, 3);
         }
 

@@ -32,6 +32,9 @@ namespace RaidRift
         public event Action<string> Notice;
         /// <summary>The AR session had to be restarted: the app must drop its room (tracking origin changed).</summary>
         public event Action RoomLost;
+        /// <summary>Rear-camera pose (XR-origin local) just before the flip: the app compares it after returning.</summary>
+        public Vector3 SavedCameraPosition => _worldCameraPosition;
+        public Quaternion SavedCameraRotation => _worldCameraRotation;
 
         readonly Dictionary<Behaviour, bool> _behaviours = new Dictionary<Behaviour, bool>();
         readonly Dictionary<Renderer, bool> _renderers = new Dictionary<Renderer, bool>();
@@ -114,7 +117,7 @@ namespace RaidRift
             faceManager.enabled = true; // Null prefab gives pose + vertices, with no visible face material.
             _targetSelfie = true;
             BeginSwitch();
-            Notice?.Invoke("Switching to selfie camera");
+            Notice?.Invoke("Switching to selfie camera · hold still");
         }
 
         void Pause(Behaviour component)
@@ -155,7 +158,7 @@ namespace RaidRift
             _deadline = _switchStarted + 10f;
         }
 
-        void RequestWorld(string message = "Returning to room camera")
+        void RequestWorld(string message = "Returning to room camera · hold still")
         {
             if (IsSelfie) { IsSelfie = false; Changed?.Invoke(false); }
             faceManager.enabled = false;
