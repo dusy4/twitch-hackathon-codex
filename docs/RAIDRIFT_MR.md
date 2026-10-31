@@ -10,7 +10,7 @@ Start with the [three-minute street checklist](STREET_TEST_RUNBOOK.md). For reco
 
 | Area | Evidence and current boundary |
 |---|---|
-| Unity version | `Editor/BuildTools.cs`: **0.20.0**, package `world.raidrift.mr`. `RaidRift-MR-0.20.0.apk` was built and published to the private APK share on October 31 at 22:23 Kyiv after `RoomSelfTest` and `CameraFeelSelfTest` passed and HUD previews rendered. Later overnight builds are listed in the Unity lead's log; the newest known-good APK is named on the owner's dashboard page. No build has a phone pass yet. |
+| Unity version | `Editor/BuildTools.cs`: **0.20.1** (versionCode 15), package `world.raidrift.mr`. `RaidRift-MR-0.20.0.apk` was built and published to the private APK share on October 31 at 22:23 Kyiv after `RoomSelfTest` and `CameraFeelSelfTest` passed and HUD previews rendered; `RaidRift-MR-0.20.1.apk` followed at 22:30 (automatic re-pair and Live channel re-apply). Later overnight builds are listed in the Unity lead's log; the newest known-good APK is named on the owner's dashboard page. No build has a phone pass yet. |
 | 0.20 contents | Selfie mode, three scan views (Mesh / Floor / Hidden), no per-pixel depth occlusion, floor smoothing, stronger CameraFeel, bigger Cartoon FX/emote bursts and world-space name tags, regrouped settings with Phosphor Fill icons. Selfie is untested on the device. |
 | Backend / Extension | Historical receipt: [extension-verification.json](../artifacts/extension-verification.json): 91 Node passes, one conditional PostgreSQL skip; four Extension browser passes per build. Tests use fixture authorization and a local EBS. |
 | Twitch input | Same receipt records an actual anonymous IRC acknowledgement from `#twitch`. It does not prove viewer commands, an incoming raid or a complete phone broadcast. |
@@ -52,7 +52,7 @@ The PC handles accounts, input ownership, bounded plans, world snapshots and det
 | `POST /v1/native/debug/event` | Private owner test events, including test raids. |
 | WS `/v1/media` | Alternative WebRTC signaling, not the direct Twitch publisher. |
 
-`ServerConnection` saves server/token locally. HTTP 401/403 during world polling clears pairing; transport failures retry after 1.2 s and retain the last snapshot. This is not a guaranteed global freeze on network loss. The Twitch chat reader runs on the PC, so a phone network switch (Wi-Fi ↔ mobile data) does not interrupt chat input; the phone simply resumes polling once the tailnet is reachable again. Source after 0.20.0 also re-pairs automatically after a server restart (debug pairing only) and re-selects the Live channel whenever the world snapshot does not show it; selecting the channel that is already connected is a no-op on the server, so these retries never drop the reader.
+`ServerConnection` saves server/token locally. HTTP 401/403 during world polling clears pairing; transport failures retry after 1.2 s and retain the last snapshot. This is not a guaranteed global freeze on network loss. The Twitch chat reader runs on the PC, so a phone network switch (Wi-Fi ↔ mobile data) does not interrupt chat input; the phone simply resumes polling once the tailnet is reachable again. From 0.20.1 the phone also re-pairs automatically after a server restart (debug pairing only) and re-selects the Live channel whenever the world snapshot does not show it; selecting the channel that is already connected is a no-op on the server, so these retries never drop the reader.
 
 The IRC reader is read-only: `justinfan` login, tags/commands capability negotiation, message-ID deduplication, numeric user IDs, PING/PONG, a client PING after 45 s of silence (Twitch itself only PINGs about every 5 minutes, so quiet channels used to trip the watchdog), a 90 s heartbeat watchdog and capped reconnect. Real raids use `USERNOTICE msg-id=raid`. A raid supplies a count and source, **not the names of all arrivals**. Named heroes come from participants; debug names are fixtures. The separate OAuth/EventSub adapter still exists in `apps/api/twitch.ts`; the private harness clears OAuth credentials. Do not ingest the same channel's raids through both paths.
 
@@ -68,10 +68,10 @@ The normal review build disables keyboard shortcuts; focused WASD/arrows are pri
 2. Niantic Spatial SDK **4.1.0-26051913**, using `NsdkARCoreLoader`, supplies mesh chunks through AR Foundation **6.4.2** `ARMeshManager`. This is a phone implementation inspired by the Phanto pattern, not Quest Phanto running on Android.
 3. `RoomNavigation` asynchronously rebakes a doll-sized Unity NavMesh every **0.8 s**, when the previous bake finishes. The bake covers a 14 × 5 × 14 m box around the phone; chunks beyond 20 m are omitted and the Niantic extension is configured to cull old mesh beyond 25 m.
 4. When mesh exists it is the walkable geometry source. Tracked horizontal ARCore plane polygons provide a weaker geometry fallback; planes also help estimate floor height. No infinite floor is added.
-5. Floor estimation uses area-weighted **3 cm height bands**, ignores tiny low specks and requires three winning bakes before switching to a different band. A close plane estimate can refine the mesh estimate. Published height glides by at most 1 cm per update unless a change exceeds 15 cm. These are heuristics, not ground truth.
+5. Floor estimation uses area-weighted **3 cm height bands**, ignores tiny low specks and smooths changes within 4 cm immediately and requires three consistent candidate bakes before switching to a band further away. A close plane estimate can refine the mesh estimate. Published height glides by at most 1 cm per update unless a change exceeds 15 cm. These are heuristics, not ground truth.
 6. Automatic landing looks roughly 1 m ahead (or where the camera ray meets the floor), samples nearby alternatives, requires floor-height agreement within 20 cm and over 15 cm edge clearance, then holds a candidate within 25 cm for **0.8 s**. Alternatively tap measured open floor. The progress chip disappears after landing.
 
-The NavMesh agent radius is 7 cm, height 30 cm, climb 8 cm, slope limit 40°, voxel size 4 cm. Thin obstacles, stairs, reflective floors and moving objects can be missed. Scan visualizations are diagnostic surfaces, not proof of collision precision. After landing/raid/go-live the app hides the scan overlay automatically.
+The NavMesh agent radius is 7 cm, height 30 cm, climb 8 cm, slope limit 40°, voxel size 4 cm. Thin obstacles, stairs, reflective floors and moving objects can be missed. Scan visualizations are diagnostic surfaces, not proof of collision precision. Raids and Go live switch the scan view to Hidden automatically; landing keeps the current scan view.
 
 **Occlusion:** hidden mesh writes depth so heroes can disappear behind scanned furniture. Per-pixel `AROcclusionManager` was removed in the 0.18.2-era source after floor flicker and clipped feet. Do not promise dynamic person/hand occlusion or a current per-pixel depth pass.
 
@@ -99,7 +99,7 @@ Ask viewers to use separate messages, with at least half a second between messag
 | `стрибни`, `танцюй`, `помахай рукою`, `сядь`, `йди вперед`, `підійди ближче` | Supported Ukrainian phrase examples. This is a bounded phrase grammar, not universal translation. |
 | `!rift go to 3 and dance` | Go to currently published **spot 3** and pose. Replace 3 with a number visible now. |
 | `!go to #3`, `!jump on 3`, `!rift sit on spot 3` | Alternate numbered target forms. Missing numbers are refused. |
-| `!rift sit on the sofa`, `!rift walk to the chair then wave` | Requires a published label and a locally reachable surface. Multiple matching objects can require controller selection. |
+| `!rift sit on the sofa`, `!rift walk to the chair then wave` | Works best with a published label and a locally reachable surface. If no label matches, a model-planned furniture request can fall back to the first generic furniture-top track, so the hero may sit on a different object than the one named. Multiple matching objects can require controller selection. |
 | `!rift run to the dog and sit on it` | Virtual choreography only. Detection/grounding is approximate; current phone code does not prove sitting precisely on a moving dog's silhouette. |
 | `!rift go over there and dance`, `!rift come back to me`, `!rift go to the portal` | Spatial vocabulary: center-of-view `there`, floor-under-phone `streamer`, and `portal`. Flexible wording can require the configured model. |
 | `!rift walk left then jump then wave` | Short sequence. Offline/plain phrase grammar accepts at most four clauses; server plans allow at most eight steps / 15 s, so expansions may reject even shorter-looking prompts. |
@@ -107,7 +107,7 @@ Ask viewers to use separate messages, with at least half a second between messag
 
 Synonyms come from `targets.ts` and compiler target binding: **sofa/couch/settee; table/dining table/desk; plant/potted plant; tv/television/monitor; puppy/doggy/dog; kitty/kitten/cat; seat/stool/armchair → chair/sofa; mug/cup; bike/bicycle**. Matching still requires an appropriate track; synonyms do not create detections. Some mappings are available only during model target binding, so a short exact label or number is the most predictable test.
 
-Only recognized ordinary chat reaches actions. Free-form target requests should start with **`!`**, `!rift` or `!ourapp`; ordinary “sit on the sofa” is not recognized by the simple unprefixed phrase parser. `!` requests use a small model first when configured, except basic commands; deterministic compilation is the offline/budget/infrastructure-failure fallback. Target errors are retained as failures. Provider configuration is server-side (`AI_PROVIDER`, `PLANNER_BASE_URL`, `PLANNER_MODEL`, `PLANNER_API_KEY` / `GROQ_API_KEY`, or `OPENCODE_GO_API_KEY`). Each planner attempt is limited to `PLANNER_TIMEOUT_MS` (default 6 s); the Groq path retries once on OpenCode Go, then falls back to keywords, so a stalled provider costs at most about 12 s. Codex is the development tool, not a mandatory live chat model.
+Only recognized ordinary chat reaches actions. Free-form target requests should start with **`!`**, `!rift` or `!ourapp`; ordinary “sit on the sofa” is not recognized by the simple unprefixed phrase parser. `!` requests use a small model first when configured, except basic commands; deterministic compilation is the offline/budget/infrastructure-failure fallback. Target errors are retained as failures. Provider configuration is server-side (`AI_PROVIDER`, `PLANNER_BASE_URL`, `PLANNER_MODEL`, `PLANNER_API_KEY` / `GROQ_API_KEY`, or `OPENCODE_GO_API_KEY`). Each planner attempt is limited to `PLANNER_TIMEOUT_MS` (default 6 s); the Groq path retries once on OpenCode Go, then falls back to keywords (about 12 s worst case for the two model requests, plus target resolution). The OpenAI provider path keeps a fixed 10 s. Codex is the development tool, not a mandatory live chat model.
 
 Model output is typed choreography, checked against the action/animation catalogs, fresh targets, ownership, moderation and budgets. Newer instructions invalidate late plans. No generated code executes. The web/server catalog is larger than the phone renderer: dragon riding, voxel construction, backflips and other catalog entries do **not** establish distinct working Unity behavior. Use the basics and measured target actions above for the phone demonstration.
 
@@ -118,7 +118,7 @@ Model output is typed choreography, checked against the action/animation catalog
 | On-device `ObjectDetector` | **YOLOX-S**, COCO-80; Unity Inference Engine **2.6.1**. Loads only `Resources/Models/yolox_s`, input 1×3×640×640; BGR letterbox, output 1×8400×85; score 0.3, class-wise NMS IoU 0.45. GPUCompute or CPU fallback, one inference in flight, nominal capture interval 0.5 s. | An older Tiny file/comment remains; Tiny is not the selected runtime model. No device FPS claim. Built-in rendering pipeline and async GPU readback required. |
 | `SurfaceLabels` | Capture-time pose/projection lifts box rays onto measured walkable geometry. Raised furniture uses clustered top hits; other objects use floor contact. Allowlisted stream-relevant classes only. | This is geometric association, not a semantic room mesh. Moving classes expire after 4 s, other labels after 60 s; stale furniture is possible. No identity recognition. |
 | `SceneTracks` | Publishes labels plus `there`, `streamer`, `portal`, up to three furniture-top tracks and roughly six numbered markers. World targets are resolved locally for hero actions. | Markers survive brief offscreen periods; numbers can change as the view changes. Follow the currently visible number, not an earlier Twitch frame. |
-| PC open vocabulary | Latest phone JPEG → local **OmDet-Turbo** (`omlab/omdet-turbo-swin-tiny-hf`) at `127.0.0.1:3420`; requested nouns, best box per class, score ≥0.3, 3 s request timeout, input frame ≤5 s old. | Optional sidecar, not automatic recognition of every object. Server boxes must be lifted back onto phone geometry. No hit or stale frame yields a target error. |
+| PC open vocabulary | Latest phone JPEG → local **OmDet-Turbo** (`omlab/omdet-turbo-swin-tiny-hf`) at `127.0.0.1:3420`; requested nouns, best box per class, score ≥0.3, 3 s request timeout, input frame ≤5 s old. | Optional sidecar, not automatic recognition of every object. Server boxes must be lifted back onto phone geometry. No hit or stale frame usually yields a target error (furniture requests may instead fall back to a generic furniture top, see above). |
 
 `SceneTracks` copies the displayed camera background in render order with the pose for that frame, encodes a **480 px-wide** JPEG on a worker, and retains a small frame-pose map. Server detections are reprojected and re-posted for up to 20 s locally; ordinary local world targets expire after 2.5 s without refresh. Server native track hold is 4 s. These different lifetimes mean a remembered target is not necessarily visible at this instant.
 
@@ -140,7 +140,7 @@ See [sidecar setup and recorded PC benchmarks](../services/ov-detector/README.md
 
 **Cartoon FX Remaster Free** by Jean Moreno is optional, imported through Asset Store/My Assets and excluded from git. `BuildTools` assigns its prefabs if available; otherwise original particles still work. Imported camera shake/lights should remain disabled; `RiftFx` also disables pack camera-shake behavior on spawn. Do not redistribute the pack source as repository assets.
 
-`Sfx` uses original synthesized cues, original ElevenLabs-generated effects and Kenney sounds. Positional one-shots use pooled sources. Exact prompts/provenance are in `Resources/Audio/SFX-ELEVENLABS.json` and `SOUNDS-PROVENANCE.json`. **Sound** is a game SFX control; **Mic** independently mutes outgoing microphone audio. Check received sound on Twitch; local audibility alone is insufficient.
+`Sfx` uses original synthesized cues, original ElevenLabs-generated effects and Kenney sounds. Positional one-shots use pooled sources. Exact prompts/provenance are in `Resources/Audio/SFX-ELEVENLABS.json` and `SOUNDS-PROVENANCE.json`. **Sound** blocks new one-shot effects and sets the starting volume of newly created loops (loops already playing, such as rift/moth ambience, keep playing until recreated); **Mic** independently mutes outgoing microphone audio. Check received sound on Twitch; local audibility alone is insufficient.
 
 ## HUD and every settings row
 
@@ -151,12 +151,12 @@ The phone HUD stays outside direct-publisher video. Hero name tags, speech bubbl
 | Account chip / Setup gear | Opens Settings; full diagnostics live at the bottom. |
 | Scan progress + hint | Tracking → mesh → NavMesh → landing; progress is heuristic, not measured scan completeness. |
 | Primary orb / Test raid | Available after landing in Demo. Local fixtures offline; paired mode requests a server test raid. |
-| Follow me | Toggle party following. |
-| Scan view rail button | Cycles **Floor → Hidden → Mesh → Floor**. |
+| Follow me (party icon) | Toggle party following. Rail buttons are icon-only. |
+| Scan view (scan-frame icon) | Cycles **Floor → Hidden → Mesh → Floor**. |
 | Chat | Shows local/simulator input. Live impersonation is refused server-side. The fading phone feed is not a complete IRC transcript. |
 | Trail | Demo rail only: local three-crystal → shrine → two-hero cheer activity; **no Shards**. |
-| Selfie | Switches front/rear camera when supported; see below. |
-| LIVE / timer / hero count / Mbps | Publisher state, time since first connection (including reconnects), rendered count and transport bitrate. Confirm receipt on Twitch. |
+| Selfie (camera-flip icon) | Switches front/rear camera when supported; see below. |
+| LIVE / timer / hero count / Mbps | Publisher state, time since first connection (including reconnects), rendered count and the encoder's current target bitrate (not measured network throughput). Confirm receipt on Twitch. |
 | Mic / red End | Live microphone mute; stop stream and leave Live mode. |
 
 Settings are one scrollable column:
@@ -171,7 +171,7 @@ Settings are one scrollable column:
 | Room mesh (Scan view) | **Mesh:** visible full mesh + walkable floor. **Floor:** walkable floor only. **Hidden:** invisible mesh occlusion plus local rift paint where applicable. Mapping continues in all three. |
 | Selfie camera | Same flip action as the rail button. |
 | Reset room scan | Clears mesh/NavMesh, heroes, rift, trail, markers and perception generations. Re-scan; it is not a server-account deletion. |
-| Sound | Saved game SFX mute. Does not mute mic. Verify loops and stream mix on device. |
+| Sound | Saved game SFX mute for new one-shots and newly created loops; already-playing loops are not updated. Does not mute mic. |
 | Reduced motion | Saved `CameraFeel` comfort option; see effect limits above. |
 | Server URL | Default `https://raidrift-pc.tail7252b4.ts.net`. Editing is applied when **Pair with server** is tapped. |
 | Pairing token · empty = debug pairing | Optional Creator Studio capture token. Nonempty replaces saved token; blank does not clear an existing token. If there is no saved token, pairing uses `/v1/debug/pair`. |
@@ -197,7 +197,7 @@ Go live switches the HUD and starts real channel selection plus direct publishin
 
 ### Selfie mode
 
-`SelfieMode` capability-checks the loader for a user-facing camera. Unsupported loaders show a notice and leave the room intact. During both flips it pauses room meshing, planes, NavMesh updates, perception, trail and moths, hides room content, and preserves the same render camera/publisher path. Front mode requests rotation-only tracking and one face. It waits for three usable camera frames; returning also requires positional tracking. A transition times out after 10 s and attempts safe recovery.
+`SelfieMode` capability-checks the loader for a user-facing camera. Unsupported loaders show a notice and leave the room intact. During both flips it pauses room meshing, planes, NavMesh updates, perception, trail and moths, hides room content, and preserves the same render camera/publisher path. Front mode requests rotation-only tracking and one face. It waits for three usable camera frames; returning normally also waits for positional tracking; after 4 s three rear frames are enough without tracking, and after 12 s forced recovery restores the world and can reset the AR session (rescan needed). A transition times out after 10 s and attempts safe recovery.
 
 When available, face pose/mesh drives a halo, depth mask and miniature hero perches. Shoulders are **face-relative approximations**, not body tracking. Without a tracked face the party uses viewport positions; it is not falsely attached to a face. On return heroes leave perches and are placed back on measured floor. Room tools are blocked while the world is paused. Continuous live flip, mirroring, face loss and restored room alignment are **untested on the target device**; test while stationary before using on stream.
 
@@ -348,9 +348,9 @@ Unity paths below are relative to `E:\RaidRift-MR\Assets\RaidRift`:
 | Scene, version, loader, Android settings | `Editor/BuildTools.cs`, `Packages/manifest.json` at project root |
 | Landing, follow, relocation, mode and quality | `Scripts/RaidRiftApp.cs` |
 | Mesh, floor, paths and jump links | `Scripts/RoomNavigation.cs`, `Scripts/Hero.cs` |
-| HUD and local input | `Scripts/Hud.cs`, `TextIntent.cs`, `LocalPlayground.cs` |
-| Server and target grounding | `Scripts/ServerConnection.cs`, `SceneTracks.cs`, `Perception/*` |
-| Camera, rift and audio | `Scripts/CameraFeel.cs`, `RiftFx.cs`, `RiftWorld.cs`, `RiftMoths.cs`, `Sfx.cs` |
+| HUD and local input | `Scripts/Hud.cs`, `Scripts/TextIntent.cs`, `Scripts/LocalPlayground.cs` |
+| Server and target grounding | `Scripts/ServerConnection.cs`, `Scripts/SceneTracks.cs`, `Scripts/Perception/*` |
+| Camera, rift and audio | `Scripts/CameraFeel.cs`, `Scripts/RiftFx.cs`, `Scripts/RiftWorld.cs`, `Scripts/RiftMoths.cs`, `Scripts/Sfx.cs` |
 | Front-camera lifecycle | `Scripts/Selfie/*` |
 | Video/audio encoder | `Scripts/Live/*`, `Assets/Plugins/Android/RaidRiftLive.androidlib` at project root |
 | Backend routing/planning | Repository `apps/api/server.ts`, `world.ts`, `compiler.ts`, `chat-intent.ts`, `targets.ts`, `twitch-irc.ts`, `ov-detector.ts` |

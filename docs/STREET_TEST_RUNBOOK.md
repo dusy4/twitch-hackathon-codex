@@ -11,7 +11,7 @@
   ```
 
 - [ ] Existing Tailscale Serve forwards HTTPS to **127.0.0.1:3412**. If dependencies/assets need setup: `npm ci`, `npm run build` first. Restart loses private test data/pairing.
-- [ ] Phone **Tailscale on** in the authorized tailnet. On **mobile data**, open [health](https://raidrift-pc.tail7252b4.ts.net/health), then [APK share](https://raidrift-pc.tail7252b4.ts.net/apk/). Install the newest `RaidRift-MR-<version>.apk` there (0.20.0 was published Oct 31 22:23; check the [overnight summary](https://dashboard.12industries.com/previews/raidrift-ui/) for a later known-good build); confirm the version in Setup diagnostics. No build has a device pass yet; this test is that pass.
+- [ ] Phone **Tailscale on** in the authorized tailnet. On **mobile data**, open [health](https://raidrift-pc.tail7252b4.ts.net/health), then [APK share](https://raidrift-pc.tail7252b4.ts.net/apk/). Install the newest `RaidRift-MR-<version>.apk` there (0.20.1 was published Oct 31 22:30 and re-pairs/re-applies the channel by itself after a server restart; check the [overnight summary](https://dashboard.12industries.com/previews/raidrift-ui/) for a later known-good build); confirm the version in Setup diagnostics. No build has a device pass yet; this test is that pass.
 - [ ] Charge battery, clean lens, free recording space, Do Not Disturb. Shade phone; avoid charging while hot. Start **Mobile data · 2.5 Mbps**; allow roughly 60 MB for three minutes plus overhead/setup. Headset reduces echo.
 - [ ] Safe textured pedestrian ground, good light; no traffic, private screens or unwilling bystanders. Stop before using controls. Arrange **two real viewers** and an observer checking received Twitch video/audio. Share `https://www.twitch.tv/YOUR_LOGIN/chat` with the real login. Extension is optional.
 
@@ -29,8 +29,8 @@
 | 0:00–0:35 | Rift and arrivals: arranged **real raid**, or **Setup → Server & testing → Server test raid** on the private harness. Label fixtures **TEST RAID**; their names are simulated. |
 | 0:35–1:10 | Both viewers `!join`; one `!wave`, other `!jump`. Leave ≥0.5 s between messages and allow Twitch delay. Show separate named heroes. |
 | 1:10–1:40 | `!w`, then `!d` separately; `!rift go to 3 and dance` using a **current visible number**. No numbers? Use `!dance`. Try `!rift sit on the chair` only with a measured labelled top. |
-| 1:40–2:05 | Stop. Flip **Selfie**, then return rear; wait for room tracking. Unsupported? Show a rear-camera wave instead. |
-| 2:05–2:45 | **Follow me**; walk slowly on scanned safe ground. Rift relocation needs over **8 m** and valid floor ahead; do not force it or promise it within this test. |
+| 1:40–2:05 | Stop. Flip **Selfie** (camera-flip icon on the right rail), then return rear; wait for room tracking. Unsupported? Show a rear-camera wave instead. |
+| 2:05–2:45 | **Follow me** (party icon on the rail); walk slowly on scanned safe ground. Rift relocation needs over **8 m** and valid floor ahead; do not force it or promise it within this test. |
 | 2:45–3:00 | Stop, goodbye, red **End**. Observer confirms stream ends. Then **Offline test room** stops polling/frame uploads. |
 
 ## Quick recovery
