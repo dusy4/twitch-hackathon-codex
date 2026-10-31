@@ -182,3 +182,30 @@ Finite walking support, bounded/fair cached local A* routes, swept body/wall/edg
 Validation is recorded under artifacts/measured-routes; build/runtime checks remain distinct from the outstanding S25 physical navigation and complete-trail tests. This does not provide a full room mesh, crowd separation, semantic furniture interaction, hand tracking or guaranteed thin/reflective obstacle coverage. ADR-010 records the decision and conservative stopping tradeoff.
 
 Final 0.11 verification: 126 JVM tests pass; build/lint pass (0 errors, 12 warnings); signature and 16 KiB ZIP alignment verified. Exact APK SHA256 081258921fb10bfced62f9a1cc40e329ecdd64640c54bc39e9f5de21014b658d, 122152162 bytes. Exact-APK native UI preview: 22 walk inputs, four discoveries, three pickups, shrine restoration, Alice/Bob cheers and completion; AR Focus/Controls and default-off detection setting checked. Initial helper raced with the completion button disappearing; retained failure plus subsequent UI/native-event verification are documented in the receipt. ARCore stayed PAUSED with zero planes in Boat, so physical navigation/occlusion remains open. No actual S25 completion, new A/V relay or real Twitch pass is inferred. APK copied to Desktop/current workspace/private APK server; no public release.
+
+
+## 2026-10-31 — Unity 0.17–0.20 source review and end-to-end documentation
+
+Documentation-only review of branch `fix/android-ar-recovery` and the live Unity project **`E:\RaidRift-MR`**. The live project is the phone source of truth; repository `apps/unity-ar` can lag. Older notes above describing missing Unity detection/publishing and requiring OAuth for all real chat are superseded for the current IRC/direct-publisher workflow.
+
+| Slice | Actual branch history and source |
+|---|---|
+| 0.17-era room/object interaction | `8f6028bbdbf9` adds the Unity MR app: Niantic meshing, live NavMesh, on-device YOLOX labels and numbered markers. `ae02838b25fb` adds planner synonyms/tailnet updates. Current runtime loads YOLOX-S, resolves capture-time targets onto walkable surfaces and drives targeted hero poses. |
+| 0.18.0 | `676b94b82a8c`: direct Twitch publishing, CameraFeel, portal tear VFX and WASD steering. `45a13ae53f0c`: anonymous IRC Live input and Extension/EBS. These are separate video and control connections. |
+| 0.18.1 / 0.18.2-era correction | `efb167f619b6`: Cartoon FX impacts and Extension rift-window hero card. Current BuildTools documents removal of per-pixel depth occlusion after owner-reported floor flicker/clipped feet; mesh-depth occlusion remains. No separate 0.18.2 commit is inferred. |
+| 0.19.0 | `e1c6405d59e0`: camera-first HUD redesign and scanning stability fixes. This is the latest reviewed branch commit. Live BuildTools still declares **0.19.0**, versionCode **14**; a local APK of that version exists. |
+| Work referred to as 0.20 | Live files contain `Selfie/*`, face-relative/viewport hero perches, guarded front/rear transitions, grouped settings and portrait HudPreview fixtures (including a v0.20 label). No reviewed 0.20 commit or APK was found. Source presence is not evidence of an integrated build or physical-device pass. |
+
+Added [RAIDRIFT_MR.md](RAIDRIFT_MR.md) as the single current phone guide, [STREET_TEST_RUNBOOK.md](STREET_TEST_RUNBOOK.md) for the November 1 noon rehearsal and [DEMO_VIDEO_SCRIPT.md](DEMO_VIDEO_SCRIPT.md) for a 2:45 submission video; refreshed README's product summary, links and done/untested/blocked matrix. Documents cover exact commands/settings, independent stream/chat health, source/build version mismatch, private harness lifetime, perception uploads, PlayerPrefs secret retention, licenses, self-test reproduction and troubleshooting.
+
+Evidence reviewed, **not rerun**: `artifacts/extension-verification.json` records 91 Node passes/one PostgreSQL skip, four Extension browser checks per build and read-only real IRC acknowledgement. Live plugin verification records standalone C# core/Android/JVM/smoke-APK checks, while its Unity GPU/full-app verification was blocked by temp-lock permissions in that task. Local 0.19.0 APK presence does not prove that today's source or those checks passed. Current on-device rear AR + YOLOX + selfie + RTMPS/mic/game-audio, tracking recovery, real two-viewer commands/raid, mobile handoffs and sustained thermal checks remain open. Owner recordings informed fixes, not a blanket current-device pass.
+
+External gates: owner Console registration, Extension secrets/testers/activation, public HTTPS EBS and Twitch review; separate owner OAuth/public callback for EventSub; durable production deployment and exact detector checkpoint/export provenance/notices. Private tailnet rehearsal has real IRC input capability but remains disposable debug infrastructure. No code changes, server restart, installation, public publishing, paid calls or commits were made by this documentation task.
+
+## 2026-10-31 night — street-stream backend hardening
+
+- Anonymous IRC reader: sends its own `PING` after 45 s without traffic. Twitch only PINGs about every 5 minutes, so in a quiet channel the 90 s watchdog used to tear the connection down and reconnect roughly every 1.5 minutes, losing any chat sent during the gap. New test: quiet channel stays on one connection while PINGs are answered; a dead wire still reconnects.
+- `POST /v1/live/channel` with the channel that is already connected keeps the running reader (no reconnect, dedupe state kept). The phone can re-select its channel after network switches or re-pairing without dropping chat. Covered in the paired Live route test.
+- Planner: per-attempt timeout `PLANNER_TIMEOUT_MS` (default 6 s, was a fixed 10 s). With the Groq → OpenCode Go retry, a stalled provider now costs at most ~12 s before the keyword fallback instead of ~20 s.
+- Twitch Extension: review ZIP rebuilt with forward-slash entry paths (`tar`), Local Test build served at `/ext/`.
+- Validation: `npx tsc --noEmit -p .` clean; `npx tsx --test tests/*.test.ts` 92 pass / 1 PostgreSQL skip. Private server on 3412 restarted with these changes.

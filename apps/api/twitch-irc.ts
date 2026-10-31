@@ -90,7 +90,12 @@ export class TwitchIrc {
       }) => Promise<unknown>;
       changed?: () => void;
     },
-    private options: { url?: string; retryMs?: number } = {},
+    private options: {
+      url?: string;
+      retryMs?: number;
+      idleMs?: number;
+      timeoutMs?: number;
+    } = {},
   ) {
     this.status = {
       channel: normalizeChannel(channel),
@@ -131,12 +136,21 @@ export class TwitchIrc {
         `JOIN #${this.status.channel}`,
       ])
         ws.send(command);
-      this.watchdog = setInterval(() => {
-        if (Date.now() - this.lastWire > 90000) {
-          this.status.error = "IRC heartbeat timed out";
-          ws.terminate();
-        }
-      }, 15000);
+      // Twitch only PINGs about every 5 minutes, so a quiet channel would trip the
+      // watchdog. Ask for a PONG ourselves whenever the wire has been idle.
+      const idleMs = this.options.idleMs ?? 45000;
+      const timeoutMs = this.options.timeoutMs ?? 90000;
+      this.watchdog = setInterval(
+        () => {
+          const idle = Date.now() - this.lastWire;
+          if (idle > timeoutMs) {
+            this.status.error = "IRC heartbeat timed out";
+            ws.terminate();
+          } else if (idle > idleMs && ws.readyState === WebSocket.OPEN)
+            ws.send("PING :raidrift");
+        },
+        Math.min(15000, Math.max(10, idleMs / 3)),
+      );
       this.watchdog.unref();
     });
     ws.on("message", (data) => {

@@ -1,5 +1,5 @@
 import { chatIntent } from "./chat-intent.js";
-import { TwitchIrc } from "./twitch-irc.js";
+import { normalizeChannel, TwitchIrc } from "./twitch-irc.js";
 import { installExtension } from "./extension.js";
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
@@ -1886,7 +1886,18 @@ export async function createApp(
       req.body,
     );
     const w = await world(room);
-    liveReaders.get(room)?.stop();
+    const current = liveReaders.get(room);
+    // A phone that reconnects (network switch, app restart) and selects the same
+    // channel again keeps the running reader instead of dropping chat for a reconnect.
+    if (
+      current?.status.connected &&
+      current.status.channel === normalizeChannel(channel)
+    ) {
+      w.state.mode = "LIVE TWITCH";
+      w.state.live = { ...current.status };
+      return w.state.live;
+    }
+    current?.stop();
     const reader = new TwitchIrc(
       channel,
       {

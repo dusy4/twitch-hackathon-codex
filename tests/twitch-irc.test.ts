@@ -104,6 +104,48 @@ test("anonymous connector negotiates, PONGs, deduplicates, ignores wrong rooms a
     await new Promise<void>((r) => fake.close(() => r()));
   }
 });
+test("quiet channel stays connected via client PINGs; a dead wire reconnects", async () => {
+  const fake = new WebSocketServer({ port: 0, host: "127.0.0.1" });
+  await once(fake, "listening");
+  let connections = 0,
+    pings = 0,
+    answer = true;
+  fake.on("connection", (ws) => {
+    connections++;
+    ws.on("message", (data) => {
+      const line = data.toString();
+      if (line.includes("JOIN"))
+        ws.send("@room-id=555 :tmi.twitch.tv ROOMSTATE #channel\r\n");
+      if (line.startsWith("PING")) {
+        pings++;
+        if (answer) ws.send(":tmi.twitch.tv PONG tmi.twitch.tv :raidrift\r\n");
+      }
+    });
+  });
+  const reader = new TwitchIrc(
+    "channel",
+    { chat: async () => {}, raid: async () => {} },
+    {
+      url: `ws://127.0.0.1:${(fake.address() as { port: number }).port}`,
+      retryMs: 10,
+      idleMs: 60,
+      timeoutMs: 300,
+    },
+  ).start();
+  try {
+    await eventually(() => reader.status.connected);
+    await new Promise((r) => setTimeout(r, 700));
+    assert.ok(pings >= 2, `expected keepalive PINGs, saw ${pings}`);
+    assert.equal(connections, 1, "answered PINGs must not trigger reconnects");
+    assert.equal(reader.status.connected, true);
+    answer = false;
+    await eventually(() => connections >= 2, 3000);
+  } finally {
+    reader.stop();
+    for (const ws of fake.clients) ws.terminate();
+    await new Promise<void>((r) => fake.close(() => r()));
+  }
+});
 test("paired Live routes deliver real identities through shared chat, steering and a non-test raid", async () => {
   const fake = new WebSocketServer({ port: 0, host: "127.0.0.1" });
   await once(fake, "listening");
@@ -157,6 +199,17 @@ test("paired Live routes deliver real identities through shared chat, steering a
     assert.equal(started.statusCode, 200, started.body);
     const w = await s.world("demo-world");
     await eventually(() => !!w.state.live?.connected);
+    const firstSocket = socket;
+    const again = await s.app.inject({
+      method: "POST",
+      url: "/v1/live/channel",
+      headers,
+      payload: { channel: "#Channel" },
+    });
+    assert.equal(again.statusCode, 200, again.body);
+    assert.equal(again.json().connected, true);
+    await new Promise((r) => setTimeout(r, 50));
+    assert.equal(socket, firstSocket, "same channel keeps the running reader");
     socket!.send(chat("live-join", "!join"));
     await eventually(() => w.state.avatars.some((a) => a.name === "Alice"));
     const alice = w.state.avatars.find((a) => a.name === "Alice")!;

@@ -722,7 +722,7 @@ async function compileOpenCode(
       endpoint ? `${endpoint.url}/chat/completions` : OPENCODE_URL,
       {
         method: "POST",
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(plannerTimeoutMs()),
         headers,
         body: JSON.stringify(body),
       },
@@ -776,6 +776,12 @@ async function compileOpenCode(
       "The choreographer suggested something outside the action catalog. Try simpler words.",
     );
   }
+}
+/** Per-request planner budget. Live chat falls back to keywords after a timeout, and the
+ * compat provider may retry once on OpenCode Go, so keep each attempt short. */
+function plannerTimeoutMs() {
+  const ms = Number(process.env.PLANNER_TIMEOUT_MS);
+  return Number.isFinite(ms) && ms >= 1000 && ms <= 30000 ? ms : 6000;
 }
 export async function compileAI(
   prompt: string,
