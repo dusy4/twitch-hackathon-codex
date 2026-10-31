@@ -61,6 +61,9 @@ export async function createTailnetTestApp(options: {
     process.env.GROQ_API_KEY || process.env.PLANNER_BASE_URL
       ? "compat"
       : "opencode";
+  // A street rehearsal has a handful of viewers; Groq free tier allows ~30 requests/min.
+  process.env.AI_MAX_IN_FLIGHT ||= "4";
+  process.env.AI_MAX_PER_MINUTE ||= "25";
   process.env.ALLOW_PAID_AI =
     process.env.AI_PROVIDER === "compat"
       ? process.env.GROQ_API_KEY ||

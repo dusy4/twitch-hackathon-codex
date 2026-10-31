@@ -19,6 +19,11 @@ import {
   summarizePlan,
   type TargetResolver,
 } from "./compiler.js";
+/** Room-wide planner budget, overridable for private rehearsals. */
+const envLimit = (key: string, fallback: number) => {
+  const n = Number(process.env[key]);
+  return Number.isInteger(n) && n >= 1 && n <= 100 ? n : fallback;
+};
 /** One-word basics stay instant keyword actions even when the LLM planner is first. */
 const BASIC_COMMAND =
   /^(?:!(?:rift|ourapp)\s+)?!?(join|jump|dance|wave|sit|cheer|stop|left|right|forward|back|backward|up|down|w|a|s|d)$/i;
@@ -473,7 +478,9 @@ export class World extends EventEmitter {
           "Try dance, jump, summon a tiny dragon, or interact with a visible object.",
         );
       this.aiMinute = this.aiMinute.filter((t) => now - t < 60000);
-      const overBudget = this.aiInFlight >= 2 || this.aiMinute.length >= 10;
+      const overBudget =
+        this.aiInFlight >= envLimit("AI_MAX_IN_FLIGHT", 2) ||
+        this.aiMinute.length >= envLimit("AI_MAX_PER_MINUTE", 10);
       if (overBudget) {
         plan = llmFirst ? keywordPlan() : null;
         if (!plan)
