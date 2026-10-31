@@ -19,6 +19,32 @@ namespace RaidRift
 
         public static float? FloorY { get; set; }
 
+        // Cartoon FX Remaster Free (owner's Asset Store license), assigned by BuildTools. Scaled to 30 cm heroes.
+        public GameObject impactGlow, groundHit, magicPoof, hitLight, comicWow, firework;
+
+        static void Spawn(GameObject prefab, Vector3 pos, float scale, Vector3? face = null)
+        {
+            if (prefab == null) return;
+            var rot = face.HasValue && face.Value.sqrMagnitude > 1e-4f ? Quaternion.LookRotation(face.Value) : Quaternion.identity;
+            var go = Instantiate(prefab, pos, rot);
+            foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true)) { var m = ps.main; m.scalingMode = ParticleSystemScalingMode.Hierarchy; }
+            go.transform.localScale = Vector3.one * scale;
+            NoCameraShake(go);
+            Destroy(go, 5f); // CFXR clears itself too; this is the backstop
+        }
+
+        /// <summary>CFXR's own shake moves the tracked AR camera (breaks registration). Turn it off on every spawn,
+        /// even after a fresh pack import resets CFXR_Effect.cs; CameraFeel provides the shake instead.</summary>
+        static void NoCameraShake(GameObject go)
+        {
+            foreach (var mb in go.GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (mb == null || mb.GetType().FullName != "CartoonFX.CFXR_Effect") continue;
+                var shake = mb.GetType().GetField("cameraShake")?.GetValue(mb);
+                shake?.GetType().GetField("enabled")?.SetValue(shake, false);
+            }
+        }
+
         void Awake()
         {
             _i = this;
@@ -132,6 +158,14 @@ namespace RaidRift
             Emit(_i._rings, floor + Vector3.up * 0.008f, Vector3.zero, 0.16f * scale, 0.36f, new Color(Seam.r, Seam.g, Seam.b, 0.65f));
             if (raid) _i.StartCoroutine(Echo(floor, scale));
             Sfx.PlayAt("crunch", center, raid ? 0.75f : 0.55f, 0.06f);
+            Spawn(_i.impactGlow, center, 0.6f * scale);
+            Spawn(_i.groundHit, floor + Vector3.up * 0.01f, 0.5f * scale);
+            if (raid)
+            {
+                Spawn(_i.firework, center + Vector3.up * 0.9f * scale, 0.5f * scale);
+                var cam = Camera.main;
+                Spawn(_i.comicWow, center + Vector3.up * 0.5f * scale, 0.45f * scale, cam != null ? cam.transform.position - center : (Vector3?)null);
+            }
             _i.StartCoroutine(Clatter(floor));
             int sparks = raid ? 72 : 48, chips = raid ? 24 : 16, smoke = raid ? 8 : 6;
             var side = Vector3.Cross(Vector3.up, facing).normalized;
@@ -188,6 +222,7 @@ namespace RaidRift
         {
             if (_i == null) return;
             if (first) CameraFeel.Shake(0.25f);
+            Spawn(_i.magicPoof, pos + Vector3.up * 0.08f, 0.25f);
             for (int n = 0; n < 12; n++)
                 Emit(_i._sparks, pos + Vector3.up * 0.06f, (outward * 0.6f + Random.insideUnitSphere * 0.6f + Vector3.up * 0.3f), Random.Range(0.012f, 0.025f), Random.Range(0.25f, 0.45f), Pick());
             for (int n = 0; n < 2; n++)
@@ -198,7 +233,7 @@ namespace RaidRift
         public static void Land(Vector3 pos, bool heavy)
         {
             if (_i == null) return;
-            if (heavy) CameraFeel.Shake(0.35f);
+            if (heavy) { CameraFeel.Shake(0.35f); Spawn(_i.groundHit, pos + Vector3.up * 0.005f, 0.18f); }
             Emit(_i._rings, pos + Vector3.up * 0.006f, Vector3.zero, 0.05f, 0.22f, new Color(Crack.r, Crack.g, Crack.b, 0.5f));
             for (int n = 0; n < 8; n++)
             {
@@ -214,6 +249,7 @@ namespace RaidRift
         {
             if (_i == null) return;
             var c = accepted ? Hex(0x59F1C8) : Hex(0xFF6A83);
+            if (accepted) Spawn(_i.hitLight, pos + Vector3.up * 0.15f, 0.15f);
             Emit(_i._rings, pos + Vector3.up * 0.007f, Vector3.zero, 0.04f, 0.18f, new Color(c.r, c.g, c.b, 0.7f));
             for (int n = 0; n < 4; n++)
                 Emit(_i._sparks, pos + Vector3.up * 0.12f, Random.insideUnitSphere * 0.35f + Vector3.up * 0.3f, 0.014f, 0.3f, c);

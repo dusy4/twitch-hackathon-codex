@@ -1,29 +1,24 @@
 {
-  "builtAt": "2026-10-31T16:23:58.403Z",
+  "builtAt": "2026-10-31T16:52:05.130Z",
   "build": "private Local Test with focused keyboard",
-  "totalBytes": 929631,
+  "totalBytes": 939886,
   "mobileBudgetBytes": 1000000,
   "includesAllHtmlNoticesAndFontFallbacks": true,
   "files": [
     {
-      "path": "dist/twitch-extension/assets/main-B82WfvwT.css",
-      "bytes": 6846,
-      "sha256": "f33852c673ce1b579f6d56bdd858dbf4c32ba7b5e466d24652e8dddd6b443ab3"
+      "path": "dist/twitch-extension/assets/inter-latin-400-C38fXH4l.woff2",
+      "bytes": 23664,
+      "sha256": "8909904ab6c872eb994093482a88a28eca2cd95912d7b6fecd72103b0dc07edc"
     },
     {
-      "path": "dist/twitch-extension/assets/main-C_GypldI.js",
-      "bytes": 849418,
-      "sha256": "e28154f493db53e0befadeac572047885c6eea98d5e7887569f30e62a8189a77"
+      "path": "dist/twitch-extension/assets/main-1Q-RQl6S.js",
+      "bytes": 856880,
+      "sha256": "ad3ea2f4982679f642b6c72990b4b61a8c98a74729300a6fd9bd6cd4e23187c8"
     },
     {
-      "path": "dist/twitch-extension/assets/space-grotesk-latin-400-normal-BnQMeOim.woff",
-      "bytes": 17004,
-      "sha256": "d3fcfce61e3792f35b7c95c2f7f4f26c8d19c93998c03ad77d7bf0cd6d334e35"
-    },
-    {
-      "path": "dist/twitch-extension/assets/space-grotesk-latin-400-normal-CJ-V5oYT.woff2",
-      "bytes": 13388,
-      "sha256": "65fd17fcbd2e2f522940b5f67ead3d23329e02891aa5495e74d11a499c0b0673"
+      "path": "dist/twitch-extension/assets/main-DrTIL2UR.css",
+      "bytes": 11987,
+      "sha256": "91903f15fa70302d1ee84908b323bea3d026e21cad35e41b9c722da0ea6715dc"
     },
     {
       "path": "dist/twitch-extension/assets/space-grotesk-latin-600-normal-BflQw4A9.woff",
@@ -38,22 +33,27 @@
     {
       "path": "dist/twitch-extension/component.html",
       "bytes": 494,
-      "sha256": "e352e4a007f727770aabdbd200398a74c1048750bd0c3b330c8c082c457e26f7"
+      "sha256": "79d0f4df5746b333060022f3c952e7f59657b7a1c9ff86282b7774d75713ca44"
     },
     {
       "path": "dist/twitch-extension/index.html",
       "bytes": 494,
-      "sha256": "e352e4a007f727770aabdbd200398a74c1048750bd0c3b330c8c082c457e26f7"
+      "sha256": "79d0f4df5746b333060022f3c952e7f59657b7a1c9ff86282b7774d75713ca44"
     },
     {
       "path": "dist/twitch-extension/mobile.html",
       "bytes": 494,
-      "sha256": "e352e4a007f727770aabdbd200398a74c1048750bd0c3b330c8c082c457e26f7"
+      "sha256": "79d0f4df5746b333060022f3c952e7f59657b7a1c9ff86282b7774d75713ca44"
     },
     {
       "path": "dist/twitch-extension/notices/beui-LICENSE.txt",
       "bytes": 1093,
       "sha256": "f77e8c10efd1e143694229ed58b57cb863d6b9dc052cdf33950c6f98a5f1709b"
+    },
+    {
+      "path": "dist/twitch-extension/notices/Inter-OFL.txt",
+      "bytes": 4380,
+      "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
     },
     {
       "path": "dist/twitch-extension/notices/react-bits-LICENSE.txt",
@@ -83,7 +83,7 @@
     {
       "path": "dist/twitch-extension/panel.html",
       "bytes": 494,
-      "sha256": "e352e4a007f727770aabdbd200398a74c1048750bd0c3b330c8c082c457e26f7"
+      "sha256": "79d0f4df5746b333060022f3c952e7f59657b7a1c9ff86282b7774d75713ca44"
     }
   ]
 }

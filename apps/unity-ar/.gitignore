@@ -21,3 +21,7 @@
 /Tools/sfx_raw/
 /LocalPackages/
 /.utmp/
+
+# Asset Store packs (owner's license; not redistributable). Import 'Cartoon FX Remaster Free' via Package Manager > My Assets.
+/Assets/JMO Assets/
+/Assets/JMO Assets.meta

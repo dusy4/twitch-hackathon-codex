@@ -24,7 +24,7 @@ namespace RaidRift.EditorTools
         const string Resources = Root + "/Resources";
         const string ScenePath = Root + "/Scenes/Main.unity";
         const string ChunkPrefab = Root + "/Prefabs/RoomMeshChunk.prefab";
-        public const string Version = "0.18.0";
+        public const string Version = "0.18.1";
         public const int VersionCode = 14;
 
         [MenuItem("RaidRift/Set up project")]
@@ -362,7 +362,15 @@ namespace RaidRift.EditorTools
             trail.cameraTransform = camGo.transform;
             appGo.AddComponent<Sfx>();
             appGo.AddComponent<Fx>();
-            appGo.AddComponent<RiftFx>();
+            var riftFx = appGo.AddComponent<RiftFx>();
+            GameObject Cfxr(string p) => AssetDatabase.LoadAssetAtPath<GameObject>("Assets/JMO Assets/Cartoon FX Remaster/CFXR Prefabs/" + p + ".prefab");
+            riftFx.impactGlow = Cfxr("Impacts/CFXR Impact Glowing HDR (Blue)");
+            riftFx.groundHit = Cfxr("Impacts/CFXR2 Ground Hit");
+            riftFx.magicPoof = Cfxr("Misc/CFXR Magic Poof");
+            riftFx.hitLight = Cfxr("Light/CFXR3 Hit Light B (Air)");
+            riftFx.comicWow = Cfxr("Texts/CFXR3 _WOW_");
+            riftFx.firework = Cfxr("Explosions/CFXR4 Firework 1 Cyan-Purple (HDR)");
+            if (riftFx.impactGlow == null) Debug.LogWarning("[RaidRift] Cartoon FX Remaster not imported; RiftFx uses its own particles only");
             var moths = new GameObject("Rift Moths").AddComponent<RiftMoths>();
             var hud = appGo.AddComponent<Hud>();
             var app = appGo.AddComponent<RaidRiftApp>();

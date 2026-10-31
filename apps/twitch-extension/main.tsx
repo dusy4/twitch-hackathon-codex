@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { z } from "zod";
 import { Button } from "./components/motion/button/base.js";
 import ClickSpark from "./components/ClickSpark/ClickSpark.js";
-import "@fontsource/space-grotesk/latin-400.css";
+import { Icon, RiftMark, RiftWindow } from "./components/RiftArt.js";
 import "@fontsource/space-grotesk/latin-600.css";
 import "./style.css";
 
@@ -87,6 +87,8 @@ function App() {
   const [connection, setConnection] = useState("Waiting for Twitch");
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
+  const [input, setInput] = useState({ x: 0, y: 0 });
+  const [visible, setVisible] = useState(!document.hidden);
   const held = useRef(new Map<string, [number, number]>());
   const current = useRef(auth);
   current.current = auth;
@@ -99,8 +101,23 @@ function App() {
   const authGeneration = useRef(0);
   const [streamKey, setStreamKey] = useState(0);
   const root = useRef<HTMLDivElement>(null);
+  const hold = (key: string, vector?: [number, number]) => {
+    if (vector) held.current.set(key, vector);
+    else held.current.delete(key);
+    let x = 0,
+      y = 0;
+    for (const v of held.current.values()) {
+      x += v[0];
+      y += v[1];
+    }
+    setInput({
+      x: Math.max(-1, Math.min(1, x)),
+      y: Math.max(-1, Math.min(1, y)),
+    });
+  };
   const release = () => {
     held.current.clear();
+    setInput({ x: 0, y: 0 });
   };
   useEffect(() => {
     const ext = window.Twitch?.ext;
@@ -117,10 +134,12 @@ function App() {
       setError("");
     });
     ext.onVisibilityChanged?.((visible) => {
+      setVisible(visible && !document.hidden);
       if (!visible) release();
     });
     window.addEventListener("blur", release);
     const hidden = () => {
+      setVisible(!document.hidden);
       if (document.hidden) release();
     };
     document.addEventListener("visibilitychange", hidden);
@@ -291,6 +310,8 @@ function App() {
       ref={root}
       data-ui
       className={`rift ${overlay ? "overlay" : "full"}`}
+      data-visible={visible}
+      data-connected={connection === "Live controls connected"}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node)) release();
       }}
@@ -308,14 +329,14 @@ function App() {
         const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
         if (vectors[key]) {
           e.preventDefault();
-          held.current.set(key, vectors[key]);
+          hold(key, vectors[key]);
         }
       }}
       onKeyUp={(e) => {
         const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
         if (held.current.has(key)) {
           e.preventDefault();
-          held.current.delete(key);
+          hold(key);
         }
       }}
     >
@@ -332,17 +353,24 @@ function App() {
             setOpen(!open);
           }}
         >
-          <span className="rift-mark" aria-hidden="true">
-            ▥
-          </span>{" "}
-          RaidRift <span className="mint">{state?.roster.length || 0}</span>
+          <RiftMark />
+          <span>RaidRift</span>
+          <span
+            className="launcher-count"
+            aria-label={`${state?.roster.length || 0} heroes`}
+          >
+            {state?.roster.length || 0}
+          </span>
         </button>
       )}
       {open && (
         <main id="controller" aria-label="RaidRift controller" tabIndex={0}>
           <header>
             <div>
-              <h1>RaidRift</h1>
+              <h1>
+                <RiftMark />
+                RaidRift
+              </h1>
               <p>Your tiny hero. Their real world.</p>
             </div>
             {overlay && (
@@ -354,7 +382,7 @@ function App() {
                   setOpen(false);
                 }}
               >
-                ×
+                <Icon name="close" />
               </button>
             )}
           </header>
@@ -371,11 +399,7 @@ function App() {
           </p>
           {!state?.hero ? (
             <div className="join">
-              <div className="portal" aria-hidden="true">
-                <i />
-                <i />
-                <i />
-              </div>
+              <RiftWindow />
               <h2>Step through the rift</h2>
               <p>Claim one hero and play alongside chat.</p>
               <Button
@@ -384,20 +408,22 @@ function App() {
                 onClick={() => void action("join", {})}
               >
                 {busy ? "Joining…" : "Join the raid"}
+                <Icon name="arrow" />
               </Button>
             </div>
           ) : (
             <>
-              <section className="hero" aria-label="My hero">
-                <div className="voxel" aria-hidden="true">
-                  <i />
-                  <b />
-                  <span />
-                </div>
-                <div>
+              <section
+                className="hero"
+                aria-label="My hero"
+                data-moving={!!state.hero.steer}
+              >
+                <RiftWindow color={state.hero.color} joined />
+                <div className="hero-info">
+                  <p className="hero-caption">Your hero</p>
                   <h2>{state.hero.name}</h2>
                   <p>{state.hero.cosmetic || "Rift adventurer"}</p>
-                  <p className="mint" role="status">
+                  <p className="hero-status" role="status">
                     {connection !== "Live controls connected"
                       ? "Reconnecting controls"
                       : state.hero.steer
@@ -408,7 +434,8 @@ function App() {
                   </p>
                 </div>
               </section>
-              <p className="delay">
+              <p className="delay" id="stream-delay">
+                <Icon name="clock" />
                 Server state now. Your stream video may be delayed.
               </p>
               <section aria-label="Movement">
@@ -416,70 +443,70 @@ function App() {
                 <div className="movement">
                   <div className="dpad">
                     {[
-                      ["Forward", 0, 1, "↑"],
-                      ["Left", -1, 0, "←"],
-                      ["Back", 0, -1, "↓"],
-                      ["Right", 1, 0, "→"],
-                    ].map(([label, x, y, icon]) => (
+                      ["Forward", 0, 1],
+                      ["Left", -1, 0],
+                      ["Back", 0, -1],
+                      ["Right", 1, 0],
+                    ].map(([label, x, y]) => (
                       <button
                         key={label}
                         className={`direction ${String(label).toLowerCase()}`}
                         aria-label={`Move ${label}`}
+                        aria-pressed={
+                          Number(x) !== 0
+                            ? input.x === Number(x)
+                            : input.y === Number(y)
+                        }
+                        aria-describedby="walk-help stream-delay"
                         disabled={!controls}
                         onPointerDown={(e) => {
                           if (!controls) return;
                           e.currentTarget.setPointerCapture(e.pointerId);
-                          held.current.set(`touch-${e.pointerId}`, [
-                            Number(x),
-                            Number(y),
-                          ]);
+                          hold(`touch-${e.pointerId}`, [Number(x), Number(y)]);
                         }}
                         onPointerUp={(e) => {
-                          held.current.delete(`touch-${e.pointerId}`);
+                          hold(`touch-${e.pointerId}`);
                         }}
-                        onPointerCancel={(e) =>
-                          held.current.delete(`touch-${e.pointerId}`)
-                        }
+                        onPointerCancel={(e) => hold(`touch-${e.pointerId}`)}
                         onLostPointerCapture={(e) =>
-                          held.current.delete(`touch-${e.pointerId}`)
+                          hold(`touch-${e.pointerId}`)
                         }
                         onKeyDown={(e) => {
                           if (e.key === " " || e.key === "Enter") {
                             e.preventDefault();
-                            held.current.set(`button-${label}`, [
-                              Number(x),
-                              Number(y),
-                            ]);
+                            hold(`button-${label}`, [Number(x), Number(y)]);
                           }
                         }}
                         onKeyUp={(e) => {
                           if (e.key === " " || e.key === "Enter") {
                             e.preventDefault();
-                            held.current.delete(`button-${label}`);
+                            hold(`button-${label}`);
                           }
                         }}
-                        onBlur={() => held.current.delete(`button-${label}`)}
+                        onBlur={() => hold(`button-${label}`)}
                       >
-                        {icon}
+                        <Icon name="arrow" />
                       </button>
                     ))}
                   </div>
-                  <p>
-                    Hold to walk
-                    <br />
-                    {keyboard
-                      ? "WASD or arrows when focused"
-                      : "Touch, or focus a direction and hold Space"}
+                  <p id="walk-help">
+                    <strong>Hold to walk</strong>
+                    <span>
+                      {keyboard
+                        ? "WASD or arrows when focused"
+                        : "Touch, or focus a direction and hold Space"}
+                    </span>
                   </p>
                 </div>
               </section>
               <section aria-label="Emotes">
                 <h2>Make a little noise</h2>
                 <ClickSpark
-                  sparkColor={["#c79bff", "#92ffe0"]}
+                  sparkColor={["#f1c8ff", "#92ffe0"]}
                   sparkCount={5}
                   shape="dot"
                   sparkRadius={16}
+                  disabled={!controls || !visible}
                 >
                   <div className="emotes">
                     {["jump", "dance", "wave", "sit", "cheer"].map((emote) => (
@@ -488,7 +515,8 @@ function App() {
                         disabled={!controls}
                         onClick={() => void action("emote", { emote })}
                       >
-                        {emote}
+                        <Icon name={emote} />
+                        <span>{emote}</span>
                       </Button>
                     ))}
                   </div>
@@ -501,6 +529,8 @@ function App() {
                     state.targets.map((t) => (
                       <button
                         key={t.id}
+                        className="target"
+                        aria-label={`${t.number ?? ""}${t.label}`}
                         disabled={!controls}
                         onClick={() =>
                           void action("prompt", {
@@ -540,6 +570,7 @@ function App() {
                   />
                   <Button type="submit" disabled={!controls || !prompt.trim()}>
                     Send
+                    <Icon name="send" />
                   </Button>
                 </div>
               </form>
@@ -554,7 +585,12 @@ function App() {
             </h2>
             <p>
               {state?.roster.length
-                ? state.roster.map((a) => <span key={a.id}>{a.name}</span>)
+                ? state.roster.map((a) => (
+                    <span key={a.id}>
+                      <i aria-hidden="true" />
+                      {a.name}
+                    </span>
+                  ))
                 : "The first adventurer could be you."}
             </p>
           </section>
@@ -563,6 +599,7 @@ function App() {
               disabled={!auth}
               onClick={() => window.Twitch?.ext.actions.requestIdShare()}
             >
+              <Icon name="link" />
               Use my Twitch identity
             </button>
             <p>

@@ -238,3 +238,84 @@ test("overlay collapses to the corner; local keyboard movement stops on blur and
     path: `artifacts/extension-collapsed-${info.project.name}.png`,
   });
 });
+
+test("held feedback clears on cancellation and blur; reduced motion and review input remain usable", async ({ page }, info) => {
+  await setup(page, info.project.name === "mobile" ? 10031 : 10030);
+  await page.goto("/ext/mobile.html");
+  await page.getByRole("button", { name: "Join the raid" }).click();
+  const right = page.getByRole("button", { name: "Move Right", exact: true });
+  await right.dispatchEvent("pointerdown", { pointerId: 1, pointerType: "touch" });
+  await expect(right).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("status")).toHaveText("Your hero is moving");
+  await page.screenshot({ path: `artifacts/extension-moving-${info.project.name}.png` });
+  await right.dispatchEvent("pointercancel", { pointerId: 1, pointerType: "touch" });
+  await expect(right).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("status")).not.toHaveText("Your hero is moving");
+  const forward = page.getByRole("button", { name: "Move Forward", exact: true });
+  await forward.focus();
+  await page.keyboard.down("Space");
+  await expect(forward).toHaveAttribute("aria-pressed", "true");
+  await page.getByLabel("Give your hero an idea").focus();
+  await page.keyboard.up("Space");
+  await expect(forward).toHaveAttribute("aria-pressed", "false");
+  if (!(await page.getByText("WASD or arrows when focused", { exact: false }).count())) {
+    let steers = 0;
+    await expect(page.getByRole("status")).not.toHaveText("Your hero is moving");
+    await page.waitForTimeout(200); // Settle the legitimate release before observing shortcut input.
+    page.on("request", request => { if (request.url().endsWith("/v1/ext/steer")) steers++; });
+    await page.getByRole("main").focus();
+    await page.keyboard.down("d");
+    await page.waitForTimeout(250);
+    await page.keyboard.up("d");
+    expect(steers, "The review build must not implement keyboard shortcuts").toBe(0);
+  }
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.evaluate(() => document.fonts.ready);
+  const proof = await page.evaluate(() => ({
+    fonts: [...document.fonts].filter(f => f.status === "loaded").map(f => f.family),
+    animations: [
+      getComputedStyle(document.querySelector(".voxel-body")!).animationName,
+      getComputedStyle(document.querySelector(".target")!, "::after").animationName,
+    ],
+  }));
+  expect(proof.fonts).toEqual(expect.arrayContaining(["Inter", "Space Grotesk"]));
+  expect(proof.animations).toEqual(["none", "none"]);
+  await page.screenshot({ path: `artifacts/extension-reduced-motion-${info.project.name}.png` });
+});
+
+test("all full-frame surfaces handle narrow widths, long identities and unavailable controls", async ({ page }, info) => {
+  await setup(page, info.project.name === "mobile" ? 10041 : 10040);
+  await page.goto("/ext/panel.html");
+  await page.getByRole("button", { name: "Join the raid" }).click();
+  // Deliberately extreme display data. Existing integration tests exercise actual server state.
+  await page.route("**/v1/ext/state", async route => {
+    const response = await route.fetch();
+    const state = await response.json();
+    state.hero.name = "A".repeat(50);
+    state.hero.cosmetic = "Rift adventurer with a very long cosmetic description";
+    state.targets = [{ id: "long-target", number: 3, label: "sofa-with-an-unusually-long-target-label" }];
+    state.roster = [{ ...state.roster[0], name: "B".repeat(50) }];
+    await route.fulfill({ json: state });
+  });
+  await page.route("**/v1/ext/events", route => route.fulfill({
+    contentType: "text/event-stream", body: ": isolated display fixture\n\n",
+  }));
+  for (const path of ["panel.html", "component.html", "mobile.html"]) {
+    await page.goto(`/ext/${path}`);
+    await expect(page.getByRole("heading", { name: "A".repeat(50), exact: true })).toBeVisible();
+    for (const width of [280, 320, 390, 768]) {
+      await page.setViewportSize({ width, height: 850 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      expect(await page.locator("main").evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
+    }
+  }
+  await page.unrouteAll({ behavior: "wait" });
+  await page.route("**/v1/ext/state", route => route.fulfill({ status: 503, json: { message: "World temporarily unavailable" } }));
+  await page.goto("/ext/mobile.html");
+  await expect(page.getByRole("alert")).toHaveText("World temporarily unavailable");
+  await expect(page.getByRole("button", { name: "Join the raid" })).toBeDisabled();
+  await page.setViewportSize({ width: 390, height: 850 });
+  await page.screenshot({ path: `artifacts/extension-unavailable-${info.project.name}.png` });
+  const axe = await new AxeBuilder({ page }).analyze();
+  expect(axe.violations).toEqual([]);
+});

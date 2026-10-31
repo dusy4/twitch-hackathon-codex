@@ -50,3 +50,6 @@ raid and EN/UA phrase rules are ports of `Playground.kt` / `TextIntent.kt`.
   shows "planes only · no room mesh", sign in under Project Settings → XR Plug-in Management →
   Niantic Spatial and rebuild.
 - Not ported: object-detection tracks (NSDK object detection is the candidate), RTMP relay.
+
+## Asset Store effects (optional, not in git)
+Impact effects use **Cartoon FX Remaster Free** (Jean Moreno, free on the Unity Asset Store). Its source files cannot be redistributed, so they are git-ignored: import it via Package Manager > My Assets before building. Its camera shake and lights are disabled in `CFXR_Effect.cs` (`DISABLE_CAMERA_SHAKE`, `DISABLE_LIGHTS`) because shaking the tracked AR camera breaks registration; `CameraFeel` shakes the composited image instead. Without the pack the build still works and `RiftFx` uses only its own particles (Kenney CC0 textures).
