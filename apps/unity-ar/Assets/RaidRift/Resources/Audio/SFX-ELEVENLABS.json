@@ -1,0 +1,437 @@
+{
+  "provider": "ElevenLabs Sound Effects",
+  "model": "eleven_text_to_sound_v2",
+  "authorized": "Owner request 2026-10-31 (starter plan credits)",
+  "terms": "https://elevenlabs.io/terms-of-use",
+  "mastering": "layered, trimmed, ~-16 dBFS RMS, -1.5 dBFS peak, 4 ms fades",
+  "assets": {
+    "ui_tap": {
+      "file": "ui_tap.wav",
+      "seconds": 0.366,
+      "layers": [
+        {
+          "prompt": "Very subtle soft premium UI tap, tiny glassy click",
+          "seconds": 0.5,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.5,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "997ef43499acfe3a2010f7d94ad631937322df492d212150e5682966cf21ffe5"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "rift_open": {
+      "file": "rift_open.wav",
+      "seconds": 3.81,
+      "layers": [
+        {
+          "prompt": "Rising magical energy riser building tension, shimmering violet crystal tones swelling upward",
+          "seconds": 2.2,
+          "offset": 0.0,
+          "gain": 0.8,
+          "prompt_influence": 0.5,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "2e40d68c2df258dd423dbae7d01a1c9b59271660797e131957528ac604027a93"
+        },
+        {
+          "prompt": "Massive cinematic impact: deep sub-bass boom, stone cracking open, punchy transient, big trailer hit",
+          "seconds": 1.8,
+          "offset": 2.0,
+          "gain": 1.0,
+          "prompt_influence": 0.55,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "7136a2192523ac9c9ceacc33f80c8d4e6278b7d92eb8d45133caa38715be2f1c"
+        },
+        {
+          "prompt": "Sparkling crystalline magic debris settling after a portal opens, airy shimmering tail with wide reverb",
+          "seconds": 2.6,
+          "offset": 2.1,
+          "gain": 0.55,
+          "prompt_influence": 0.45,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "86ab90b04629fbbdf67421cd47a60286d0518516f08bd91712f332173b89a6aa"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:33Z"
+    },
+    "rift_close": {
+      "file": "rift_close.wav",
+      "seconds": 1.299,
+      "layers": [
+        {
+          "prompt": "Magical portal collapsing: reverse suction whoosh imploding into a soft deep thud, crystal shimmer fading",
+          "seconds": 1.6,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.5,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "8b35aa692c053e8f243e9edee40584e3a155c606897c29db25889476117aa446"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:33Z"
+    },
+    "rift_ambience": {
+      "file": "rift_ambience.wav",
+      "seconds": 6.0,
+      "layers": [
+        {
+          "prompt": "Seamless magical dimension ambience: soft wind, distant crystal chimes, low warm drone, gentle sparkles",
+          "seconds": 6.0,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.4,
+          "loop": true,
+          "cost": "cached",
+          "sha256": "ae290c2f51a98cf73a98c0d58c0e559d2b327ed1671c595f4f0fd45393741bb2"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:33Z"
+    },
+    "moth_flutter": {
+      "file": "moth_flutter.wav",
+      "seconds": 3.0,
+      "layers": [
+        {
+          "prompt": "Seamless soft fluttering of small glowing magical moth wings with faint sparkle shimmer",
+          "seconds": 3.0,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.45,
+          "loop": true,
+          "cost": "cached",
+          "sha256": "3eef01aa74bbfa7f3bebec82516609d4f33feaaad6a4521938d9966ced9322b0"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "raid_stinger": {
+      "file": "raid_stinger.wav",
+      "seconds": 2.4,
+      "layers": [
+        {
+          "prompt": "Epic cinematic braam hit with whoosh lead-in and sub drop, short heroic trailer stinger, no melody",
+          "seconds": 2.4,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.5,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "afa2d9ce3facc61a4f4fececf694276f3434e9d6369e905dc79c235021f93d9d"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "teleport_out": {
+      "file": "teleport_out.wav",
+      "seconds": 0.8,
+      "layers": [
+        {
+          "prompt": "Magic vanish: quick reverse whoosh into a soft poof with sparkles",
+          "seconds": 0.8,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.5,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "c6b533f12ce27df4b13eec50a6f7b1f3e4b162e2adbf22b599a77ad53a719971"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "teleport_in": {
+      "file": "teleport_in.wav",
+      "seconds": 0.302,
+      "layers": [
+        {
+          "prompt": "Magic appear: bright pop with a sparkle burst and tiny chime",
+          "seconds": 0.8,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.5,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "08bd4a0fae16c1dc89f16cd4d647b496e1743e1ae63aeb109eff935103b26f52"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "spell": {
+      "file": "spell.wav",
+      "seconds": 1.0,
+      "layers": [
+        {
+          "prompt": "Small fantasy spell cast: sparkly zap with a rising chime and soft whoosh",
+          "seconds": 1.0,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.5,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "0efd03c41ffcc9411a104b45f00de541ef1b0ed5a6d50dd97d0d84013eecd1e3"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "landing_lock": {
+      "file": "landing_lock.wav",
+      "seconds": 0.88,
+      "layers": [
+        {
+          "prompt": "Satisfying holographic lock-on confirmation: soft magical chime with gentle whoosh, premium UI",
+          "seconds": 0.9,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.5,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "8bcc0502621507c930a44090195002b5c40c9462b40cb5f7af317df7f3b96bc7"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "step_1": {
+      "file": "step_1.wav",
+      "seconds": 0.315,
+      "layers": [
+        {
+          "prompt": "Single tiny footstep of a small cartoon character in soft boots on carpet, short and soft, take 1",
+          "seconds": 0.5,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.4,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "c27bdd7410dc009c5b57a8cf80c7ac05cb329df2eff5955d994c6c60760523ca"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "step_2": {
+      "file": "step_2.wav",
+      "seconds": 0.407,
+      "layers": [
+        {
+          "prompt": "Single tiny footstep of a small cartoon character in soft boots on carpet, short and soft, take 2",
+          "seconds": 0.5,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.4,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "b66493f5dc2cefc0ae7450d83b4e7ed12de72f5c4e1743a636e0838e2923b0df"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "step_3": {
+      "file": "step_3.wav",
+      "seconds": 0.319,
+      "layers": [
+        {
+          "prompt": "Single tiny footstep of a small cartoon character in soft boots on carpet, short and soft, take 3",
+          "seconds": 0.5,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.4,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "90ac5615ea750982686d906d10557c0ebd321e2a6eb2bcb895433438209e356a"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "step_4": {
+      "file": "step_4.wav",
+      "seconds": 0.201,
+      "layers": [
+        {
+          "prompt": "Single tiny footstep of a small cartoon character in soft boots on carpet, short and soft, take 4",
+          "seconds": 0.5,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.4,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "cd02451b80e8bcdb5581be9ba087bca1fbb676e60ac250a96f3f77cf83e96ad4"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "jump_1": {
+      "file": "jump_1.wav",
+      "seconds": 0.6,
+      "layers": [
+        {
+          "prompt": "Small cartoon character jump: quick springy take-off with a short cloth whoosh, take 1",
+          "seconds": 0.6,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.4,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "0bf20cc17f79b002743eb021603cb8ea0f56e3173e074210c4f23925bd7a4d0e"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "jump_2": {
+      "file": "jump_2.wav",
+      "seconds": 0.464,
+      "layers": [
+        {
+          "prompt": "Small cartoon character jump: quick springy take-off with a short cloth whoosh, take 2",
+          "seconds": 0.6,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.4,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "bd2ca82bef83068b7a5edfbae4848259a1fa94eea50577ffb15cc3ef3e7435af"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "jump_3": {
+      "file": "jump_3.wav",
+      "seconds": 0.449,
+      "layers": [
+        {
+          "prompt": "Small cartoon character jump: quick springy take-off with a short cloth whoosh, take 3",
+          "seconds": 0.6,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.4,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "45fab70b1480ae4b4ac9d1a7bd8f116cd375cb17b2758d34f1199fd424fa5271"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "land_1": {
+      "file": "land_1.wav",
+      "seconds": 0.295,
+      "layers": [
+        {
+          "prompt": "Small cartoon character landing on carpet: soft punchy thud with a tiny cloth rustle, take 1",
+          "seconds": 0.5,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.4,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "521c152bd8d87bdb374ea0c905fbd0a05a89214400c8587028de1a4dc18b5ac1"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "land_2": {
+      "file": "land_2.wav",
+      "seconds": 0.291,
+      "layers": [
+        {
+          "prompt": "Small cartoon character landing on carpet: soft punchy thud with a tiny cloth rustle, take 2",
+          "seconds": 0.5,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.4,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "61e6f9bc0a5d1ca0cecaa8e1eb0255f950679b316dfe32feac4dcc0527956b3a"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "land_3": {
+      "file": "land_3.wav",
+      "seconds": 0.31,
+      "layers": [
+        {
+          "prompt": "Small cartoon character landing on carpet: soft punchy thud with a tiny cloth rustle, take 3",
+          "seconds": 0.5,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.4,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "1079baacd6f9fd2f1f71758a585a36a9b34e4faa56d1243c0f9ed83cd0d55b63"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "cheer_1": {
+      "file": "cheer_1.wav",
+      "seconds": 1.2,
+      "layers": [
+        {
+          "prompt": "Tiny cute fantasy creature cheering happily, high-pitched joyful gibberish yay, non-verbal, take 1",
+          "seconds": 1.2,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.4,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "75ad93736e39fb6e6509c3d5af51d7d829122e1e1714ff078b334339cba682b8"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "cheer_2": {
+      "file": "cheer_2.wav",
+      "seconds": 1.2,
+      "layers": [
+        {
+          "prompt": "Tiny cute fantasy creature cheering happily, high-pitched joyful gibberish yay, non-verbal, take 2",
+          "seconds": 1.2,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.4,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "95773a54f951c3aa7974bb0545810e464202435af57c5767fb7e0976cf9668e4"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "greet_1": {
+      "file": "greet_1.wav",
+      "seconds": 0.794,
+      "layers": [
+        {
+          "prompt": "Tiny cute fantasy creature friendly greeting chirp, high-pitched, non-verbal hello, take 1",
+          "seconds": 0.8,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.4,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "0533381405c4c7511657268f5b1cd8ee5162b34996a83f024b75badcd33e66be"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    },
+    "greet_2": {
+      "file": "greet_2.wav",
+      "seconds": 0.79,
+      "layers": [
+        {
+          "prompt": "Tiny cute fantasy creature friendly greeting chirp, high-pitched, non-verbal hello, take 2",
+          "seconds": 0.8,
+          "offset": 0.0,
+          "gain": 1.0,
+          "prompt_influence": 0.4,
+          "loop": false,
+          "cost": "cached",
+          "sha256": "ad6a63849e6d11f0d0b4c634bdf2db136d7aff56c3583bcb6355eba89b8adb08"
+        }
+      ],
+      "generatedAt": "2026-10-31T09:40:34Z"
+    }
+  }
+}

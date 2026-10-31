@@ -1,0 +1,23 @@
+/Library/
+/Temp/
+/Obj/
+/Logs/
+/Builds/
+/UserSettings/
+/MemoryCaptures/
+*.csproj
+*.sln
+*.apk
+# KayKit models are copied in by BuildTools from apps/web/public/models/kaykit
+/Assets/RaidRift/Resources/Characters/*.glb
+/Assets/RaidRift/Resources/Characters/*.glb.meta
+
+# Niantic sign-in tokens are injected at build time; never commit them
+/Assets/XR/Settings/AuthBuildSettings.asset
+/Assets/XR/Settings/AuthBuildSettings.asset.meta
+
+# Private room frames for local detector tests only
+/Tools/testimages/
+/Tools/sfx_raw/
+/LocalPackages/
+/.utmp/

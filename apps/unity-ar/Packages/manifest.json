@@ -1,0 +1,31 @@
+{
+  "dependencies": {
+    "com.nianticspatial.nsdk": "https://github.com/nianticspatial/nsdk-library-upm.git#4.1.0-26051913",
+    "com.unity.ai.inference": "file:../LocalPackages/com.unity.ai.inference-2.6.1.tgz",
+    "com.unity.dt.app-ui": "file:../LocalPackages/com.unity.dt.app-ui-1.3.6.tgz",
+    "com.unity.ai.navigation": "2.0.16",
+    "com.unity.cloud.gltfast": "6.20.0",
+    "com.unity.nuget.newtonsoft-json": "3.2.1",
+    "com.unity.ugui": "2.0.0",
+    "com.unity.xr.arkit": "file:../LocalPackages/com.unity.xr.arkit-6.4.2.tgz",
+    "com.unity.xr.openxr": "file:../LocalPackages/com.unity.xr.openxr-1.19.0.tgz",
+    "com.unity.editorcoroutines": "file:../LocalPackages/com.unity.editorcoroutines-1.0.0.tgz",
+    "com.unity.xr.legacyinputhelpers": "file:../LocalPackages/com.unity.xr.legacyinputhelpers-2.1.12.tgz",
+    "com.unity.webrtc": "file:../LocalPackages/com.unity.webrtc-3.0.0.tgz",
+    "com.unity.modules.audio": "1.0.0",
+    "com.unity.xr.arcore": "file:../LocalPackages/com.unity.xr.arcore-6.4.2.tgz",
+    "com.unity.xr.arfoundation": "file:../LocalPackages/com.unity.xr.arfoundation-6.4.2.tgz",
+    "com.unity.xr.management": "4.5.1",
+    "com.unity.modules.ai": "1.0.0",
+    "com.unity.modules.androidjni": "1.0.0",
+    "com.unity.modules.animation": "1.0.0",
+    "com.unity.modules.imgui": "1.0.0",
+    "com.unity.modules.jsonserialize": "1.0.0",
+    "com.unity.modules.physics": "1.0.0",
+    "com.unity.modules.ui": "1.0.0",
+    "com.unity.modules.unitywebrequest": "1.0.0",
+    "com.unity.modules.unitywebrequesttexture": "1.0.0",
+    "com.unity.modules.xr": "1.0.0"
+  }
+}
+
