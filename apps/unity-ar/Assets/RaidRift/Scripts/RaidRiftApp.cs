@@ -290,7 +290,12 @@ namespace RaidRift
             }
             if (!UseServer) _playground.Tick(NowMs, tracking && _landed);
             var world = CurrentWorld();
-            if (detector != null) detector.enabled = tracking && room.HasNavMesh;
+            if (detector != null)
+            {
+                detector.enabled = tracking && room.HasNavMesh;
+                // While broadcasting the encoder owns the GPU budget: look for objects less often (heat, FPS).
+                detector.interval = _liveMode ? 1.2f : 0.5f;
+            }
             if (sceneTracks != null)
             {
                 sceneTracks.active = _live && _landed && tracking;

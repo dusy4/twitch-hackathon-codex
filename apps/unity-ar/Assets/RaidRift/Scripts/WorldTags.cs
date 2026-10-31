@@ -108,7 +108,17 @@ namespace RaidRift
                 // Pop in (overshoot), float up gently, fade by shrinking out at the end.
                 float pop = age < 0.18f ? Mathf.SmoothStep(0.6f, 1.12f, age / 0.18f) : Mathf.Lerp(1.12f, 1f, Mathf.Clamp01((age - 0.18f) / 0.12f));
                 float outS = Mathf.Clamp01(left / 0.25f);
-                transform.position = _base + Vector3.up * (age * 0.04f);
+                var p = _base + Vector3.up * (age * 0.04f);
+                // Portrait phone ~1.5 m from the rift: 2 m up is above the frame. Keep the banner on screen
+                // (upper part of the stream's 9:16 crop), at the same depth so it still sits in the scene.
+                var vp = _cam.WorldToViewportPoint(p);
+                if (vp.z > 0.2f)
+                {
+                    vp.x = Mathf.Clamp(vp.x, 0.2f, 0.8f);
+                    vp.y = Mathf.Clamp(vp.y, 0.2f, 0.74f);
+                    p = _cam.ViewportToWorldPoint(vp);
+                }
+                transform.position = p;
                 transform.rotation = Quaternion.LookRotation(transform.position - _cam.transform.position, Vector3.up);
                 transform.localScale = Vector3.one * pop * outS;
             }

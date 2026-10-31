@@ -52,13 +52,15 @@ namespace RaidRift
             _floorPlane.SetParent(transform, false);
             var add = Resources.Load<Material>("Materials/FxAdd");
             var alpha = Resources.Load<Material>("Materials/FxAlpha");
-            _sparks = Make("Sparks", add, "Fx/Spark", 400, 0.35f);
-            _streaks = Make("Streaks", add, "Fx/Streak", 160, 0.3f);
+            // Kenney Spark/Streak are faint clouds with a 2-px core at spark sizes (fx-emotes preview showed nothing):
+            // a solid hot dot reads on a phone and at 720p; stretched along velocity it is the streak too.
+            _sparks = Make("Sparks", add, "dot", 400, 0.35f);
+            _streaks = Make("Streaks", add, "dot", 160, 0.3f);
             _streaks.GetComponent<ParticleSystemRenderer>().renderMode = ParticleSystemRenderMode.Stretch;
             var sr = _streaks.GetComponent<ParticleSystemRenderer>(); sr.velocityScale = 0.06f; sr.lengthScale = 1.2f;
             _flares = Make("Flares", add, "Fx/Flare", 16, 0f);
             _smoke = Make("Smoke", alpha, "Fx/Smoke", 48, 0.12f, grow: 2.2f);
-            _rings = Make("Rings", add, "Fx/Ring", 12, 0f, grow: 10f);
+            _rings = Make("Rings", add, "Fx/Ring", 24, 0f, grow: 10f);
             _rings.GetComponent<ParticleSystemRenderer>().renderMode = ParticleSystemRenderMode.HorizontalBillboard;
             _chips = Make("Chips", Resources.Load<Material>("Materials/Obsidian"), null, 64, 1f, shrinkOut: true);
             var cr = _chips.GetComponent<ParticleSystemRenderer>();
@@ -153,7 +155,8 @@ namespace RaidRift
             if (baseMat != null)
             {
                 var m = new Material(baseMat);
-                if (texture != null) m.mainTexture = Resources.Load<Texture2D>(texture);
+                if (texture == "dot") m.mainTexture = Dot();
+                else if (texture != null) m.mainTexture = Resources.Load<Texture2D>(texture);
                 r.sharedMaterial = m;
             }
             r.sortingFudge = name == "Smoke" ? 2f : 0f;
@@ -161,8 +164,13 @@ namespace RaidRift
             return ps;
         }
 
+        /// <summary>Sparks/streaks sized in metres are 2–5 px at 720p from 1.5 m (fx-sheet preview): scale them up
+        /// so the stream sees them. Chips, smoke, rings and flares keep their physical sizes.</summary>
+        const float StreamReadable = 2.0f;
+
         static void Emit(ParticleSystem ps, Vector3 pos, Vector3 vel, float size, float life, Color color, float rotation = 0f)
         {
+            if (_i != null && (ps == _i._sparks || ps == _i._streaks)) size *= StreamReadable;
             var p = new ParticleSystem.EmitParams
             {
                 position = pos, velocity = vel, startSize = size, startLifetime = life,
@@ -178,13 +186,19 @@ namespace RaidRift
         public static void Charge(Vector3 center, Vector3 facing, float scale = 1f)
         {
             if (_i == null) return;
-            for (int n = 0; n < 24; n++)
+            // In front of the window (-facing = toward the viewer): at the portal plane its depth hid all of this.
+            center -= facing.normalized * 0.25f * scale;
+            // Reads at 720p: a dense inward pull of streaks + motes and a seam glow that swells into the tear.
+            for (int n = 0; n < 48; n++)
             {
-                var from = center + Random.onUnitSphere * Random.Range(0.35f, 0.8f) * scale;
+                var from = center + Random.onUnitSphere * Random.Range(0.4f, 1.0f) * scale;
                 float life = Random.Range(0.3f, 0.6f);
-                Emit(_i._streaks, from, (center - from) / life, Random.Range(0.012f, 0.026f) * scale, life, Pick());
+                Emit(n % 3 == 0 ? _i._sparks : _i._streaks, from, (center - from) / life, Random.Range(0.02f, 0.045f) * scale, life, Pick());
             }
-            Emit(_i._flares, center, Vector3.zero, 0.5f * scale, 0.6f, new Color(Seam.r, Seam.g, Seam.b, 0.55f));
+            Emit(_i._flares, center, Vector3.zero, 0.6f * scale, 0.6f, new Color(Seam.r, Seam.g, Seam.b, 0.6f));
+            Emit(_i._flares, center, Vector3.zero, 0.3f * scale, 0.6f, new Color(Crack.r, Crack.g, Crack.b, 0.5f));
+            var ground = FloorY.HasValue ? new Vector3(center.x, FloorY.Value + 0.01f, center.z) : center - Vector3.up * 0.95f * scale;
+            Emit(_i._rings, ground, Vector3.zero, 0.55f * scale, 0.6f, new Color(Seam.r, Seam.g, Seam.b, 0.35f));
             Sfx.PlayAt("charge", center, 0.45f, 0.05f);
         }
 
@@ -193,18 +207,18 @@ namespace RaidRift
         {
             if (_i == null) return;
             CameraFeel.Impact(raid ? 1f : 0.72f);
-            Emit(_i._flares, center, Vector3.zero, 1.2f * scale, 0.18f, Crack);
+            Emit(_i._flares, center - facing.normalized * 0.25f * scale, Vector3.zero, 1.2f * scale, 0.18f, Crack);
             // Shockwave: thin ring 0.08 → 0.8 m over 0.36 s (+ delayed echo for raids).
             Emit(_i._rings, floor + Vector3.up * 0.008f, Vector3.zero, 0.16f * scale, 0.36f, new Color(Seam.r, Seam.g, Seam.b, 0.65f));
             if (raid) _i.StartCoroutine(Echo(floor, scale));
             Sfx.PlayAt("crunch", center, raid ? 0.75f : 0.55f, 0.06f);
-            Spawn(_i.impactGlow, center, 1.4f * scale);
+            Spawn(_i.impactGlow, center, 1.0f * scale); // hits hard but leaves the opening visible (fx-sheet)
             Spawn(_i.groundHit, floor + Vector3.up * 0.01f, 1.2f * scale);
             if (raid)
             {
                 Spawn(_i.firework, center + Vector3.up * 0.9f * scale, 1.0f * scale);
                 var cam = Camera.main;
-                Spawn(_i.comicWow, center + Vector3.up * 0.5f * scale, 0.8f * scale, cam != null ? cam.transform.position - center : (Vector3?)null);
+                Spawn(_i.comicWow, center + Vector3.up * 0.75f * scale, 0.55f * scale, cam != null ? cam.transform.position - center : (Vector3?)null);
             }
             _i.StartCoroutine(Clatter(floor));
             int sparks = raid ? 72 : 48, chips = raid ? 24 : 16, smoke = raid ? 8 : 6;
@@ -212,8 +226,9 @@ namespace RaidRift
             for (int n = 0; n < sparks; n++)
             {
                 // Mostly out of the opening (toward the viewer), fanned sideways and up.
-                var dir = (-facing * Random.Range(0.4f, 1f) + side * Random.Range(-1f, 1f) + Vector3.up * Random.Range(-0.1f, 0.9f)).normalized;
+                // Streaks fan sideways/up: one flying straight at the lens stretches into a full-screen line.
                 var ps = n % 3 == 0 ? _i._streaks : _i._sparks;
+                var dir = (-facing * (ps == _i._streaks ? Random.Range(0.1f, 0.4f) : Random.Range(0.4f, 1f)) + side * Random.Range(-1f, 1f) + Vector3.up * Random.Range(-0.1f, 0.9f)).normalized;
                 Emit(ps, center + Random.insideUnitSphere * 0.15f * scale, dir * Random.Range(0.5f, 1.8f) * scale, Random.Range(0.015f, 0.04f) * scale, Random.Range(0.25f, 0.55f), Pick());
             }
             for (int n = 0; n < chips; n++)
@@ -289,24 +304,38 @@ namespace RaidRift
         {
             if (_i == null) return;
             var head = pos + Vector3.up * 0.38f;
+            // Every emote gets a floor pop so even small ones read at 720p; then its own signature.
+            var pop = EmoteColor(action);
+            Emit(_i._rings, pos + Vector3.up * 0.008f, Vector3.zero, 0.12f, 0.45f, new Color(pop.r, pop.g, pop.b, 0.7f));
             switch (action)
             {
                 case "cheer":
-                    Spawn(_i.firework, head + Vector3.up * 0.15f, 0.3f);
+                    Spawn(_i.firework, head + Vector3.up * 0.15f, 0.4f);
                     break;
                 case "dance":
-                    Spawn(_i.fallingStars, head + Vector3.up * 0.2f, 0.3f);
-                    for (int n = 0; n < 10; n++) Emit(_i._sparks, head, Random.insideUnitSphere * 0.5f + Vector3.up * 0.4f, 0.02f, 0.6f, Pick());
+                    Spawn(_i.fallingStars, head + Vector3.up * 0.2f, 0.5f);
+                    for (int n = 0; n < 18; n++) Emit(_i._sparks, head, Random.insideUnitSphere * 0.5f + Vector3.up * 0.4f, 0.045f, 0.9f, Bright(pop));
                     break;
                 case "jump":
-                    for (int n = 0; n < 12; n++) Emit(_i._streaks, pos + Vector3.up * 0.02f, new Vector3(Random.Range(-0.4f, 0.4f), Random.Range(0.6f, 1.2f), Random.Range(-0.4f, 0.4f)), 0.02f, 0.35f, Pick());
+                    for (int n = 0; n < 18; n++) Emit(_i._streaks, pos + Vector3.up * 0.02f, new Vector3(Random.Range(-0.4f, 0.4f), Random.Range(0.6f, 1.2f), Random.Range(-0.4f, 0.4f)), 0.04f, 0.55f, Bright(pop));
+                    Spawn(_i.groundHit, pos + Vector3.up * 0.005f, 0.3f);
                     break;
                 case "spell":
-                    Spawn(_i.impactGlow, head, 0.45f);
+                    Spawn(_i.impactGlow, head, 0.6f);
+                    for (int n = 0; n < 16; n++)
+                    {
+                        float a = n * Mathf.PI / 8f;
+                        var o = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * 0.12f;
+                        Emit(_i._sparks, pos + o + Vector3.up * 0.05f, Vector3.up * Random.Range(0.4f, 0.9f) + o * 2f, 0.04f, 0.8f, Bright(pop));
+                    }
                     break;
                 case "wave":
                 case "greet":
-                    Spawn(_i.hitLight, head, 0.3f);
+                    Spawn(_i.hitLight, head, 0.45f);
+                    for (int n = 0; n < 8; n++) Emit(_i._sparks, head, Random.insideUnitSphere * 0.35f + Vector3.up * 0.3f, 0.035f, 0.7f, Bright(pop));
+                    break;
+                default:
+                    for (int n = 0; n < 8; n++) Emit(_i._sparks, head, Random.insideUnitSphere * 0.35f + Vector3.up * 0.3f, 0.035f, 0.6f, Bright(pop));
                     break;
             }
         }
@@ -321,6 +350,33 @@ namespace RaidRift
             for (int n = 0; n < 4; n++)
                 Emit(_i._sparks, pos + Vector3.up * 0.12f, Random.insideUnitSphere * 0.35f + Vector3.up * 0.3f, 0.014f, 0.3f, c);
         }
+
+        /// <summary>Emote sparks contrast with the violet rift: the emote colour, white-hot cores, a little cyan.</summary>
+        static Color Bright(Color pop) { float v = Random.value; return v < 0.3f ? Color.white : v < 0.45f ? Energy : Color.Lerp(pop, Color.white, 0.25f); }
+
+        static Texture2D _dot;
+
+        /// <summary>64 px white dot: solid hot core, short soft edge (alpha carries the shape for additive blending).</summary>
+        static Texture2D Dot()
+        {
+            if (_dot != null) return _dot;
+            const int n = 64;
+            _dot = new Texture2D(n, n, TextureFormat.RGBA32, true) { name = "Fx dot", wrapMode = TextureWrapMode.Clamp };
+            var px = new Color32[n * n];
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    float r = new Vector2(x - (n - 1) * 0.5f, y - (n - 1) * 0.5f).magnitude / (n * 0.5f);
+                    float a = Mathf.Pow(Mathf.Clamp01(1.25f - r * 1.45f), 1.5f);
+                    px[y * n + x] = new Color32(255, 255, 255, (byte)Mathf.RoundToInt(a * 255f));
+                }
+            _dot.SetPixels32(px);
+            _dot.Apply(true, true);
+            return _dot;
+        }
+
+        static Color EmoteColor(string action) => action == "wave" || action == "greet" ? Hex(0x59F1C8) : action == "cheer" ? Hex(0xFFD45C)
+            : action == "dance" ? Hex(0xFF5CD6) : action == "jump" ? Energy : Seam;
 
         static Color Hex(int rgb) => new Color(((rgb >> 16) & 255) / 255f, ((rgb >> 8) & 255) / 255f, (rgb & 255) / 255f, 1f);
     }

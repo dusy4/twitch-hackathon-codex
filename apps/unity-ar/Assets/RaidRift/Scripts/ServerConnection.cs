@@ -64,7 +64,8 @@ namespace RaidRift
         /// <summary>Debug pairing (empty token field) can be redone silently: the private rehearsal server keeps
         /// pairing in memory, so a server restart turns the saved token into a 401 mid-stream.</summary>
         const string PrefDebugToken = "raidrift.token.debug";
-        bool DebugToken => PlayerPrefs.GetInt(PrefDebugToken, 0) == 1;
+        // Missing flag = a token saved by ≤0.20.0, which only had debug pairing in practice; pasted tokens set 0.
+        bool DebugToken => PlayerPrefs.GetInt(PrefDebugToken, 1) == 1;
 
         /// <summary>The Twitch channel live mode wants read. Re-applied whenever the server's world doesn't
         /// show it (server restart, re-pair), so a street stream never silently loses chat.</summary>

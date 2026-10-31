@@ -40,6 +40,7 @@ namespace RaidRift
         Image _scanBar;
         GameObject _account, _liveChips, _liveActions, _primary, _scanChip, _hintPill, _toastPill, _chatRow, _setup;
         readonly List<Text> _feedLines = new List<Text>();
+        GameObject _feedCard;
         RectTransform _labels;
         InputField _chatInput, _serverInput, _tokenInput, _channelInput, _keyInput;
         RawImage _backdrop;
@@ -126,10 +127,12 @@ namespace RaidRift
         public void SetFeed(IList<ChatLine> lines)
         {
             int n = _feedLines.Count;
+            if (_feedCard != null && _feedCard.activeSelf != (lines.Count > 0)) _feedCard.SetActive(lines.Count > 0);
             for (int i = 0; i < n; i++)
             {
                 int li = lines.Count - n + i;
                 var t = _feedLines[i];
+                if (t.gameObject.activeSelf != (li >= 0)) t.gameObject.SetActive(li >= 0);
                 if (li < 0) { t.text = ""; continue; }
                 var l = lines[li];
                 var color = l.System ? (l.Ok ? "#c79bff" : "#ff8a9a") : NameColor(l.Speaker);
@@ -389,19 +392,23 @@ namespace RaidRift
 
         void BuildChat()
         {
-            // Stream-style chat: no panel, text shadow, five lines fading upward, bottom-left.
-            var feed = Rect("Feed", _safe);
-            Anchor(feed, new Vector2(0, 0), new Vector2(0.42f, 0), new Vector2(8, 24), new Vector2(0, 300));
+            // Stream-style chat (ui-concept-1): a soft dark card that grows with its lines, bottom-left, so names
+            // stay readable over bright rooms; hidden while empty. Five lines fading upward.
+            var feed = Box("Feed", _safe, new Color(0.05f, 0.03f, 0.1f, 0.5f), true);
+            feed.anchorMin = new Vector2(0, 0); feed.anchorMax = new Vector2(0.39f, 0); feed.pivot = new Vector2(0, 0);
+            feed.offsetMin = new Vector2(8, 24); feed.offsetMax = new Vector2(0, 24);
             var v = feed.gameObject.AddComponent<VerticalLayoutGroup>();
-            v.childAlignment = TextAnchor.LowerLeft; v.spacing = 4;
+            v.childAlignment = TextAnchor.LowerLeft; v.spacing = 6; v.padding = new RectOffset(22, 18, 14, 14);
             v.childControlHeight = true; v.childControlWidth = true; v.childForceExpandHeight = false; v.childForceExpandWidth = true;
+            feed.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            _feedCard = feed.gameObject;
             for (int i = 0; i < 5; i++)
             {
-                var t = Label(Rect("Line", feed), "", 24, FontStyle.Normal, Color.white, TextAnchor.LowerLeft, Vector2.zero, Vector2.zero);
-                t.rectTransform.parent.gameObject.AddComponent<LayoutElement>().preferredHeight = 52;
+                var t = Label(feed, "", 26, FontStyle.Normal, Color.white, TextAnchor.LowerLeft, Vector2.zero, Vector2.zero);
                 var sh = t.gameObject.AddComponent<Shadow>(); sh.effectColor = new Color(0, 0, 0, 0.75f); sh.effectDistance = new Vector2(1.5f, -1.5f);
                 _feedLines.Add(t);
             }
+            _feedCard.SetActive(false);
 
             // Chat input: frosted pill with send button, above the feed.
             var row = Pill("ChatRow", _safe, new Vector2(0, 0), new Vector2(0.62f, 0), new Vector2(0, 320), new Vector2(0, 416));
