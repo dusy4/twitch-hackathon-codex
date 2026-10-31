@@ -1863,6 +1863,7 @@ export async function createApp(
       throw new GameError("REVOKED", "Pairing revoked", 401);
     return p.room;
   }
+  const NATIVE_HERO_LIMIT = 12;
   const liveReaders = new Map<string, TwitchIrc>();
   const idleLive = () => ({
     channel: null,
@@ -1889,10 +1890,8 @@ export async function createApp(
     const current = liveReaders.get(room);
     // A phone that reconnects (network switch, app restart) and selects the same
     // channel again keeps the running reader instead of dropping chat for a reconnect.
-    if (
-      current?.status.connected &&
-      current.status.channel === normalizeChannel(channel)
-    ) {
+    // Also while it is still joining or retrying: the reader reconnects by itself.
+    if (current?.status.channel === normalizeChannel(channel)) {
       w.state.mode = "LIVE TWITCH";
       w.state.live = { ...current.status };
       return w.state.live;
@@ -1941,7 +1940,11 @@ export async function createApp(
             await w.raid(`irc:${m.id}`, m.sourceId, m.from, m.count, false);
         },
       },
-      { url: options.ircUrl },
+      {
+        url: options.ircUrl,
+        actionable: (text) =>
+          CHAT_COMMAND.test(text) || chatIntent(text) !== null,
+      },
     );
     liveReaders.set(room, reader);
     w.state.mode = "LIVE TWITCH";
@@ -2003,7 +2006,14 @@ export async function createApp(
   }
   app.get("/v1/native/world", async (req, reply) => {
     reply.header("Cache-Control", "private, no-store");
-    return (await world(await captureRoom(req))).state;
+    const state = (await world(await captureRoom(req))).state;
+    // The phone renders only the first 12 heroes. When practice/test-raid heroes
+    // pile up, list the most recently active first so real chatters stay visible.
+    if (state.avatars.length <= NATIVE_HERO_LIMIT) return state;
+    return {
+      ...state,
+      avatars: [...state.avatars].sort((a, b) => b.lastActive - a.lastActive),
+    };
   });
   /** Stable Twitch-style numeric id for a simulated chatter name. */
   const simulatedId = (name: string) =>
@@ -2553,19 +2563,22 @@ export async function createApp(
           void w.save().catch(() => metrics.failures++);
       }, 5000),
       setInterval(() => {
-        void db.query(`DELETE FROM oauth_states WHERE expires_at<now()`);
-        void db.query("DELETE FROM sessions WHERE expires_at<now()");
-        void db.query(
+        // A rejected cleanup query must never become an unhandled rejection.
+        const cleanup = (sql: string) =>
+          db.query(sql).catch(() => metrics.failures++);
+        cleanup(`DELETE FROM oauth_states WHERE expires_at<now()`);
+        cleanup("DELETE FROM sessions WHERE expires_at<now()");
+        cleanup(
           "DELETE FROM construction_receipts WHERE created_at<now()-interval '24 hours'",
         );
-        void db.query("DELETE FROM structures WHERE expires_at<now()");
-        void db.query(
+        cleanup("DELETE FROM structures WHERE expires_at<now()");
+        cleanup(
           "UPDATE inbox SET payload='{}'::jsonb WHERE created_at<now()-interval '1 day' AND status IN ('done','dead')",
         );
-        void db.query(
+        cleanup(
           "DELETE FROM inbox WHERE created_at<now()-interval '30 days'",
         );
-        void db.query(
+        cleanup(
           `UPDATE action_log SET plan=null WHERE created_at<now()-interval '1 day' AND plan IS NOT NULL`,
         );
         for (const w of worlds.values()) {

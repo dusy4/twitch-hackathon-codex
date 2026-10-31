@@ -62,5 +62,13 @@ console.log(
   `Room ${TAILNET_ROOM}: SIMULATOR, connected, vision on, quest "Sit with the dog" (2 players, 50 shards), 2 demo characters.`,
 );
 console.log("DEBUG_TOOLS on. Data is in memory and resets on stop.");
+// The in-memory rehearsal world is lost on exit, so a stray rejection is logged
+// instead of killing the process mid-stream.
+process.on("unhandledRejection", (reason) =>
+  console.error(
+    `${new Date().toISOString()} unhandled rejection:`,
+    reason instanceof Error ? reason.message : reason,
+  ),
+);
 for (const signal of ["SIGINT", "SIGTERM"] as const)
   process.on(signal, () => void server.app.close().then(() => process.exit(0)));

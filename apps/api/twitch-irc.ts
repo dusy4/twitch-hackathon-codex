@@ -95,6 +95,8 @@ export class TwitchIrc {
       retryMs?: number;
       idleMs?: number;
       timeoutMs?: number;
+      /** Messages worth acting on; others are ignored before rate limiting. */
+      actionable?: (text: string) => boolean;
     } = {},
   ) {
     this.status = {
@@ -226,6 +228,10 @@ export class TwitchIrc {
         if (this.seen.size < 100000) this.seen.add(userId);
         this.status.viewersSeen = this.seen.size;
       }
+      const text = (m.params[1] || "").slice(0, 500);
+      // Ordinary conversation must not use up the per-user cooldown: "hi" then
+      // "!join" 100 ms later should still join.
+      if (this.options.actionable && !this.options.actionable(text)) return;
       const now = Date.now(),
         last = this.rate.get(userId);
       if (last !== undefined && now - last < 500) return;
@@ -239,7 +245,7 @@ export class TwitchIrc {
           userId,
           name: m.tags["display-name"] || m.prefix.split("!")[0],
           color: m.tags.color || "",
-          text: (m.params[1] || "").slice(0, 500),
+          text,
         });
     } else if (m.tags["msg-id"] === "raid") {
       const count = Number(m.tags["msg-param-viewerCount"]);
@@ -257,7 +263,8 @@ export class TwitchIrc {
           count,
         });
     }
-    if (task && this.pending < 64) {
+    // Raids are rare and important: never drop one because chat work is backed up.
+    if (task && (this.pending < 64 || m.command === "USERNOTICE")) {
       this.pending++;
       void task()
         .catch(() => {

@@ -104,6 +104,43 @@ test("anonymous connector negotiates, PONGs, deduplicates, ignores wrong rooms a
     await new Promise<void>((r) => fake.close(() => r()));
   }
 });
+test("ordinary conversation does not consume the command cooldown", async () => {
+  const fake = new WebSocketServer({ port: 0, host: "127.0.0.1" });
+  await once(fake, "listening");
+  let socket: WebSocket | undefined;
+  fake.on("connection", (ws) => {
+    socket = ws;
+    ws.on("message", (data) => {
+      if (data.toString().includes("JOIN"))
+        ws.send("@room-id=555 :tmi.twitch.tv ROOMSTATE #channel\r\n");
+    });
+  });
+  const texts: string[] = [];
+  const reader = new TwitchIrc(
+    "channel",
+    {
+      chat: async (m) => {
+        texts.push(m.text);
+      },
+      raid: async () => {},
+    },
+    {
+      url: `ws://127.0.0.1:${(fake.address() as { port: number }).port}`,
+      actionable: (text) => text.startsWith("!"),
+    },
+  ).start();
+  try {
+    await eventually(() => reader.status.connected);
+    socket!.send(chat("hi", "hello everyone") + chat("join", "!join"));
+    await eventually(() => texts.length === 1);
+    assert.deepEqual(texts, ["!join"]);
+    assert.equal(reader.status.viewersSeen, 1);
+  } finally {
+    reader.stop();
+    for (const ws of fake.clients) ws.terminate();
+    await new Promise<void>((r) => fake.close(() => r()));
+  }
+});
 test("quiet channel stays connected via client PINGs; a dead wire reconnects", async () => {
   const fake = new WebSocketServer({ port: 0, host: "127.0.0.1" });
   await once(fake, "listening");
