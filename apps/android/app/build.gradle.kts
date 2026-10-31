@@ -10,8 +10,8 @@ android {
         applicationId = "world.raidrift.capture.android"
         minSdk = 24
         targetSdk = 36
-        versionCode = 16
-        versionName = "0.11.0-measured-routes"
+        versionCode = 19
+        versionName = "0.12.2-camera-fix"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

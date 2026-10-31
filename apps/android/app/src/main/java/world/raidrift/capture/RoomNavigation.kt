@@ -7,24 +7,32 @@ import kotlin.math.hypot
 
 /** Conservative local walking geometry. Plane boundaries are evidence, not infinite floors.
  * No inferred chair boxes or semantic detections become colliders. */
-class WalkingGeometry(private val surfaces: List<PlaneSnapshot>, private val walls: List<SensedWall>, private val occupied: (FootPosition)->Boolean = { false }) {
+class WalkingGeometry(private val surfaces: List<PlaneSnapshot>, private val walls: List<SensedWall>, private val volume: RoomVolume? = null, private val occupied: (FootPosition)->Boolean = { false }) {
     private data class Bounds(val plane:PlaneSnapshot,val x0:Float,val x1:Float,val z0:Float,val z1:Float) {
         fun contains(x:Float,z:Float)=x in x0..x1 && z in z0..z1 && plane.contains(x,z,0f)
     }
     private val patches=surfaces.filter { it.polygon.size in 3..256 }.map { p -> Bounds(p,p.polygon.minOf { it.u },p.polygon.maxOf { it.u },p.polygon.minOf { it.v },p.polygon.maxOf { it.v }) }
     private val fits=mutableMapOf<FootPosition,Boolean>()
+    /** Plane support, or a measured volume layer (bed top, box, sofa seat) that ARCore has no plane
+     * for. A volume layer only counts when it is clearly above the plane below it, so floor depth
+     * noise never replaces a measured floor plane. */
     fun support(p: FootPosition): Float? {
         var best:Float?=null
         for(surface in patches) if(surface.plane.y<=p.y+.035f && (best==null || surface.plane.y>best) && surface.contains(p.x,p.z)) best=surface.plane.y
-        return best
+        val layer=volume?.surface(p) ?: return best
+        return if(best==null || layer>best+LAYER_GAP) layer else best
     }
     private fun canStand(p:FootPosition):Boolean=fits.getOrPut(p) {
         if(occupied(p)) return@getOrPut false
+        // Measured 3D geometry inside the body: a floor walker meets the bed side as a wall.
+        if(volume?.bodyBlocked(p)==true) return@getOrPut false
         for((dx,dz) in FOOTPRINT) {
             val q=p.copy(x=p.x+dx,z=p.z+dz)
             val y=support(q) ?: return@getOrPut false
-            if(abs(y-p.y)>.035f) return@getOrPut false
-            if(patches.any { it.plane.y>y+.04f && it.plane.y<y+.34f && it.contains(q.x,q.z) }) return@getOrPut false
+            // Ledge rule: a different layer under any part of the footprint means no walking there.
+            if(abs(y-p.y)>LAYER_TOLERANCE) return@getOrPut false
+            // A measured surface above the feet but below head clearance (a bed, a low table) is solid.
+            if(patches.any { it.plane.y>y+.04f && it.plane.y<y+RoomObstacles.CLEARANCE && it.contains(q.x,q.z) }) return@getOrPut false
         }
         true
     }
@@ -44,6 +52,10 @@ class WalkingGeometry(private val surfaces: List<PlaneSnapshot>, private val wal
     }
     companion object {
         private val FOOTPRINT=listOf(0f to 0f,-.065f to -.065f,-.065f to .065f,.065f to -.065f,.065f to .065f)
+        /** Height difference still treated as the same walking layer (plane fit and depth noise). */
+        const val LAYER_TOLERANCE=.035f
+        /** A volume top must rise this far above the plane below to become its own layer. */
+        const val LAYER_GAP=.10f
     }
 }
 

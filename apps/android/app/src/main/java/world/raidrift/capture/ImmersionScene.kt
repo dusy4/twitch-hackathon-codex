@@ -86,6 +86,19 @@ fun SceneScope.TrailObjective(state: TrailState, reduced: Boolean, preview: Bool
     }
 }
 
+/** Invisible, depth-only boxes over measured furniture: characters behind a bed are hidden by it
+ * without per-pixel floor depth noise eating their feet. Boxes never cast or receive shadows. */
+@Composable
+fun SceneScope.RoomOccluders(boxes: List<RoomObstacles.Occluder>) {
+    val hidden=remember(materialLoader) { materialLoader.createOcclusionInstance() }
+    boxes.forEach { b -> key(b) {
+        CubeNode(size=Size(b.width,b.top-b.bottom,b.depth),materialInstance=hidden,
+            position=Position(b.x,(b.bottom+b.top)/2,b.z),
+            // After the camera background (0, occluder mode on), before characters (default 4).
+            apply={ isShadowCaster=false;isShadowReceiver=false;setPriority(io.github.sceneview.ar.camera.ARCameraStream.OCCLUDER_PRIORITY) })
+    } }
+}
+
 @Composable
 fun SceneScope.MagicBursts(bursts: List<MagicBurst>, reduced: Boolean) {
     val pale=remember(materialLoader) { materialLoader.createColorInstance(Color(0xffb9ffe6),metallic=.15f,roughness=.25f) }

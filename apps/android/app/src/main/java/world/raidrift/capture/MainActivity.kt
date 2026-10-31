@@ -121,6 +121,7 @@ private fun CaptureApp(connection: WorldConnection) {
     val motor = remember { SurfaceMotor() }
     val navigator = remember { RoomNavigator() }
     val roomObstacles = remember { RoomObstacles() }
+    val roomVolume = remember { RoomVolume() }
     val walkingHeading = remember { WalkingHeading() }
     val spatialClock = remember { longArrayOf(0L) }
     var waitingForRoute by remember { mutableIntStateOf(0) }
@@ -170,6 +171,9 @@ private fun CaptureApp(connection: WorldConnection) {
     // Off by default: ARCore depth is low-res and a few cm noisy at the floor, which hides the lower
     // part (or all) of a 30 cm character standing on it. DBG can switch it on to compare.
     var occlusionOn by remember { mutableStateOf(false) }
+    // On by default: only confirmed furniture columns from the height field occlude, never floor noise.
+    var furnitureOcclusion by remember { mutableStateOf(true) }
+    var occluders by remember { mutableStateOf<List<RoomObstacles.Occluder>>(emptyList()) }
     var shadowPlanes by remember { mutableStateOf<List<Plane>>(emptyList()) }
     var trackingOk by remember { mutableStateOf(false) }
     var feedActive by remember { mutableStateOf(true) }
@@ -338,6 +342,11 @@ private fun CaptureApp(connection: WorldConnection) {
                 arView.applyRenderQuality(RenderQuality.Performance)
                 arView.setShadowingEnabled(shadowMode.real)
             }
+            // The camera background is normally drawn last (priority 7) and depth-tested; depth-only
+            // furniture boxes drawn before it leave black holes. Occluder mode draws the camera first.
+            val cameraStream = rememberARCameraStream(materialLoader)
+            val hasOccluders = occluders.isNotEmpty()
+            LaunchedEffect(cameraStream, hasOccluders) { cameraStream.isOccluderMeshEnabled = hasOccluders }
             ARSceneView(
                 modifier = Modifier.fillMaxSize(), engine = engine, modelLoader = modelLoader,
                 materialLoader = materialLoader, cameraNode = arCamera, surfaceMirrorer = mirror,
@@ -347,13 +356,14 @@ private fun CaptureApp(connection: WorldConnection) {
                 sessionConfiguration = configureArSession,
                 sessionCameraConfig = selectCameraConfig,
                 view = arView,
+                cameraStream = cameraStream,
                 renderQuality = null,
                 // occlusion -> ARCameraStream.isDepthOcclusionEnabled: swaps the camera background to the
                 // depth material (writes real-world depth, drawn first) and uploads acquireDepthImage16Bits each frame.
                 sceneUnderstanding = SceneUnderstanding(occlusion = depthSupported && occlusionOn, lighting = true, planeVisualization = anchor == null && !relay.active && !clip.recording && !output.active),
                 onSessionCreated = { session ->
                     if(!trail.preview) trail.stop()
-                    rt.reset(); detector.invalidate(); anchor = null; motor.clear(); navigator.clear(); roomObstacles.clear();walkingHeading.clear();spatialClock[0]=0; feet = emptyMap(); autoStage = false; landingReady = false; landingArea = null; landingStability.clear(); raidArrivalGate.clear(); landingClock[0] = 0
+                    rt.reset(); detector.invalidate(); anchor = null; motor.clear(); navigator.clear(); roomObstacles.clear();roomVolume.clear();walkingHeading.clear();spatialClock[0]=0; feet = emptyMap(); autoStage = false; landingReady = false; landingArea = null; landingStability.clear(); raidArrivalGate.clear(); landingClock[0] = 0
                     contactFrame.clock.reset(); contactFrame.pose = null
                     if (BuildConfig.DEBUG) android.util.Log.d("RaidRiftAR", "config planes=${session.config.planeFindingMode} light=${session.config.lightEstimationMode} update=${session.config.updateMode} cpu=${session.cameraConfig.imageSize}")
                     depthSupported = session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)
@@ -416,10 +426,13 @@ private fun CaptureApp(connection: WorldConnection) {
                     val observed = allPlanes.filter { it.trackingState == TrackingState.TRACKING && it.subsumedBy == null }.take(64)
                     val spatialRecord by lazy { captureFrameRecord(frame,"spatial",nowEpoch,emptyList()) }
                     val spatialDue=nowElapsed-spatialClock[0]>=250
-                    if(!tracked) { roomObstacles.clear();walkingHeading.clear();navigator.clear() }
+                    if(!tracked) { roomObstacles.clear();roomVolume.clear();walkingHeading.clear();navigator.clear();if(occluders.isNotEmpty()) occluders=emptyList() }
                     if(spatialDue) {
                         spatialClock[0]=nowElapsed
                         if(tracked && depthSupported && floorY!=null) roomObstacles.observe(spatialRecord,floorY,nowElapsed)
+                        if(tracked && depthSupported) roomVolume.observe(spatialRecord,nowElapsed)
+                        val boxes=if(tracked && furnitureOcclusion && !occlusionOn) roomObstacles.occluders() else emptyList()
+                        if(boxes!=occluders) occluders=boxes
                     }
                     soundListener.foot=frame.camera.pose.foot()
                     soundListener.right=frame.camera.displayOrientedPose.xAxis.let { FootPosition(it[0],it[1],it[2]) }
@@ -744,7 +757,7 @@ private fun CaptureApp(connection: WorldConnection) {
                         }
                         // Polygons are finite. Manual placement/follow mode must not manufacture an
                         // infinite floor at the anchor height. Copy values; do not retain ARCore planes.
-                        val walking=WalkingGeometry(landingSurfaces(planes).map { PlaneSnapshot(it.first.y,it.first.polygon) },walls) { roomObstacles.blocked(it,nowElapsed) }
+                        val walking=WalkingGeometry(landingSurfaces(planes).map { PlaneSnapshot(it.first.y,it.first.polygon) },walls,roomVolume.takeIf { depthSupported }) { roomObstacles.blocked(it,nowElapsed) }
                         fun support(query: FootPosition): Float? = walking.support(query)
                         val elapsed = presentationStep
                         contactFrame.pose?.let { previous ->
@@ -868,6 +881,7 @@ private fun CaptureApp(connection: WorldConnection) {
                 // Real shadows: invisible shadow catchers on tracked floors/desks (only once placed, so they
                 // never stack with the plane renderer's own receiver).
                 if (shadowMode.real && anchor != null) shadowPlanes.forEach { plane -> key(plane) { ShadowReceiverPlane(plane = plane) } }
+                if (trackingOk && occluders.isNotEmpty()) RoomOccluders(occluders)
                 anchor?.let { origin -> AnchorNode(anchor = origin) {
                     world?.let { CharacterWorld(it, feet, shadowMode.blob) { arCamera.worldPosition } }
                 } }
@@ -1043,7 +1057,8 @@ private fun CaptureApp(connection: WorldConnection) {
             Text("Scans measured surfaces continuously. Existing characters stay put; new arrivals wait for a clear landing area.", style = MaterialTheme.typography.bodySmall)
             Row(verticalAlignment = Alignment.CenterVertically) { Switch(followMe, { followMe = it; if(it) { autoStage=false; landingReady=anchor!=null } }); Spacer(Modifier.width(8.dp)); Text("Walking mode · characters follow") }
             Text(if (followMe) "Characters catch up toward the camera on measured ground." else "Fixed stage: walking away leaves the characters here. Look back to see them again. The stage lasts for this AR session.", style = MaterialTheme.typography.bodySmall)
-            if (depthSupported) Row(verticalAlignment = Alignment.CenterVertically) { Switch(occlusionOn, { occlusionOn = it }); Spacer(Modifier.width(8.dp)); Text("Depth occlusion · experimental") }
+            if (depthSupported) Row(verticalAlignment = Alignment.CenterVertically) { Switch(furnitureOcclusion, { furnitureOcclusion = it }); Spacer(Modifier.width(8.dp)); Text("Hide characters behind furniture") }
+            if (depthSupported) Row(verticalAlignment = Alignment.CenterVertically) { Switch(occlusionOn, { occlusionOn = it }); Spacer(Modifier.width(8.dp)); Text("Full-pixel depth occlusion · experimental") }
             Text("Automatic landing is on by default. A surface tap overrides it with manual placement. Select target chooses an interaction surface.", style = MaterialTheme.typography.bodySmall)
             if (ar && anchor != null) OutlinedButton(onClick = { placementMode = true; selectMode = false; settingsOpen = false }) { Text("Move stage") }
             TextButton(onClick = { settingsOpen = false; debugOpen = !debugOpen }) { Text("Diagnostics") }
