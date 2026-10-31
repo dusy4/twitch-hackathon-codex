@@ -459,10 +459,28 @@ export function summarizePlan(plan: ActionPlan, tracks: SceneTrack[] = []) {
     })
     .join(" · ");
 }
-export type AIProvider = { provider: "openai" | "opencode"; model: string };
+export type AIProvider = {
+  provider: "openai" | "opencode" | "compat";
+  model: string;
+  url?: string;
+  key?: string;
+};
+/** Default small planner: Groq-hosted gpt-oss-20b (fast, strict JSON). Any OpenAI-compatible
+ * chat-completions endpoint works via PLANNER_BASE_URL/PLANNER_MODEL, e.g. a local Liquid LFM2
+ * served by Ollama (http://127.0.0.1:11434/v1) or llama.cpp's server. */
+export const COMPAT_DEFAULT_URL = "https://api.groq.com/openai/v1";
+export const COMPAT_DEFAULT_MODEL = "openai/gpt-oss-20b";
 /** The configured paid planner, or null when advanced choreography is offline. */
 export function aiProvider(env = process.env): AIProvider | null {
   if (env.ALLOW_PAID_AI !== "true") return null;
+  if (env.AI_PROVIDER === "compat") {
+    const url = (env.PLANNER_BASE_URL || COMPAT_DEFAULT_URL).replace(/\/+$/, "");
+    const key = env.PLANNER_API_KEY || env.GROQ_API_KEY || "";
+    const local = /^https?:\/\/(127\.|localhost|\[::1\])/.test(url);
+    return key || local
+      ? { provider: "compat", model: env.PLANNER_MODEL || COMPAT_DEFAULT_MODEL, url, key }
+      : null;
+  }
   if (env.AI_PROVIDER === "opencode")
     return env.OPENCODE_GO_API_KEY
       ? {
@@ -499,6 +517,8 @@ export function planInstructions(tracks: SceneTrack[]) {
     `Visible tracks (use these exact ids as target): ${JSON.stringify(visible)}`,
     'If the viewer names a real object that is NOT in that list (any object, e.g. a pillow or a lamp), set target to "?" plus a short English noun for it, e.g. "?pillow" or "?potted plant"; the server looks for it with a camera detector. Never invent track ids. If the request needs no object, use target null.',
     'To go to an object and sit on it: navigate(name "run", target id, 1700ms), play_animation(name "sit", same target, 3000ms), attach_to_track(name "sit", same target, 5000ms).',
+    'Viewers watch the stream and cannot point. The stream shows numbered markers; a number in the request ("3", "#3", "spot 3", "go to 3", "jump on 5") means the track whose class is "spot <number>" (e.g. "spot 3"). If no number exists for it, say the spot is not on screen.',
+    'Spatial words map to tracks the phone publishes: "there", "over there", "that spot" = the track whose class is "there" (the middle of the picture viewers see); "here", "me", "to me", "come back" = class "streamer"; "the portal"/"home" = class "portal"; a bed, sofa, chair seat or table top the viewer mentions may be a class "furniture top" track when no better-named track exists. Go there with navigate(target id); to get on top of furniture use jump_to_surface.',
     "Limits: 1 to 8 steps, each durationMs 100..7000, total at most 15000 ms, at most two spawn/build/effect steps. message: short friendly English (max 140 chars).",
   ].join("\n");
 }
@@ -528,6 +548,19 @@ export function extractJson(text: string): unknown {
     }
   }
 }
+/** Words viewers use vs. the phone detector's names (COCO via SurfaceLabels: sofa, table, tv, plant, person). */
+const SYNONYMS: Record<string, string[]> = {
+  couch: ["sofa"], sofa: ["couch"], settee: ["sofa"],
+  desk: ["table"], table: ["desk"],
+  television: ["tv"], screen: ["tv", "laptop"], monitor: ["tv"],
+  puppy: ["dog"], doggy: ["dog"], kitty: ["cat"], kitten: ["cat"],
+  human: ["person"], guy: ["person"], girl: ["person"], man: ["person"], woman: ["person"],
+  plant: ["potted plant", "plant"], flower: ["plant"],
+  seat: ["chair", "sofa"], stool: ["chair"], armchair: ["chair", "sofa"],
+  mug: ["cup"], glass: ["cup", "wine glass"],
+};
+/** Furniture a character can stand or sit on; falls back to the phone's scanned "furniture top". */
+const FURNITURE = /\b(bed|sofa|couch|table|desk|chair|seat|ottoman|bench|stool|shelf|furniture|top)\b/;
 /** Finds (and inserts into the world) tracks for nouns nobody has seen yet. */
 export type TargetResolver = (nouns: string[]) => Promise<SceneTrack[]>;
 /**
@@ -553,13 +586,38 @@ export async function bindTargets(
       s.target = done;
       continue;
     }
+    // Numbered on-stream markers: "3", "#3", "?spot 3", "spot-3" -> the phone's "spot 3" track.
+    const number = raw.trim().match(/^\??\s*(?:spot[\s_-]*)?#?\s*(\d{1,2})$/i);
+    if (number) {
+      const spot = all.find((t) => t.class === `spot ${Number(number[1])}`);
+      if (!spot)
+        throw new GameError("TARGET_NOT_VISIBLE", `Spot ${Number(number[1])} isn't on screen right now.`);
+      bound.set(raw, spot.id);
+      s.target = spot.id;
+      continue;
+    }
     const asked = raw.trim().startsWith("?");
     const words = normalizeWords(raw.replace(/^\s*\?/, "")).split(" ");
     if (!words[0]) continue;
     words[words.length - 1] = singular(words[words.length - 1]);
     const noun = words.join(" ").slice(0, 40).trim();
     const idLike = !asked && /[-_#\d]/.test(raw);
-    const named = all.filter((t) => mentions(t.class, noun));
+    // A mangled id ("ph-chair", "chair_2") still names its class: "chair".
+    const fromId = idLike
+      ? normalizeWords(raw.replace(/^(ph|phone|track)[-_]/i, "").replace(/[-_#]?\d+$/, "").replace(/[-_#]+/g, " "))
+      : "";
+    const alias = SYNONYMS[noun] ?? SYNONYMS[fromId] ?? [];
+    let named = all.filter(
+      (t) =>
+        mentions(t.class, noun) ||
+        (!!fromId && mentions(t.class, fromId)) ||
+        alias.some((a) => mentions(t.class, a)),
+    );
+    // "the bed / sofa / table" with no detector track: the scanned raised surface the phone published.
+    if (!named.length && FURNITURE.test(fromId || noun)) {
+      const tops = all.filter((t) => t.class === "furniture top");
+      if (tops.length) named = [tops[0]];
+    }
     let hit: SceneTrack | undefined;
     if (named.length === 1) hit = named[0];
     else if (named.length > 1)
@@ -590,27 +648,34 @@ async function compileOpenCode(
   fetcher: typeof fetch,
   observedAt: number,
   resolve?: TargetResolver,
+  endpoint?: { url: string; key?: string },
 ) {
   let res: Response;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (endpoint) {
+    if (endpoint.key) headers.Authorization = `Bearer ${endpoint.key}`;
+  } else {
+    headers.Authorization = `Bearer ${process.env.OPENCODE_GO_API_KEY}`;
+    headers["x-opencode-session"] = opencodeSession;
+  }
+  const body: Record<string, unknown> = {
+    model,
+    temperature: 0.2,
+    max_tokens: 900,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: planInstructions(tracks) },
+      { role: "user", content: JSON.stringify({ viewer_request: prompt }) },
+    ],
+  };
+  // Small reasoning models (gpt-oss) answer this constrained task fine with minimal reasoning.
+  if (endpoint && /gpt-oss/.test(model)) body.reasoning_effort = "low";
   try {
-    res = await fetcher(OPENCODE_URL, {
+    res = await fetcher(endpoint ? `${endpoint.url}/chat/completions` : OPENCODE_URL, {
       method: "POST",
       signal: AbortSignal.timeout(10000),
-      headers: {
-        Authorization: `Bearer ${process.env.OPENCODE_GO_API_KEY}`,
-        "x-opencode-session": opencodeSession,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0.2,
-        max_tokens: 900,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: planInstructions(tracks) },
-          { role: "user", content: JSON.stringify({ viewer_request: prompt }) },
-        ],
-      }),
+      headers,
+      body: JSON.stringify(body),
     });
   } catch (error) {
     throw new GameError(
@@ -676,15 +741,22 @@ export async function compileAI(
       "Advanced choreography is offline. Try jump, dance, or a visible object command.",
       503,
     );
+  if (provider.provider === "compat") {
+    try {
+      return await compileOpenCode(prompt, tracks, provider.model, fetcher, observedAt, resolve, {
+        url: provider.url!,
+        key: provider.key,
+      });
+    } catch (error) {
+      // Busy chat can hit the small model's rate limit (Groq free tier 429): retry once on OpenCode Go
+      // when configured; the world falls back to keywords after that.
+      if (!(error instanceof GameError) || error.code !== "AI_UNAVAILABLE" || !process.env.OPENCODE_GO_API_KEY)
+        throw error;
+      return compileOpenCode(prompt, tracks, process.env.OPENCODE_MODEL || "deepseek-v4.1-flash", fetcher, observedAt, resolve);
+    }
+  }
   if (provider.provider === "opencode")
-    return compileOpenCode(
-      prompt,
-      tracks,
-      provider.model,
-      fetcher,
-      observedAt,
-      resolve,
-    );
+    return compileOpenCode(prompt, tracks, provider.model, fetcher, observedAt, resolve);
   const res = await fetcher("https://api.openai.com/v1/responses", {
     method: "POST",
     signal: AbortSignal.timeout(10000),

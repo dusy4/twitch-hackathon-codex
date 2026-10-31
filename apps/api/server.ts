@@ -1543,8 +1543,9 @@ export async function createApp(
     if (!inserted.rows.length) metrics.duplicates++;
     return reply.code(204).send();
   });
-  const CHAT_COMMAND =
-    /^!(join|left|right|up|down|w|a|s|d|forward|backward|back|jump|wave|dance|sit|rift|ourapp|stop)(\s|$)/i;
+  // Any "!<words>" is a RaidRift prompt for the LLM planner ("!go over there", "!sit on the bed then
+  // dance"); a bare "!" or "! text" is not. Ordinary chat without "!" stays the keyword intent path.
+  const CHAT_COMMAND = /^![\p{L}\p{N}]/iu;
   /** The one chat-command path shared by Twitch EventSub and the phone. */
   async function chatCommand(
     w: World,

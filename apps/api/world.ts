@@ -14,10 +14,17 @@ import {
   GameError,
   localCompile,
   compileAI,
+  aiProvider,
   validatePlan,
   summarizePlan,
   type TargetResolver,
 } from "./compiler.js";
+/** One-word basics stay instant keyword actions even when the LLM planner is first. */
+const BASIC_COMMAND =
+  /^(?:!(?:rift|ourapp)\s+)?!?(join|jump|dance|wave|sit|stop|left|right|forward|back|backward|up|down|w|a|s|d)$/i;
+/** "!rift go to there" / "!go to there" -> "go to there" for the model. */
+const stripCommandPrefix = (text: string) =>
+  text.trim().replace(/^!(?:rift|ourapp)\s+/i, "").replace(/^!/, "").trim() || text;
 import { mentions, targetNouns } from "./targets.js";
 import { credit } from "./economy.js";
 import type { Database } from "./db.js";
@@ -311,7 +318,9 @@ export class World extends EventEmitter {
     ).rows[0];
     if (previous) return previous;
     const now = Date.now();
-    if (now - (this.cooldowns.get(who.id) || 0) < 500)
+    // A clock that stepped backwards (NTP correction, mocked test clock) must not lock a viewer out.
+    const sinceLast = now - (this.cooldowns.get(who.id) || 0);
+    if (sinceLast >= 0 && sinceLast < 500)
       throw new GameError("COOLDOWN", "Give your avatar a moment.", 429);
     this.cooldowns.set(who.id, now);
     const a = await this.join(who);
@@ -352,48 +361,66 @@ export class World extends EventEmitter {
     const tracks = targetHint
       ? this.state.tracks.filter((t) => t.id === targetHint)
       : this.state.tracks;
-    let plan = localCompile(
-      prompt,
-      tracks,
-      a.x,
-      a.y,
-      this.state.config.geometry,
-    );
-    const source: "keywords" | "ai" = plan ? "keywords" : "ai";
+    // LLM-first for free-form "!..." prompts (owner decision 2026-10-31): the small planner model reads
+    // the request; the keyword compiler is the fallback when the model is offline, over budget or fails.
+    // Single-word basics (!jump, !dance, a WASD step) stay instant keyword actions.
+    const llmFirst =
+      process.env.PLANNER_LLM_FIRST !== "false" &&
+      !!aiProvider() &&
+      this.state.config.ai &&
+      !BASIC_COMMAND.test(prompt.trim());
+    const keywordPlan = () =>
+      localCompile(prompt, tracks, a.x, a.y, this.state.config.geometry);
+    let plan = llmFirst ? null : keywordPlan();
+    let source: "keywords" | "ai" = plan ? "keywords" : "ai";
     let latency: number | null = null;
     if (!plan) {
-      if (!this.state.config.ai)
+      if (!this.state.config.ai || !aiProvider())
         throw new GameError(
           "UNKNOWN_COMMAND",
           "Try dance, jump, summon a tiny dragon, or interact with a visible object.",
         );
       this.aiMinute = this.aiMinute.filter((t) => now - t < 60000);
-      if (this.aiInFlight >= 2 || this.aiMinute.length >= 10)
-        throw new GameError(
-          "AI_BUDGET",
-          "This world has reached its choreography budget.",
-          429,
-        );
-      this.aiMinute.push(now);
-      this.aiInFlight++;
-      const started = Date.now();
-      try {
-        plan = await compileAI(
-          prompt,
-          tracks,
-          fetch,
-          targetHint ? undefined : resolve,
-        );
-        this.ai.lastError = null;
-      } catch (error) {
-        this.ai.lastError =
-          error instanceof GameError
-            ? `${error.code}: ${error.message}`
-            : "AI_FAILED";
-        throw error;
-      } finally {
-        this.aiInFlight--;
-        latency = this.ai.lastLatencyMs = Date.now() - started;
+      const overBudget = this.aiInFlight >= 2 || this.aiMinute.length >= 10;
+      if (overBudget) {
+        plan = llmFirst ? keywordPlan() : null;
+        if (!plan)
+          throw new GameError(
+            "AI_BUDGET",
+            "This world has reached its choreography budget.",
+            429,
+          );
+        source = "keywords";
+      } else {
+        this.aiMinute.push(now);
+        this.aiInFlight++;
+        const started = Date.now();
+        try {
+          plan = await compileAI(
+            stripCommandPrefix(prompt),
+            tracks,
+            fetch,
+            targetHint ? undefined : resolve,
+          );
+          this.ai.lastError = null;
+        } catch (error) {
+          this.ai.lastError =
+            error instanceof GameError
+              ? `${error.code}: ${error.message}`
+              : "AI_FAILED";
+          // Target problems are real answers ("can't see a pillow"); only infrastructure
+          // failures fall back to keywords.
+          const targetError =
+            error instanceof GameError &&
+            /^TARGET_|STALE_TARGET/.test(error.code);
+          const fallback = llmFirst && !targetError ? keywordPlan() : null;
+          if (!fallback) throw error;
+          plan = fallback;
+          source = "keywords";
+        } finally {
+          this.aiInFlight--;
+          latency = this.ai.lastLatencyMs = Date.now() - started;
+        }
       }
     }
     const currentTracks = targetHint

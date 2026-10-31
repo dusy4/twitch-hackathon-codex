@@ -26,6 +26,8 @@ if (envFile && !process.env.OPENCODE_GO_API_KEY)
     envFile,
     "OPENCODE_GO_API_KEY",
   );
+if (envFile && !process.env.GROQ_API_KEY)
+  process.env.GROQ_API_KEY = readEnvValue(envFile, "GROQ_API_KEY");
 relayUrl ??= `rtmp://${new URL(origin).hostname}:1935/live/raidrift`;
 const server = await createTailnetTestApp({ host, port, origin, relayUrl });
 try {
@@ -35,9 +37,11 @@ try {
   throw error;
 }
 const ai =
-  process.env.ALLOW_PAID_AI === "true"
-    ? `OpenCode Go (${process.env.OPENCODE_MODEL || "deepseek-v4.1-flash"})`
-    : "OFF (set OPENCODE_GO_API_KEY or pass --env-file)";
+  process.env.ALLOW_PAID_AI !== "true"
+    ? "OFF (set GROQ_API_KEY / OPENCODE_GO_API_KEY or pass --env-file)"
+    : process.env.AI_PROVIDER === "compat"
+      ? `LLM-first small planner (${process.env.PLANNER_MODEL || "openai/gpt-oss-20b"} @ ${process.env.PLANNER_BASE_URL || "Groq"})`
+      : `OpenCode Go (${process.env.OPENCODE_MODEL || "deepseek-v4.1-flash"})`;
 console.log(`RaidRift TAILNET SIMULATOR listening on http://${host}:${port}`);
 console.log(`Public origin:   ${server.origin}`);
 console.log(`Dashboard:       ${server.origin}/dashboard (Simulator -> host)`);

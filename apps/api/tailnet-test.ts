@@ -55,10 +55,18 @@ export async function createTailnetTestApp(options: {
   process.env.OPENAI_API_KEY = "";
   process.env.EXPERIMENTAL_CAMERA_REWARDS = "false";
   process.env.DEBUG_TOOLS = "true";
-  process.env.AI_PROVIDER ||= "opencode";
-  process.env.ALLOW_PAID_AI = process.env.OPENCODE_GO_API_KEY
-    ? "true"
-    : "false";
+  // Small fast planner first (Groq gpt-oss-20b, or any OpenAI-compatible PLANNER_BASE_URL such as a
+  // local Liquid LFM2), else OpenCode Go.
+  process.env.AI_PROVIDER ||=
+    process.env.GROQ_API_KEY || process.env.PLANNER_BASE_URL ? "compat" : "opencode";
+  process.env.ALLOW_PAID_AI =
+    process.env.AI_PROVIDER === "compat"
+      ? process.env.GROQ_API_KEY || process.env.PLANNER_API_KEY || process.env.PLANNER_BASE_URL
+        ? "true"
+        : "false"
+      : process.env.OPENCODE_GO_API_KEY
+        ? "true"
+        : "false";
   const server = await createApp({
     db: Database.memory(),
     security: new Security(randomBytes(32)),

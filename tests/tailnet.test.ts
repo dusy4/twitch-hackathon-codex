@@ -146,8 +146,15 @@ test("pairing, native tracks and synchronous native chat drive the north star wi
     assert.ok(s.log.some((e: { kind: string }) => e.kind === "plan"));
     assert.ok(s.log.some((e: { kind: string }) => e.kind === "tracks"));
     assert.equal(s.ai.provider, null);
-    // Plain unknown "!" commands are refused, not silently dropped.
-    const unknown = await post("/v1/native/chat", { text: "!hug" });
+    // Any "!" prompt now reaches the planner (LLM-first). With no model configured, an unknown one
+    // is refused by the keyword fallback, not silently dropped. Wait out the 500 ms viewer cooldown.
+    mock.timers.enable({ apis: ["Date"], now: Date.now() + 60_000 });
+    let unknown;
+    try {
+      unknown = await post("/v1/native/chat", { text: "!hug" });
+    } finally {
+      mock.timers.reset();
+    }
     assert.equal(unknown.json().ok, false);
     assert.equal(unknown.json().code, "UNKNOWN_COMMAND");
   } finally {
