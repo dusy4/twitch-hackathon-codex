@@ -281,23 +281,23 @@ namespace RaidRift
             var disc = GameObject.CreatePrimitive(PrimitiveType.Quad);
             Destroy(disc.GetComponent<Collider>());
             disc.transform.SetParent(badge.transform, false);
-            disc.transform.localScale = Vector3.one * 0.1f;
+            disc.transform.localScale = Vector3.one * 0.28f;
             disc.transform.localPosition = new Vector3(0f, 0f, 0.002f);
             var dr = disc.GetComponent<Renderer>();
             dr.sharedMaterial = Resources.Load<Material>("Materials/BlobShadow");
             var db = new MaterialPropertyBlock();
             db.SetFloat("_Strength", 0.9f);
             dr.SetPropertyBlock(db);
-            if (_font == null) _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (_font == null) _font = Resources.Load<Font>("Fonts/SpaceGrotesk-Bold") ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             var text = badge.AddComponent<TextMesh>();
             text.font = _font;
             text.text = label == null ? n.ToString() : $"{n}\n<size=40>{label}</size>";
             text.richText = true;
             text.fontSize = 96;
-            text.characterSize = 0.006f; // viewers must read it on a 720p stream to type "!go to 3"
+            text.characterSize = 0.012f; // fx-spots preview: viewers must read it on a 720p stream to type "!go to 3"
             text.anchor = TextAnchor.MiddleCenter;
             text.alignment = TextAlignment.Center;
-            text.fontStyle = FontStyle.Bold;
+            text.fontStyle = FontStyle.Normal; // the font itself is bold
             text.color = new Color(0.75f, 1f, 0.92f);
             badge.GetComponent<MeshRenderer>().sharedMaterial = _font.material;
             root.AddComponent<SpotBillboard>().badge = badge.transform;
@@ -318,7 +318,7 @@ namespace RaidRift
                 // Far spots keep a readable size on stream (like name tags), capped so near ones stay small.
                 float dist = (badge.position - cam.transform.position).magnitude;
                 badge.localScale = Vector3.one * Mathf.Clamp(dist / 1.4f, 1f, 2.6f);
-                badge.localPosition = new Vector3(0f, 0.11f + 0.06f * badge.localScale.y + Mathf.Sin(Time.time * 2f + _seed) * 0.012f, 0f);
+                badge.localPosition = new Vector3(0f, 0.1f + 0.1f * badge.localScale.y + Mathf.Sin(Time.time * 2f + _seed) * 0.012f, 0f);
                 transform.GetChild(0).localScale = Vector3.one * (0.15f + Mathf.Sin(Time.time * 3f + _seed) * 0.015f);
             }
         }

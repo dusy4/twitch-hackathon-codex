@@ -35,6 +35,8 @@ namespace RaidRift
         public float UptimeSeconds { get; private set; }
         /// <summary>Sessions rebuilt by the stuck-reconnect watchdog (shown in Setup diagnostics).</summary>
         public int Restarts { get; private set; }
+        /// <summary>Capture FPS the bridge currently wants (lower under SEVERE/CRITICAL thermal status).</summary>
+        public int TargetFps => _targetFps;
         public event Action<string> StateChanged;
         public RenderTexture View => _view;
         bool _micMuted;

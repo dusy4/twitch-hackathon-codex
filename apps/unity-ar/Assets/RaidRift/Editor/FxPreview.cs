@@ -129,6 +129,56 @@ namespace RaidRift.EditorTools
                         try { preview.Save(frame, "fx-caption.png"); }
                         finally { Object.DestroyImmediate(frame); Object.DestroyImmediate(caption.gameObject); }
                     });
+                    // Numbered "!rift go to N" spots near and far (SceneTracks.Marker + its billboard), as viewers see them.
+                    Stage("fx-spots.png", () =>
+                    {
+                        preview.ResetEffects();
+                        string tag = preview.camera.tag;
+                        preview.camera.tag = "MainCamera";
+                        var host = new GameObject("Spots host").AddComponent<SceneTracks>();
+                        var marker = typeof(SceneTracks).GetMethod("Marker", BindingFlags.Instance | BindingFlags.NonPublic);
+                        var spots = new List<GameObject>();
+                        var at = new[] { new Vector3(-0.5f, 0f, 0.4f), new Vector3(0.45f, 0f, 0.6f), new Vector3(-0.9f, 0f, 2.6f), new Vector3(1.1f, 0f, 3.4f) };
+                        for (int i = 0; i < at.Length; i++)
+                            spots.Add((GameObject)marker.Invoke(host, new object[] { i + 1, at[i], i == 1 ? "chair" : null }));
+                        foreach (var s in spots)
+                            foreach (var mb in s.GetComponents<MonoBehaviour>())
+                                mb.GetType().GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.NonPublic)?.Invoke(mb, null);
+                        var frame = preview.Capture();
+                        try { preview.Save(frame, "fx-spots.png"); }
+                        finally
+                        {
+                            Object.DestroyImmediate(frame);
+                            foreach (var s in spots) Object.DestroyImmediate(s);
+                            Object.DestroyImmediate(host.gameObject);
+                            preview.camera.tag = tag;
+                        }
+                    });
+                    // Viewer name tags (WorldTags) over real Hero objects, one with a fresh command line.
+                    Stage("fx-tags.png", () =>
+                    {
+                        preview.ResetEffects();
+                        var heroes = new List<Hero>();
+                        var spots = new[] { (new Vector3(-0.35f, 0f, 0.55f), "pixelknight", ""), (new Vector3(0.3f, 0f, 0.8f), "mothmage", "jump on 3"), (new Vector3(0.05f, 0f, 1.9f), "lunarfox_the_long_name", "") };
+                        foreach (var (pos, name, msg) in spots)
+                        {
+                            var h = Hero.Create(name, HeroModels.For(name), 0, null);
+                            h.transform.position = pos;
+                            h.transform.rotation = Quaternion.LookRotation(Vector3.back);
+                            typeof(Hero).GetProperty("Spawned").GetSetMethod(true).Invoke(h, new object[] { true });
+                            h.DisplayName = name; h.Message = msg;
+                            heroes.Add(h);
+                        }
+                        WorldTags.Update(preview.camera, heroes);
+                        var frame = preview.Capture();
+                        try { preview.Save(frame, "fx-tags.png"); }
+                        finally
+                        {
+                            Object.DestroyImmediate(frame);
+                            WorldTags.Clear();
+                            foreach (var h in heroes) if (h != null) Object.DestroyImmediate(h.gameObject);
+                        }
+                    });
                     // Raid banner as the app places it (2.15 m over the rift): must stay inside the 9:16 frame.
                     Stage("fx-banner.png", () =>
                     {

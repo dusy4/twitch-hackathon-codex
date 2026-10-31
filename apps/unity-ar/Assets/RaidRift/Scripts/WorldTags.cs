@@ -10,10 +10,32 @@ namespace RaidRift
     /// </summary>
     public static class WorldTags
     {
-        class Tag { public Transform root, backing; public TextMesh text; public string last; }
+        class Tag { public Transform root, backing; public TextMesh text; public string last; public float popAt = -10f; public long serial; }
         static readonly Dictionary<string, Tag> _tags = new Dictionary<string, Tag>();
         static Font _font;
-        static Material _back;
+        static Material _back, _tagBack, _tagText;
+
+        // Copies of a dynamic font's material (for our own render queue) must follow the font when Unity rebuilds
+        // its glyph atlas for new names/characters; otherwise TextMesh UVs point into a stale texture.
+        static readonly List<(Font font, Material mat)> _fontMats = new List<(Font, Material)>();
+        static bool _rebuildHooked;
+
+        static Material FontCopy(Font font, int queue, string name)
+        {
+            var m = new Material(font.material) { renderQueue = queue, name = name };
+            _fontMats.RemoveAll(e => e.mat == null);
+            _fontMats.Add((font, m));
+            if (!_rebuildHooked)
+            {
+                _rebuildHooked = true;
+                Font.textureRebuilt += rebuilt =>
+                {
+                    foreach (var e in _fontMats)
+                        if (e.font == rebuilt && e.mat != null) e.mat.mainTexture = rebuilt.material.mainTexture;
+                };
+            }
+            return m;
+        }
 
         public static void Update(Camera cam, IEnumerable<Hero> heroes, bool selfie = false) // SELFIE: default preserves world callers.
         {
@@ -23,15 +45,22 @@ namespace RaidRift
                 if (hero == null || !hero.Spawned) continue;
                 seen.Add(hero.Id);
                 if (!_tags.TryGetValue(hero.Id, out var tag) || tag.root == null) { tag = Create(hero.Id); _tags[hero.Id] = tag; }
-                var msg = string.IsNullOrEmpty(hero.Message) ? "" : "\n<size=34><color=#c79bff>" + Clean(Truncate(hero.Message, 26)) + "</color></size>";
+                var msg = string.IsNullOrEmpty(hero.Message) ? "" : "\n<size=42><color=#92ffe0>" + Clean(Truncate(hero.Message, 26)) + "</color></size>";
                 string content = Clean(hero.DisplayName ?? "") + msg;
                 if (content != tag.last)
                 {
+
                     tag.text.text = content;
                     tag.last = content;
                     var b = tag.text.GetComponent<Renderer>().bounds; // fit the backing to the text (local units)
                     float w = Mathf.Max(0.6f, b.size.x / Mathf.Max(1e-4f, tag.root.lossyScale.x) + 0.25f);
                     tag.backing.localScale = new Vector3(Mathf.Min(w, 3.4f), string.IsNullOrEmpty(msg) ? 0.42f : 0.78f, 1f);
+                }
+                // A new command (even the same "!jump" twice): pop so the viewer sees it land.
+                if (hero.ActionSerial != tag.serial)
+                {
+                    if (tag.serial != 0 && msg.Length > 0) tag.popAt = Time.time;
+                    tag.serial = hero.ActionSerial;
                 }
                 var top = hero.transform.position + (selfie ? cam.transform.up : Vector3.up) * (hero.DisplayHeight + (selfie ? 0.014f : 0.07f)); // SELFIE: scaled perch label.
                 tag.root.position = top;
@@ -39,6 +68,8 @@ namespace RaidRift
                 tag.root.rotation = Quaternion.LookRotation(to, cam.transform.up); // screen-aligned: no tilt with phone roll
                 // Constant apparent size: scale with distance, clamped so far tags don't become billboards.
                 float s = Mathf.Clamp(to.magnitude, 0.25f, 4f) * 0.06f;
+                float pop = Time.time - tag.popAt;
+                if (pop < 0.3f) s *= 1f + 0.3f * Mathf.Sin(pop / 0.3f * Mathf.PI); // quick bounce, back to normal at 0.3 s
                 tag.root.localScale = Vector3.one * s;
                 // SELFIE: compensate glyphs for provider projection reflection; never mirror the stream/HUD.
                 tag.text.transform.localScale = new Vector3(selfie && cam.projectionMatrix.m00 < 0f ? -1f : 1f, 1f, 1f);
@@ -57,7 +88,9 @@ namespace RaidRift
             var text = new GameObject("Text").AddComponent<TextMesh>();
             text.transform.SetParent(root, false);
             text.font = _font;
-            text.GetComponent<MeshRenderer>().sharedMaterial = _font.material;
+            // Own render order (shared, made once): plate after the rift window (else the window covers it), text last.
+            if (_tagText == null) _tagText = FontCopy(_font, 3110, "Tag text");
+            text.GetComponent<MeshRenderer>().sharedMaterial = _tagText;
             text.fontSize = 64;
             text.characterSize = 0.06f;
             text.anchor = TextAnchor.LowerCenter;
@@ -71,7 +104,8 @@ namespace RaidRift
             var r = back.GetComponent<Renderer>();
             if (_back != null)
             {
-                r.sharedMaterial = _back;
+                if (_tagBack == null) _tagBack = new Material(_back) { renderQueue = 3100, name = "Tag plate" };
+                r.sharedMaterial = _tagBack;
                 var block = new MaterialPropertyBlock();
                 block.SetFloat("_Strength", 0.75f);
                 r.SetPropertyBlock(block);
@@ -87,7 +121,7 @@ namespace RaidRift
             var text = go.AddComponent<TextMesh>();
             text.font = Resources.Load<Font>("Fonts/SpaceGrotesk-Bold") ?? _font;
             // Own queue: after the rift window (else it draws over the plate) and after the plate.
-            var textMat = new Material(text.font.material) { renderQueue = 3110 };
+            var textMat = FontCopy(text.font, 3110, "Banner text");
             Material plateMat = null;
             go.GetComponent<MeshRenderer>().sharedMaterial = textMat;
             text.fontSize = 96;

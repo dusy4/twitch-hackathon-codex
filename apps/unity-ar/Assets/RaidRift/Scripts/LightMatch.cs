@@ -35,7 +35,10 @@ namespace RaidRift
             if (e.mainLightIntensityLumens.HasValue) _light.intensity = Mathf.Clamp(e.mainLightIntensityLumens.Value / 1000f, 0.3f, 1.6f);
             else if (e.averageBrightness.HasValue) _light.intensity = Mathf.Clamp(e.averageBrightness.Value * 2f, 0.3f, 1.6f);
             // 0 = indoor/dim … 1 = bright daylight (intensity is clamped 0.3–1.6 above). CameraFeel tames bloom/flash.
-            Brightness01 = Mathf.MoveTowards(Brightness01, Mathf.InverseLerp(0.8f, 1.6f, _light.intensity), 0.05f);
+            // Only from a real estimate: without one (selfie requests none, or unsupported) keep the last value
+            // instead of drifting toward the light's default intensity.
+            if (e.mainLightIntensityLumens.HasValue || e.averageBrightness.HasValue)
+                Brightness01 = Mathf.MoveTowards(Brightness01, Mathf.InverseLerp(0.8f, 1.6f, _light.intensity), 0.05f);
             if (e.ambientSphericalHarmonics.HasValue)
             {
                 RenderSettings.ambientMode = AmbientMode.Skybox;

@@ -35,8 +35,13 @@ namespace RaidRift
             s.volume = Muted ? 0f : volume;
             s.time = Random.Range(0f, clip.length);
             s.Play();
+            _loops.RemoveAll(l => l.source == null);
+            _loops.Add((s, volume));
             return s;
         }
+
+        // Live loops and their unmuted volume, so the Sound toggle silences ambience that is already playing.
+        static readonly List<(AudioSource source, float volume)> _loops = new List<(AudioSource, float)>();
         AudioSource _source;
         readonly List<AudioSource> _pool = new List<AudioSource>();
         int _next;
@@ -44,7 +49,11 @@ namespace RaidRift
         public static bool Muted
         {
             get => PlayerPrefs.GetInt(PrefMute, 0) == 1;
-            set { PlayerPrefs.SetInt(PrefMute, value ? 1 : 0); PlayerPrefs.Save(); }
+            set
+            {
+                PlayerPrefs.SetInt(PrefMute, value ? 1 : 0); PlayerPrefs.Save();
+                foreach (var l in _loops) if (l.source != null) l.source.volume = value ? 0f : l.volume;
+            }
         }
 
         void Awake()

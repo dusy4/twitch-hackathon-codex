@@ -106,6 +106,8 @@ namespace RaidRift
                 });
             var q = Qualities[_quality];
             publisher.arCamera = arCamera;
+            // Mixer sums voice + game with a hard clip: leave the streamer's voice headroom over raid stingers.
+            publisher.GameVolume = 0.75f;
             publisher.StartLive(new LiveSettings
             {
                 url = "rtmps://live.twitch.tv:443/app",
@@ -127,6 +129,7 @@ namespace RaidRift
             if (publisher != null) publisher.StopLive();
             if (_live) server.StopLiveChannel();
             _liveMode = false;
+            Application.targetFrameRate = 60; // undo a thermal 30 fps cap
             hud.SetBackdrop(null);
             hud.SetMode(false, "DEMO");
             hud.Toast("Stream ended · back to demo mode");
@@ -148,6 +151,9 @@ namespace RaidRift
                 return;
             }
             hud.SetBackdrop(publisher.View); // null after a failure/stop: the camera renders to the screen again
+            // Phone too hot (encoder already dropped below 30 fps): stop rendering 60 fps nobody sees on stream.
+            // Capture active (also while reconnecting), not "delivering": a hot phone stays capped during a reconnect.
+            Application.targetFrameRate = publisher.View != null && publisher.TargetFps > 0 && publisher.TargetFps < 30 ? 30 : 60;
             var up = System.TimeSpan.FromSeconds(publisher.UptimeSeconds);
             string chip = publisher.IsLive ? $"● LIVE {(int)up.TotalMinutes:00}:{up.Seconds:00}" : publisher.State.StartsWith("error") ? "● OFFLINE" : "● " + publisher.State.ToUpperInvariant();
             hud.SetMode(true, chip);
