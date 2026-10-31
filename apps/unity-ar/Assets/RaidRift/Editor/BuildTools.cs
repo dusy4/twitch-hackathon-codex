@@ -24,7 +24,7 @@ namespace RaidRift.EditorTools
         const string Resources = Root + "/Resources";
         const string ScenePath = Root + "/Scenes/Main.unity";
         const string ChunkPrefab = Root + "/Prefabs/RoomMeshChunk.prefab";
-        public const string Version = "0.17.1";
+        public const string Version = "0.18.0";
         public const int VersionCode = 14;
 
         [MenuItem("RaidRift/Set up project")]
@@ -146,6 +146,9 @@ namespace RaidRift.EditorTools
             Mat("RiftWindow", "RaidRift/RiftWindow", m => { });
             Mat("RiftPaint", "RaidRift/RiftPaint", m => { });
             Mat("PortalSwirl", "RaidRift/Portal", m => { });
+            Mat("CameraFeel", "RaidRift/CameraFeel", m => { });
+            Mat("FxAdd", "Mobile/Particles/Additive", m => { });         // RiftFx sparks/rings/flares (Kenney CC0 textures)
+            Mat("FxAlpha", "Mobile/Particles/Alpha Blended", m => { });  // RiftFx dust/smoke
             Mat("Obsidian", "RaidRift/Toon", m => { m.SetColor("_Color", new Color(0.13f, 0.08f, 0.22f)); m.SetColor("_Emission", new Color(0.05f, 0.01f, 0.1f)); m.SetColor("_Rim", new Color(0.7f, 0.45f, 1f)); });
             Mat("Crystal", "RaidRift/Toon", m => { m.SetColor("_Color", new Color(0.35f, 0.95f, 0.85f)); m.SetColor("_Emission", new Color(0.12f, 0.45f, 0.4f)); m.SetColor("_Rim", Color.white); });
             Mat("Gold", "RaidRift/Toon", m => { m.SetColor("_Color", new Color(1f, 0.8f, 0.35f)); m.SetColor("_Emission", new Color(0.3f, 0.2f, 0.02f)); m.SetColor("_Rim", new Color(1f, 0.95f, 0.7f)); });
@@ -227,6 +230,13 @@ namespace RaidRift.EditorTools
             return ok;
         }
 
+        static void SetFloat(SerializedObject so, string name, float value)
+        {
+            var p = so.FindProperty(name);
+            if (p != null) p.floatValue = value;
+            else Debug.LogWarning("[RaidRift] missing serialized field " + name);
+        }
+
         static Type FindType(string fullName) =>
             AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType(fullName, false)).FirstOrDefault(t => t != null);
 
@@ -255,6 +265,13 @@ namespace RaidRift.EditorTools
                 var so = new SerializedObject(asset);
                 var p = so.FindProperty("activeInputHandler");
                 if (p != null && p.intValue == 0) { p.intValue = 1; so.ApplyModifiedPropertiesWithoutUndo(); }
+                // LIVE: enable the repository and credential-safe logging templates for RootEncoder.
+                foreach (var name in new[] { "useCustomGradleSettingsTemplate", "useCustomLauncherGradleManifest", "useCustomGradlePropertiesTemplate" })
+                {
+                    var template = so.FindProperty(name);
+                    if (template != null) template.boolValue = true;
+                }
+                so.ApplyModifiedPropertiesWithoutUndo();
             }
             // Debug server over Tailscale may be plain http to a 100.x address: allow cleartext like the native debug build.
             PlayerSettings.insecureHttpOption = InsecureHttpOption.AlwaysAllowed;
@@ -282,6 +299,7 @@ namespace RaidRift.EditorTools
             cam.farClipPlane = 30f;
             cam.cullingMask = ~(1 << RiftWorld.Layer); // the rift world is only seen through its window
             camGo.AddComponent<AudioListener>();
+            camGo.AddComponent<CameraFeel>(); // shake/flash/bloom on the composited image (phone + stream)
             var cameraManager = camGo.AddComponent<ARCameraManager>();
             camGo.AddComponent<ARCameraBackground>();
             var tpd = camGo.AddComponent<UnityEngine.InputSystem.XR.TrackedPoseDriver>();
@@ -302,7 +320,28 @@ namespace RaidRift.EditorTools
             meshes.density = 0.5f;
             meshes.normals = true;
             var ext = FindType("NianticSpatial.NSDK.AR.Meshing.NsdkMeshingExtension");
-            if (ext != null) meshGo.AddComponent(ext);
+            if (ext != null)
+            {
+                var meshing = new SerializedObject(meshGo.AddComponent(ext));
+                // City walks: drop mesh blocks 25 m behind the streamer so memory stays bounded for hours.
+                SetFloat(meshing, "_meshCullingDistance", 25f);
+                meshing.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            // Live depth occlusion (Niantic depth, fused with the room mesh): real things hide the heroes per pixel.
+            var occlusion = camGo.AddComponent<AROcclusionManager>();
+            occlusion.requestedEnvironmentDepthMode = UnityEngine.XR.ARSubsystems.EnvironmentDepthMode.Medium;
+            occlusion.environmentDepthTemporalSmoothingRequested = true;
+            var occExt = FindType("NianticSpatial.NSDK.AR.Occlusion.NsdkOcclusionExtension");
+            if (occExt != null)
+            {
+                var oe = new SerializedObject(camGo.AddComponent(occExt));
+                var mm = oe.FindProperty("_meshManager");
+                if (mm != null) mm.objectReferenceValue = meshes;
+                var fr = oe.FindProperty("_targetFrameRate");
+                if (fr != null) fr.longValue = 20; // GPU budget shared with meshing and the detector
+                oe.ApplyModifiedPropertiesWithoutUndo();
+            }
 
             var lightGo = new GameObject("Sun");
             var light = lightGo.AddComponent<Light>();
@@ -323,6 +362,7 @@ namespace RaidRift.EditorTools
             trail.cameraTransform = camGo.transform;
             appGo.AddComponent<Sfx>();
             appGo.AddComponent<Fx>();
+            appGo.AddComponent<RiftFx>();
             var moths = new GameObject("Rift Moths").AddComponent<RiftMoths>();
             var hud = appGo.AddComponent<Hud>();
             var app = appGo.AddComponent<RaidRiftApp>();
@@ -344,6 +384,9 @@ namespace RaidRift.EditorTools
             sceneTracks.server = server;
             sceneTracks.room = room;
             app.sceneTracks = sceneTracks;
+            // Live mode: RTMPS straight from the phone to Twitch (clean AR composite + mic + game audio).
+            app.publisher = appGo.AddComponent<LivePublisher>();
+            app.publisher.arCamera = cam;
             // On-device object understanding: YOLOX-Tiny (COCO) -> labelled surfaces in the 3D map.
             var detector = appGo.AddComponent<ObjectDetector>();
             detector.arCamera = cam;

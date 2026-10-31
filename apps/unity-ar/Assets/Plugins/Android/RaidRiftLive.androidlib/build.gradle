@@ -1,0 +1,26 @@
+apply plugin: 'com.android.library'
+
+android {
+    namespace 'com.raidrift.live'
+    compileSdk 36
+    defaultConfig {
+        minSdk 25
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    sourceSets.main {
+        manifest.srcFile 'AndroidManifest.xml'
+        java.srcDirs = ['src']
+        assets.srcDirs = ['assets']
+    }
+}
+
+dependencies {
+    // Same modules/version as the existing RaidRift Kotlin publisher.
+    implementation 'com.github.pedroSG94.RootEncoder:encoder:2.8.1'
+    implementation 'com.github.pedroSG94.RootEncoder:rtmp:2.8.1'
+    implementation 'com.github.pedroSG94.RootEncoder:srt:2.8.1'
+}

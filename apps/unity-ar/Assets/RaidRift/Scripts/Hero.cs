@@ -158,6 +158,7 @@ namespace RaidRift
         {
             _squash = 0.22f * strength;
             Fx.Dust(transform.position, strength);
+            RiftFx.Land(transform.position, strength > 0.9f);
             Sfx.PlayAt("land", transform.position, 0.55f * strength);
         }
 
@@ -239,6 +240,7 @@ namespace RaidRift
 
         /// <summary>Walking out of the rift world: no agent yet, a straight walk from inside the world to the
         /// window foot. Behind the window plane the hero is drawn by the rift camera (layer 8).</summary>
+        static float _lastArrival = -100f; // first hero of a group gets the small camera hit
         public bool Entering { get; private set; }
         RiftWorld _rift;
         Vector3 _exit;
@@ -270,6 +272,8 @@ namespace RaidRift
                     _groundY = _exit.y;
                     Land(0.6f);
                     Fx.Sparkle(_exit + Vector3.up * 0.12f, SparkMint, 14, 0.6f);
+            RiftFx.Arrival(_exit, Vector3.ProjectOnPlane(_exit - transform.position, Vector3.up).normalized, Time.time - _lastArrival > 2f);
+            _lastArrival = Time.time;
                     Sfx.PlayAt("teleport_in", _exit, 0.5f);
                 }
                 return;

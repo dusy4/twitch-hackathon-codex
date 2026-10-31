@@ -161,6 +161,10 @@ namespace RaidRift
                         Message = (string)a["message"] ?? "",
                         SpawnedAt = (long?)a["spawnedAt"] ?? 0,
                         Target = (string)a["target"],
+                        SteerX = (float?)a["steer"]?["x"] ?? 0f,
+                        SteerY = (float?)a["steer"]?["y"] ?? 0f,
+                        SteerUntil = (long?)a["steer"]?["until"] ?? 0,
+                        SteerSeq = (long?)a["steer"]?["seq"] ?? 0,
                     });
                     if (w.Heroes.Count >= 12) break;
                 }
@@ -179,6 +183,7 @@ namespace RaidRift
                         FrameId = (string)t["frameId"],
                     });
                 }
+            if (j["live"] is JObject live) { w.LiveChannel = (string)live["channel"]; w.LiveConnected = (bool?)live["connected"] ?? false; }
             if (j["raid"] is JObject r)
                 w.Raid = new RaidState { Id = (string)r["id"], From = (string)r["from"] ?? "", Count = (int?)r["count"] ?? 0, Started = (long?)r["started"] ?? 0, Test = (bool?)r["test"] ?? false };
             return w;
@@ -221,12 +226,19 @@ namespace RaidRift
             StartCoroutine(Post("/v1/native/frame", body, 10, (ok, reply) => { _frameInFlight = false; done?.Invoke(ok, reply); }));
         }
 
+        /// <summary>Live mode: the server reads this real Twitch channel's chat (anonymous, read-only) and raids.</summary>
+        public void SetLiveChannel(string channel, Action<bool, string> done) =>
+            StartCoroutine(Post("/v1/live/channel", new JObject { ["channel"] = channel }, 10, done));
+
+        public void StopLiveChannel(Action<bool, string> done = null) =>
+            StartCoroutine(Post("/v1/live/channel", new JObject(), 10, done, "DELETE"));
+
         public void DebugRaid(Action<bool, string> done) =>
             StartCoroutine(Post("/v1/native/debug/event", new JObject { ["type"] = "raid", ["from"] = "TestRaider", ["viewers"] = 6, ["chatters"] = 6 }, 8, done));
 
-        IEnumerator Post(string path, JObject body, int timeout, Action<bool, string> done)
+        IEnumerator Post(string path, JObject body, int timeout, Action<bool, string> done, string method = "POST")
         {
-            using (var req = new UnityWebRequest(Server + path, "POST"))
+            using (var req = new UnityWebRequest(Server + path, method))
             {
                 req.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(body.ToString(Newtonsoft.Json.Formatting.None)));
                 req.downloadHandler = new DownloadHandlerBuffer();

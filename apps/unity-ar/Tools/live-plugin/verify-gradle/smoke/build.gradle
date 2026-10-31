@@ -1,0 +1,19 @@
+apply plugin: 'com.android.application'
+android {
+    namespace 'com.raidrift.live.verify'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'com.raidrift.live.verify'
+        minSdk 25
+        targetSdk 36
+    }
+    buildTypes.release {
+        minifyEnabled true
+        proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+    }
+    testOptions.unitTests.returnDefaultValues = true
+}
+dependencies {
+    implementation project(':live')
+    testImplementation 'junit:junit:4.13.2'
+}

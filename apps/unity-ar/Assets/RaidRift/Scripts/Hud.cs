@@ -14,12 +14,17 @@ namespace RaidRift
         static readonly Color Violet = new Color(0.78f, 0.6f, 1f);
         static readonly Color Mint = new Color(0.57f, 1f, 0.88f);
 
-        Font _font;
+        static readonly Color LiveRed = new Color(1f, 0.27f, 0.36f);
+
+        Font _font, _bold, _display;
         RectTransform _root;
-        Text _title, _status, _hint, _feed, _toast;
+        Text _title, _status, _hint, _feed, _toast, _modeChip, _liveInfo, _quality;
         RectTransform _labels;
         GameObject _chatRow, _setup;
-        InputField _chatInput, _serverInput, _tokenInput;
+        InputField _chatInput, _serverInput, _tokenInput, _channelInput, _keyInput;
+        public event Action<string, string> OnGoLive;
+        static readonly string[] DemoButtons = { "raid", "follow", "trail", "scan", "chat", "setup" };
+        static readonly string[] LiveButtons = { "follow", "scan", "chat", "mic", "setup", "end-live" };
         RawImage _backdrop;
         readonly Dictionary<string, (RectTransform rect, Text text)> _tags = new Dictionary<string, (RectTransform, Text)>();
         readonly Dictionary<string, Text> _buttons = new Dictionary<string, Text>();
@@ -29,7 +34,24 @@ namespace RaidRift
         public event Action<string> OnChat;
         public event Action<string, string> OnServer;
 
-        public bool Typing => (_chatInput != null && _chatInput.isFocused) || (_serverInput != null && _serverInput.isFocused) || (_tokenInput != null && _tokenInput.isFocused);
+        public bool Typing => Focused(_chatInput) || Focused(_serverInput) || Focused(_tokenInput) || Focused(_channelInput) || Focused(_keyInput);
+        static bool Focused(InputField f) => f != null && f.isFocused;
+
+        /// <summary>Demo = test room / stub chat / dev tools. Live = real Twitch channel + stream from the phone.</summary>
+        public void SetMode(bool live, string chip)
+        {
+            foreach (var kv in _buttons)
+                kv.Value.transform.parent.gameObject.SetActive(Array.IndexOf(live ? LiveButtons : DemoButtons, kv.Key) >= 0);
+            _modeChip.text = chip;
+            _modeChip.color = live ? LiveRed : Mint;
+        }
+
+        public void SetLiveInfo(string info, string quality, string channel)
+        {
+            if (_liveInfo != null) _liveInfo.text = info;
+            if (_quality != null) _quality.text = quality;
+            if (_channelInput != null && !_channelInput.isFocused && string.IsNullOrEmpty(_channelInput.text)) _channelInput.text = channel;
+        }
 
         Image _flash;
         RawImage _vignette;
@@ -39,6 +61,13 @@ namespace RaidRift
         /// <summary>Camera "hit": a coloured flash plus a vignette pulse that fade out (portal opening, hops).</summary>
         public void Flash(Color color, float strength)
         {
+            // On the composited image (phone + stream) when CameraFeel is present; UI overlay as a fallback.
+            if (FindFirstObjectByType<CameraFeel>() != null)
+            {
+                CameraFeel.Flash(color, strength);
+                CameraFeel.Vignette(new Color(color.r * 0.3f, color.g * 0.08f, color.b * 0.5f), strength * 0.5f);
+                return;
+            }
             EnsureOverlays();
             _flashColor = color;
             _flashAmount = Mathf.Max(_flashAmount, strength);
@@ -99,7 +128,11 @@ namespace RaidRift
 
         public void Build()
         {
-            _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            // Inter (OFL, full Latin + Cyrillic: chat and Twitch names) for text; Space Grotesk (OFL) for the wordmark.
+            var builtin = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            _font = Resources.Load<Font>("Fonts/Inter-Regular") ?? builtin;
+            _bold = Resources.Load<Font>("Fonts/Inter-SemiBold") ?? _font;
+            _display = Resources.Load<Font>("Fonts/SpaceGrotesk-Bold") ?? _bold;
             if (FindFirstObjectByType<EventSystem>() == null)
             {
                 var es = new GameObject("EventSystem");
@@ -129,8 +162,11 @@ namespace RaidRift
             // Top pill
             var top = Box("Top", safe, Panel);
             Anchor(top, new Vector2(0, 1), new Vector2(1, 1), new Vector2(24, -160), new Vector2(-24, -24));
-            _title = Label(top, "RAIDRIFT", 40, FontStyle.Bold, Color.white, TextAnchor.UpperLeft, new Vector2(28, -16), new Vector2(-28, -8));
+            _title = Label(top, "RAIDRIFT", 40, FontStyle.Bold, Color.white, TextAnchor.UpperLeft, new Vector2(28, -16), new Vector2(-280, -8));
+            _title.font = _display;
             _status = Label(top, "", 28, FontStyle.Normal, Violet, TextAnchor.LowerLeft, new Vector2(28, 12), new Vector2(-28, -70));
+            _modeChip = Label(top, "DEMO", 26, FontStyle.Bold, Mint, TextAnchor.UpperRight, new Vector2(28, -20), new Vector2(-28, -10));
+            _modeChip.font = _display;
 
             _hint = Label(safe, "", 32, FontStyle.Bold, Mint, TextAnchor.UpperCenter, Vector2.zero, Vector2.zero);
             Anchor(_hint.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(40, -260), new Vector2(-40, -175));
@@ -152,7 +188,7 @@ namespace RaidRift
             layout.spacing = 10;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = true;
-            foreach (var id in new[] { "raid", "follow", "trail", "scan", "chat", "setup" }) Button(row, id);
+            foreach (var id in new[] { "raid", "follow", "trail", "scan", "chat", "mic", "setup", "end-live" }) Button(row, id);
 
             // Chat input row
             _chatRow = Box("ChatRow", safe, Panel).gameObject;
@@ -165,30 +201,71 @@ namespace RaidRift
             _chatInput.onEndEdit.AddListener(_ => { if (!_chatInput.wasCanceled) SubmitChat(); });
             _chatRow.SetActive(false);
 
-            // Setup panel
-            _setup = Box("Setup", safe, Panel).gameObject;
+            // Setup sheet: two columns (fits landscape and portrait). Left = Go live on Twitch, right = demo & dev.
+            _setup = Box("Setup", safe, new Color(0.04f, 0.045f, 0.075f, 0.94f)).gameObject;
             var setupRect = _setup.GetComponent<RectTransform>();
-            Anchor(setupRect, new Vector2(0, 0.5f), new Vector2(1, 0.5f), new Vector2(40, -500), new Vector2(-40, 500));
-            Label(setupRect, "Server (Tailscale) · pairing token from Creator Studio (optional)", 28, FontStyle.Bold, Violet, TextAnchor.UpperLeft, new Vector2(30, -30), new Vector2(-30, -20));
-            _serverInput = Input(setupRect, ServerConnection.DefaultServer, Vector2.zero, Vector2.zero);
-            Anchor(_serverInput.GetComponent<RectTransform>(), new Vector2(0, 1), new Vector2(1, 1), new Vector2(30, -175), new Vector2(-30, -85));
-            _tokenInput = Input(setupRect, "paste token · empty = debug pairing", Vector2.zero, Vector2.zero);
-            Anchor(_tokenInput.GetComponent<RectTransform>(), new Vector2(0, 1), new Vector2(1, 1), new Vector2(30, -280), new Vector2(-30, -190));
+            Anchor(setupRect, new Vector2(0.03f, 0.04f), new Vector2(0.97f, 0.96f), Vector2.zero, Vector2.zero);
+            var liveCol = Column(setupRect, 0f, 0.5f);
+            var demoCol = Column(setupRect, 0.5f, 1f);
+
+            Heading(liveCol, "GO LIVE ON TWITCH", LiveRed);
+            _channelInput = Row(Input(liveCol, "your Twitch channel (chat + raids)", Vector2.zero, Vector2.zero).GetComponent<RectTransform>()).GetComponent<InputField>();
+            _keyInput = Row(Input(liveCol, "stream key · stays on this phone", Vector2.zero, Vector2.zero).GetComponent<RectTransform>()).GetComponent<InputField>();
+            _keyInput.contentType = InputField.ContentType.Password;
+            var quality = SheetButton(liveCol, "Quality", "quality", false);
+            _quality = quality.GetComponentInChildren<Text>();
+            var go = SheetButton(liveCol, "Go live", null, true);
+            go.onClick.AddListener(() => { OnGoLive?.Invoke(_channelInput.text.Trim().TrimStart('#').ToLowerInvariant(), _keyInput.text.Trim()); _setup.SetActive(false); });
+            SheetButton(liveCol, "End live · back to demo", "end-live", false);
+            _liveInfo = Label(Row(Rect("Info", liveCol), 90), "", 24, FontStyle.Normal, new Color(1, 1, 1, .65f), TextAnchor.UpperLeft, Vector2.zero, Vector2.zero);
+
+            Heading(demoCol, "DEMO & DEV", Violet);
+            _serverInput = Row(Input(demoCol, ServerConnection.DefaultServer, Vector2.zero, Vector2.zero).GetComponent<RectTransform>()).GetComponent<InputField>();
+            _tokenInput = Row(Input(demoCol, "pairing token · empty = debug pairing", Vector2.zero, Vector2.zero).GetComponent<RectTransform>()).GetComponent<InputField>();
             _tokenInput.contentType = InputField.ContentType.Password;
-            string[] actions = { "pair", "stream", "offline", "server-raid", "reset-room", "sound" };
-            string[] titles = { "Pair & go live", "Stream to PC (WebRTC)", "Offline test room", "Server test raid", "Reset room scan", "Sound on/off" };
-            for (int i = 0; i < actions.Length; i++)
-            {
-                var a = actions[i];
-                var b = SmallButton(setupRect, titles[i], new Vector2(0, 1), new Vector2(1, 1), new Vector2(30, -400 - i * 100), new Vector2(-30, -310 - i * 100));
+            string[] actions = { "pair", "offline", "server-raid", "stream", "reset-room", "sound", "motion" };
+            string[] titles = { "Pair with server", "Offline test room", "Server test raid", "Stream to PC (WebRTC)", "Reset room scan", "Sound on/off", "Reduced motion on/off" };
+            for (int i = 0; i < actions.Length; i++) SheetButton(demoCol, titles[i], actions[i], false);
+            _setup.SetActive(false);
+        }
+
+        RectTransform Column(RectTransform parent, float xMin, float xMax)
+        {
+            var c = Rect("Column", parent);
+            Anchor(c, new Vector2(xMin, 0), new Vector2(xMax, 1), new Vector2(28, 28), new Vector2(-28, -28));
+            var v = c.gameObject.AddComponent<VerticalLayoutGroup>();
+            v.spacing = 12;
+            v.childControlHeight = true; v.childControlWidth = true;
+            v.childForceExpandHeight = false; v.childForceExpandWidth = true;
+            return c;
+        }
+
+        static RectTransform Row(RectTransform r, float height = 84)
+        {
+            var le = r.gameObject.AddComponent<LayoutElement>();
+            le.preferredHeight = height; le.minHeight = height * 0.75f;
+            return r;
+        }
+
+        void Heading(RectTransform column, string text, Color color)
+        {
+            var t = Label(Row(Rect("Heading", column), 56), text, 30, FontStyle.Bold, color, TextAnchor.MiddleLeft, Vector2.zero, Vector2.zero);
+            t.font = _display;
+        }
+
+        Button SheetButton(RectTransform column, string title, string action, bool primary)
+        {
+            var r = Row(Box("Button " + title, column, primary ? new Color(LiveRed.r, LiveRed.g, LiveRed.b, 0.9f) : new Color(0.78f, 0.6f, 1f, 0.16f)), primary ? 100 : 80);
+            var b = r.gameObject.AddComponent<Button>();
+            Label(r, title, primary ? 34 : 28, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter, Vector2.zero, Vector2.zero);
+            if (action != null)
                 b.onClick.AddListener(() =>
                 {
-                    if (a == "pair") { OnServer?.Invoke(_serverInput.text, _tokenInput.text.Trim()); _tokenInput.text = ""; }
-                    OnButton?.Invoke(a);
-                    _setup.SetActive(false);
+                    if (action == "pair") { OnServer?.Invoke(_serverInput.text, _tokenInput.text.Trim()); _tokenInput.text = ""; }
+                    OnButton?.Invoke(action);
+                    if (action != "quality") _setup.SetActive(false);
                 });
-            }
-            _setup.SetActive(false);
+            return b;
         }
 
         void SubmitChat()
@@ -313,7 +390,9 @@ namespace RaidRift
             Stretch(r);
             r.offsetMin = offMin; r.offsetMax = offMax;
             var t = r.gameObject.AddComponent<Text>();
-            t.font = _font; t.fontSize = size; t.fontStyle = style; t.color = color; t.alignment = align;
+            // Real semibold face instead of faux bold.
+            bool bold = style == FontStyle.Bold && _bold != null;
+            t.font = bold ? _bold : _font; t.fontSize = size; t.fontStyle = bold ? FontStyle.Normal : style; t.color = color; t.alignment = align;
             t.text = text; t.supportRichText = true; t.raycastTarget = false;
             t.horizontalOverflow = HorizontalWrapMode.Wrap; t.verticalOverflow = VerticalWrapMode.Overflow;
             return t;

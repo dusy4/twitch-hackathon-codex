@@ -1,0 +1,11 @@
+RaidRift Live Android publisher
+
+Uses RootEncoder 2.8.1, Copyright (C) 2024 pedroSG94 (Pedro Sanchez).
+https://github.com/pedroSG94/RootEncoder/tree/2.8.1
+Licensed under the Apache License, Version 2.0. See Apache-2.0.txt.
+The inspected upstream source files are unmodified; RaidRift supplies custom
+MediaCodec input sources and lifecycle/transport control through public APIs.
+
+Transitive components include Kotlin standard library, kotlinx.coroutines,
+Ktor network/TLS (JetBrains), and AndroidX annotations (Android Open Source
+Project), under Apache-2.0. Their own embedded notices are retained by Gradle.

@@ -20,7 +20,7 @@ namespace RaidRift
         Camera _cam;
         public Vector3 Anchor { get; set; }
         public float? FloorY { get; set; }
-        const int Max = 14;
+        const int Max = 8; // VFX plan: 4–6 visible, 8 max, so the streamer stays the subject
 
         void Awake() => _glow = Resources.Load<Material>("Materials/Glow");
 
@@ -47,14 +47,14 @@ namespace RaidRift
             var wingR = Quad(root, color * 0.8f, 0.05f);
             var trail = root.gameObject.AddComponent<TrailRenderer>();
             trail.sharedMaterial = _glow;
-            trail.time = 0.45f;
+            trail.time = 0.22f; // short taper (plan 0.18–0.25 s)
             trail.startWidth = 0.018f;
             trail.endWidth = 0f;
             trail.startColor = new Color(color.r, color.g, color.b, 0.6f);
             trail.endColor = new Color(color.r, color.g, color.b, 0f);
             trail.minVertexDistance = 0.02f;
             trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            return new Moth { t = root, wingL = wingL, wingR = wingR, seed = Random.value * 100f, speed = Random.Range(0.45f, 0.8f) };
+            return new Moth { t = root, wingL = wingL, wingR = wingR, seed = Random.value * 100f, speed = Random.Range(0.25f, 0.5f) };
         }
 
         Transform Quad(Transform parent, Color color, float size)
@@ -90,7 +90,7 @@ namespace RaidRift
                 if (h < 0.35f) steer.y += 1.5f;
                 if (h > 1.9f) steer.y -= 1.5f;
                 var fromCam = p - _cam.transform.position;
-                if (fromCam.magnitude < 0.45f) steer += fromCam.normalized * 3f;
+                if (fromCam.magnitude < 0.6f) steer += fromCam.normalized * 3f; // keep 0.6 m off the lens
                 m.vel = Vector3.Lerp(m.vel, steer.normalized * m.speed, 1f - Mathf.Exp(-1.6f * dt));
                 m.t.position = p + m.vel * dt;
                 if (m.vel.sqrMagnitude > 1e-4f) m.t.rotation = Quaternion.LookRotation(m.vel.normalized);

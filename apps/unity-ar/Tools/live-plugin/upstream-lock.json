@@ -1,0 +1,29 @@
+{
+  "version": "2.8.1",
+  "commit": "cca548ab7942ab50d34dede272d5da90d46c6b67",
+  "source": "https://github.com/pedroSG94/RootEncoder/tree/2.8.1",
+  "zipSha256": "10abc5fbc51826271c86d9eae2fa09ed8cbd37256e592762e76b95c9822d23bd",
+  "files": {
+    "LICENSE.txt": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+    "gradle/libs.versions.toml": "1c2a5e5533c3da81631fef57fcddbab472cecc64fd11ffe57ea9795054627573",
+    "encoder/src/main/java/com/pedro/encoder/BaseEncoder.java": "1729a035b605ce7e4b207790793d4fc338641a647aa457168c0b2892b6b58cb0",
+    "encoder/src/main/java/com/pedro/encoder/Frame.kt": "135d4b21ab3a8a9601f148476b4b09d8fd0e905b785d715778d7827442422583",
+    "encoder/src/main/java/com/pedro/encoder/TimestampMode.kt": "404a80fed3694e6a883c229c50c5df3f1f96b1c71117e86437446042810739f6",
+    "encoder/src/main/java/com/pedro/encoder/CodecErrorCallback.kt": "bb38bd3df42b07fb056db57b5a326f83337e5f8bea43fcd1d4d7502d733b7550",
+    "encoder/src/main/java/com/pedro/encoder/video/VideoEncoder.java": "c19c40b3a6ea048673ba55132d762352b278b39523407a44b4da63203021f815",
+    "encoder/src/main/java/com/pedro/encoder/video/GetVideoData.kt": "f3152527cb7a73f46273c3a7ac6f00a964dfafc6598762512696a2504f38d247",
+    "encoder/src/main/java/com/pedro/encoder/audio/AudioEncoder.java": "c04910915e48832fb332d0fa086309f952a93626f9ee38cbbb7c468a3c2d2aab",
+    "encoder/src/main/java/com/pedro/encoder/audio/GetAudioData.kt": "141cd4182ab38860629555b5bbd9cd5227feb869d66c53e3632c52062dccb78b",
+    "common/src/main/java/com/pedro/common/ConnectChecker.kt": "42bb80e4272541dd826f97ca9b27699522dcd591f0afe4a893c35c089a354a90",
+    "common/src/main/java/com/pedro/common/TimeUtils.kt": "acd9b96c325307e8b937b05e62db0d7f1765e50e4b5ee54b50b2933eff7d2ff3",
+    "common/src/main/java/com/pedro/common/UrlParser.kt": "796661ec00812e192162c1eb62330744d8af8fc7cc307c6d810ec367efd392b4",
+    "common/src/main/java/com/pedro/common/base/BaseSender.kt": "d01beeffe3cf6c3311f7764a030a1c83a791ee2cfafaeb03e181ca341b2c0754",
+    "rtmp/src/main/java/com/pedro/rtmp/rtmp/RtmpClient.kt": "345baeb0bc41af45683c2295f5fc962fdfbd8ff69a6919202360cf93a327f393",
+    "srt/src/main/java/com/pedro/srt/srt/SrtClient.kt": "4fc2744937e8f1fa82a52ec7bba5152824f3688009910243e1c82b17fa9de3f0",
+    "encoder/src/main/java/com/pedro/encoder/GetFrame.kt": "9bfaaf841891695206c76f808da341568ebcdeb67c81ee17752325e5a4db414e",
+    "encoder/src/main/java/com/pedro/encoder/utils/CodecUtil.java": "5f70e4389b8a4fecea63ad889cb8286231dcb046af912244368aa5dc1ea541b1",
+    "encoder/src/main/java/com/pedro/encoder/video/FormatVideoEncoder.java": "bdfd687e2203b4f32272d85576c0a5c14aa52e327ff3335b0dfa99c034d1414c",
+    "rtmp/src/main/java/com/pedro/rtmp/rtmp/RtmpSender.kt": "970c295fdb2bda43995664bff02e876eb3a21fbbebb0eacb1a8bf251e409fcf0",
+    "srt/src/main/java/com/pedro/srt/srt/SrtSender.kt": "5c1de87d908686cc40e70d47ffd62eb2afed6eaff1f9f13bf8c3e052f9d8a857"
+  }
+}

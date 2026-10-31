@@ -1,0 +1,13 @@
+pluginManagement {
+    repositories { google(); mavenCentral(); gradlePluginPortal() }
+}
+dependencyResolutionManagement {
+    repositories {
+        google(); mavenCentral()
+        maven { url 'https://jitpack.io'; content { includeGroup 'com.github.pedroSG94.RootEncoder' } }
+    }
+}
+rootProject.name = 'RaidRiftLiveVerify'
+include ':live'
+project(':live').projectDir = file('../../../Assets/Plugins/Android/RaidRiftLive.androidlib')
+include ':smoke'

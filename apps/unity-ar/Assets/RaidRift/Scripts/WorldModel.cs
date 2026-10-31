@@ -16,6 +16,11 @@ namespace RaidRift
         public string Message = "";
         public long SpawnedAt;
         public string Target;
+        // WASD steering from the Twitch Extension / !w!a!s!d: direction in the streamer's camera frame
+        // (x right, y away), active until SteerUntil (server epoch ms). Seq changes on every new hold.
+        public float SteerX, SteerY;
+        public long SteerUntil, SteerSeq;
+        public bool Steering(long nowMs) => SteerUntil > nowMs && (SteerX != 0f || SteerY != 0f);
     }
 
     public class RaidState
@@ -33,6 +38,9 @@ namespace RaidRift
         public readonly List<HeroState> Heroes = new List<HeroState>();
         public readonly List<TrackState> Tracks = new List<TrackState>();
         public RaidState Raid;
+        /// <summary>Real Twitch channel the server is reading chat from (Live mode), or null.</summary>
+        public string LiveChannel;
+        public bool LiveConnected;
     }
 
     /// <summary>A scene target: an object the server's detector found ("server", box in the phone frame

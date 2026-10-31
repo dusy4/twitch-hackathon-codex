@@ -62,7 +62,7 @@ namespace RaidRift
             }
             // ElevenLabs variation sets (step_1..4, jump_1..3, land_1..3, cheer_1..2, greet_1..2): a random take
             // per play, so repeated actions never sound identical.
-            foreach (var set in new[] { "step", "jump", "land", "cheer", "greet" })
+            foreach (var set in new[] { "step", "jump", "land", "cheer", "greet", "debris", "crunch", "charge" }) // debris/crunch/charge: Kenney CC0
             {
                 var takes = new List<AudioClip>();
                 for (int i = 1; i <= 6; i++)

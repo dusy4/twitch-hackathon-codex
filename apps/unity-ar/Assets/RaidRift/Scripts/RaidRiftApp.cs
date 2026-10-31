@@ -22,6 +22,19 @@ namespace RaidRift
         public SceneTracks sceneTracks;
         public SurfaceLabels surfaceLabels;
         public ObjectDetector detector;
+        public LivePublisher publisher;
+
+        // Live mode = a real Twitch channel (server reads its chat + raids) and the phone streams to Twitch.
+        // Demo mode = everything else (offline test room, stub viewers, dev tools).
+        bool _liveMode;
+        int _quality;
+        static readonly (string name, int start, int min, int max, int fps)[] Qualities =
+        {
+            ("HD · 4.5 Mbps", 4500, 1500, 6000, 30),
+            ("Mobile data · 2.5 Mbps", 2500, 800, 3500, 30),
+            ("Weak signal · 1.2 Mbps", 1200, 500, 1800, 24),
+        };
+        const string PrefChannel = "rr.live.channel", PrefKey = "rr.live.key", PrefQuality = "rr.live.quality";
 
         readonly LocalPlayground _playground = new LocalPlayground();
         readonly Dictionary<string, Hero> _heroes = new Dictionary<string, Hero>();
@@ -62,7 +75,74 @@ namespace RaidRift
             };
             server.OnNotice += (text, ok) => { hud.Toast(text); AddServerLine("Server", text, ok); };
             trail.OnEvent += TrailEvent;
+            hud.OnGoLive += GoLive;
+            _quality = Mathf.Clamp(PlayerPrefs.GetInt(PrefQuality, 0), 0, Qualities.Length - 1);
+            hud.SetMode(false, "DEMO");
             RefreshButtons();
+        }
+
+        // ---------------- live mode ----------------
+        void GoLive(string channel, string key)
+        {
+            if (string.IsNullOrEmpty(key)) key = PlayerPrefs.GetString(PrefKey, "");
+            if (string.IsNullOrEmpty(channel)) channel = PlayerPrefs.GetString(PrefChannel, "");
+            if (string.IsNullOrEmpty(key)) { hud.Toast("Paste your stream key · Twitch Creator Dashboard › Settings › Stream", 4f); return; }
+            if (publisher == null) { hud.Toast("Streaming is not available in this build"); return; }
+            PlayerPrefs.SetString(PrefKey, key); // on-device only; never sent to our server or shown on stream
+            PlayerPrefs.SetString(PrefChannel, channel);
+            PlayerPrefs.Save();
+            if (stream != null && stream.Active) stream.Stop("Stream off"); // one owner of the camera texture
+            if (!_live) { _live = true; server.Begin(); }
+            if (!string.IsNullOrEmpty(channel))
+                server.SetLiveChannel(channel, (ok, reply) =>
+                {
+                    hud.Toast(ok ? $"Reading #{channel} chat · viewers type !join" : "Chat link failed · " + reply, 3f);
+                    AddServerLine("RaidRift", ok ? $"Connected to #{channel} chat" : "Chat link failed · " + reply, ok);
+                });
+            var q = Qualities[_quality];
+            publisher.arCamera = arCamera;
+            publisher.StartLive(new LiveSettings
+            {
+                url = "rtmps://live.twitch.tv:443/app",
+                key = key,
+                fps = q.fps, startKbps = q.start, minKbps = q.min, maxKbps = q.max,
+                adaptive = true, mic = true,
+                landscape = Screen.width >= Screen.height,
+            });
+            _liveMode = true;
+            // A clean broadcast: the scan grid becomes the invisible occluder.
+            _scanView = false; room.showWalkable = false; _nextMaterialPass = 0f;
+            hud.SetMode(true, "● LIVE");
+            Sfx.Play("raid_stinger", 0.5f);
+            RefreshButtons();
+        }
+
+        void EndLive()
+        {
+            if (publisher != null) publisher.StopLive();
+            if (_live) server.StopLiveChannel();
+            _liveMode = false;
+            hud.SetBackdrop(null);
+            hud.SetMode(false, "DEMO");
+            hud.Toast("Stream ended · back to demo mode");
+            RefreshButtons();
+        }
+
+        void LiveTick(WorldState world)
+        {
+            string quality = "Quality · " + Qualities[_quality].name;
+            if (!_liveMode || publisher == null)
+            {
+                hud.SetLiveInfo("Streams the AR view (no buttons) + your mic + game sound straight to Twitch. Chat commands and raids come from your channel.", quality, PlayerPrefs.GetString(PrefChannel, ""));
+                return;
+            }
+            hud.SetBackdrop(publisher.View); // null after a failure/stop: the camera renders to the screen again
+            var up = System.TimeSpan.FromSeconds(publisher.UptimeSeconds);
+            string chip = publisher.IsLive ? $"● LIVE {(int)up.TotalMinutes:00}:{up.Seconds:00}" : publisher.State.StartsWith("error") ? "● OFFLINE" : "● " + publisher.State.ToUpperInvariant();
+            hud.SetMode(true, chip);
+            string chat = world?.LiveChannel != null ? (world.LiveConnected ? $"#{world.LiveChannel} chat connected" : $"#{world.LiveChannel} chat reconnecting…") : "no channel chat";
+            hud.SetLiveInfo($"{publisher.State} · {publisher.BitrateKbps} kbps · {publisher.SendFps:0} fps · dropped {publisher.DroppedFrames}\n{chat} · mic {(publisher.MicMuted ? "muted" : "on")}", quality, "");
+            hud.SetButton("mic", publisher.MicMuted ? "Mic off" : "Mic on", !publisher.MicMuted);
         }
 
         // ---------------- buttons ----------------
@@ -93,6 +173,14 @@ namespace RaidRift
                     _nextMaterialPass = 0f;
                     break;
                 case "chat": hud.ToggleChat(); break;
+                case "end-live": if (_liveMode) EndLive(); break;
+                case "motion": CameraFeel.ReducedMotion = !CameraFeel.ReducedMotion; hud.Toast(CameraFeel.ReducedMotion ? "Reduced motion: no screen shake" : "Full camera effects"); break;
+                case "mic": if (publisher != null) { publisher.MicMuted = !publisher.MicMuted; hud.Toast(publisher.MicMuted ? "Mic muted on stream" : "Mic live"); } break;
+                case "quality":
+                    _quality = (_quality + 1) % Qualities.Length;
+                    PlayerPrefs.SetInt(PrefQuality, _quality);
+                    if (_liveMode) hud.Toast("Applies next time you go live");
+                    break;
                 case "setup": hud.ToggleSetup(server.Server); break;
                 case "pair": _live = true; server.Begin(); break;
                 case "stream":
@@ -134,7 +222,9 @@ namespace RaidRift
             hud.SetButton("trail", trail.Current == RiftTrail.Phase.Off ? "Trail" : "Trail on", trail.Current != RiftTrail.Phase.Off);
             hud.SetButton("scan", _scanView ? "Scan on" : "Scan off", _scanView);
             hud.SetButton("chat", "Chat", false);
-            hud.SetButton("setup", _live ? "Live" : "Setup", _live);
+            hud.SetButton("setup", "Setup", false);
+            hud.SetButton("end-live", "End", false);
+            if (publisher == null || !_liveMode) hud.SetButton("mic", "Mic", false);
         }
 
         void SendChat(string text)
@@ -174,7 +264,8 @@ namespace RaidRift
         {
             bool tracking = ARSession.state == ARSessionState.SessionTracking;
             if (!_landed) UpdateLanding(tracking);
-            else AutoFollow();
+            else { AutoFollow(); RelocateRift(tracking); }
+            RiftFx.FloorY = room.FloorY;
             if (moths != null)
             {
                 moths.FloorY = room.FloorY;
@@ -193,6 +284,7 @@ namespace RaidRift
             SyncHeroes(world);
             UpdateRoomMaterials();
             UpdateHud(world, tracking);
+            LiveTick(world);
             HandleTap(tracking);
         }
 
@@ -335,6 +427,9 @@ namespace RaidRift
             _rift = RiftWorld.Create(_origin + _away * 0.45f, arCamera.transform.position, arCamera);
             _raidOpened = Time.time;
             hud.Flash(new Color(0.75f, 0.5f, 1f), 0.8f);
+            StartCoroutine(TearSequence(_rift, 1f, !world.Raid.Test));
+            WorldTags.Banner(_rift.transform.position + Vector3.up * 2.15f, arCamera, world.Raid.Test ? "TEST RAID" : "RAID",
+                world.Raid.Test ? "the rift is opening" : $"{world.Raid.From} · {world.Raid.Count} viewers", 2.4f); // charge 0.6 s → tear (camera hit) → shockwave, sparks, chips
             if (!world.Raid.Test) Sfx.Play("raid_stinger", 0.8f); // real raids get the trailer hit
             if (moths != null) moths.Burst(_rift.transform.position + Vector3.up * 1.0f, -_rift.Forward, 12);
             // The rift paints the room now: switch the scan grid to the invisible occluder + paint.
@@ -382,6 +477,7 @@ namespace RaidRift
                     if (!hero.Place(spawn, face)) { index++; continue; }
                 }
                 bool newAction = state.Serial != hero.ActionSerial;
+                if (newAction && hero.ActionSerial != 0 && state.Animation != "idle") RiftFx.Command(hero.transform.position, true); // chat command landed
                 // Planner steps with a room target ("there", the chair, the bed top) walk there, then pose.
                 Vector3 targetPos = default;
                 bool targeted = state.Target != null && sceneTracks != null && sceneTracks.TryWorld(state.Target, out targetPos);
@@ -392,6 +488,7 @@ namespace RaidRift
                     if (!_cheerSerial.TryGetValue(state.Id, out var last) || last != state.Serial) { _cheerSerial[state.Id] = state.Serial; trail.Cheer(state.Id); }
                 }
                 CatchUp(hero);
+                if (Steer(hero, state)) { index++; continue; } // a viewer is holding WASD: they drive
                 if (targeted || hero.HasPendingPose) { index++; continue; } // ActAt owns the destination
                 Vector3 goal;
                 bool run;
@@ -416,6 +513,33 @@ namespace RaidRift
                 Destroy(_heroes[id].gameObject);
                 _heroes.Remove(id);
             }
+        }
+
+        // ---------------- WASD steering (Twitch Extension d-pad, !w !a !s !d) ----------------
+        readonly Dictionary<string, (long until, float deadline)> _steer = new Dictionary<string, (long, float)>();
+
+        /// <summary>Directions are in the streamer's view (W = away from the camera, D = screen right), so what a
+        /// viewer presses matches what they see on stream. The server extends `until` while the key is held; we
+        /// use local receipt time (phone and PC clocks differ), so a hold ends 0.7 s after updates stop.</summary>
+        bool Steer(Hero hero, HeroState state)
+        {
+            bool held = state.SteerX != 0f || state.SteerY != 0f;
+            _steer.TryGetValue(state.Id, out var s);
+            if (!held) { _steer.Remove(state.Id); return false; }
+            if (state.SteerUntil != s.until) s = (state.SteerUntil, Time.time + 0.7f);
+            _steer[state.Id] = s;
+            if (Time.time > s.deadline) return false;
+            var cam = arCamera.transform;
+            var fwd = Vector3.ProjectOnPlane(cam.forward, Vector3.up);
+            if (fwd.sqrMagnitude < 1e-4f) fwd = Vector3.ProjectOnPlane(cam.up, Vector3.up);
+            fwd.Normalize();
+            var right = Vector3.Cross(Vector3.up, fwd);
+            var dir = Vector3.ClampMagnitude(right * state.SteerX + fwd * state.SteerY, 1f);
+            var pos = hero.transform.position;
+            // Probe 0.8 m ahead; along a wall, slide instead of stopping.
+            if (room.Sample(pos + dir * 0.8f, 0.35f, out var to) || room.Sample(pos + dir * 0.4f, 0.3f, out to))
+                hero.SetDestination(to, dir.magnitude > 0.7f);
+            return true;
         }
 
         // ---------------- roaming brain ("Mario jumps around everywhere") ----------------
@@ -517,6 +641,50 @@ namespace RaidRift
             RefreshButtons();
         }
 
+        /// <summary>VFX-PLAN portal timeline: 0–0.6 s anticipation pull-in, 0.6 s tear with the camera hit, floor
+        /// shockwave, outward sparks, heavy obsidian chips and low smoke; RiftWorld's own open/boom runs underneath.</summary>
+        System.Collections.IEnumerator TearSequence(RiftWorld rift, float scale, bool raid)
+        {
+            if (rift == null) yield break;
+            var foot = rift.transform.position;
+            var center = foot + Vector3.up * 0.95f * scale;
+            RiftFx.Charge(center, rift.Forward, scale);
+            yield return new WaitForSeconds(0.6f);
+            if (rift == null) yield break;
+            RiftFx.Tear(center, rift.Forward, foot, scale, raid);
+        }
+
+        float _nextRelocate;
+
+        /// <summary>The stage travels with an IRL streamer: once the party follows and the streamer is 8 m+ from
+        /// the rift, it collapses and tears open again ~1.6 m ahead on scanned floor, so new raiders arrive where
+        /// the stream is now, not back at the first room.</summary>
+        void RelocateRift(bool tracking)
+        {
+            if (!tracking || !_follow || _rift == null || Time.time < _nextRelocate || Time.time - _raidOpened < 8f) return;
+            if (!room.FloorUnderCamera(out var floor)) return;
+            if (new Vector2(floor.x - _origin.x, floor.z - _origin.z).magnitude < 8f) return;
+            _nextRelocate = Time.time + 2f; // retry soon if no good spot yet
+            foreach (var h in _heroes.Values) if (h.Entering) return; // never strand someone mid-portal
+            var flat = Vector3.ProjectOnPlane(arCamera.transform.forward, Vector3.up);
+            if (flat.sqrMagnitude < 1e-4f) return;
+            flat.Normalize();
+            if (!room.Sample(floor + flat * 1.6f, 0.5f, out var spot) || Mathf.Abs(spot.y - floor.y) > 0.12f || room.Clearance(spot) < 0.35f) return;
+            var old = _rift.transform.position;
+            Fx.Sparkle(old + Vector3.up * 0.9f, new Color(0.7f, 0.45f, 1f), 24, 0.9f);
+            Destroy(_rift.gameObject);
+            _origin = spot;
+            _away = flat;
+            _right = Vector3.Cross(Vector3.up, _away);
+            _rift = RiftWorld.Create(_origin + _away * 0.45f, arCamera.transform.position, arCamera);
+            _raidOpened = Time.time;
+            if (moths != null) moths.Burst(_rift.transform.position + Vector3.up * 1.0f, -_rift.Forward, 8);
+            Sfx.Play("rift_open", 0.7f);
+            StartCoroutine(TearSequence(_rift, 0.8f, false));
+            hud.Toast("The rift followed you", 2f);
+            _nextRelocate = Time.time + 12f;
+        }
+
         /// <summary>City walking: a hero left far behind (or stuck while following) rift-hops to the streamer.</summary>
         void CatchUp(Hero hero)
         {
@@ -609,7 +777,7 @@ namespace RaidRift
             var title = "RAIDRIFT " + Application.version + (world.Raid != null ? (world.Raid.Test ? " · TEST RAID" : " · RAID FROM " + world.Raid.From.ToUpperInvariant()) : "");
             hud.SetStatus(title, status, hint);
             hud.SetFeed(_live ? _serverLines : _playground.Messages);
-            hud.UpdateTags(arCamera, _heroes.Values);
+            WorldTags.Update(arCamera, _heroes.Values); // in the 3D scene, so names are on the broadcast too
         }
     }
 }

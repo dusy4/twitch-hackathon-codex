@@ -43,20 +43,6 @@ raid and EN/UA phrase rules are ports of `Playground.kt` / `TextIntent.kt`.
   (ARCore's `arcore_client` and `unityandroidpermissions` share namespace `com.google.ar.core`).
 - Classic Activity entry (GameActivity not needed); IL2CPP ARM64, GLES3, minSdk 25.
 
-## Restore local Unity packages
-
-`Packages/manifest.json` references official Unity package tarballs as
-`file:../LocalPackages/<name>-<version>.tgz`. These archives are excluded from Git.
-Their official download URL is `https://packages.unity.com/<name>/-/<name>-<version>.tgz`.
-Before opening a fresh checkout in Unity, run:
-
-```powershell
-powershell -File apps/unity-ar/Tools/fetch-local-packages.ps1
-```
-
-The script reads the manifest and downloads only missing archives into
-`apps/unity-ar/LocalPackages/`. It leaves existing archives untouched.
-
 ## Status (2026-10-31)
 - 0.13.1 built with NSDK meshing + WebRTC + sounds: `RaidRift-MR-0.13.1.apk` on the Tailscale share.
 - Compiled and packaged; **not yet run on a device**.

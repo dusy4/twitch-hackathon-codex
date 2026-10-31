@@ -1,0 +1,8 @@
+vendor/
+gradle-home/
+verify-out/
+verify-gradle/.gradle/
+verify-gradle/build/
+verify-gradle/local.properties
+checks/
+__pycache__/
