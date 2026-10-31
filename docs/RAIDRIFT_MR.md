@@ -44,7 +44,7 @@ The PC handles accounts, input ownership, bounded plans, world snapshots and det
 | Route | Use |
 |---|---|
 | `GET /v1/debug/pair` | Private debug harness only: obtains a capture token. Production uses a Creator Studio mobile token. |
-| `GET /v1/native/world` | Bearer-authenticated snapshot; the client waits about 150 ms after a successful reply before polling again. At most 12 heroes are imported. |
+| `GET /v1/native/world` | Bearer-authenticated snapshot; the client waits about 150 ms after a successful reply before polling again. At most 12 heroes are imported; when the room has more, the server lists the most recently active first so real chatters are not hidden behind idle practice heroes. |
 | `POST /v1/native/tracks` | Up to 50 phone targets, about every 0.4 s; server timestamps receipt. |
 | `POST /v1/native/frame` | One downscaled displayed-camera JPEG about every 1.5 s while paired, landed and tracking; vision consent is checked on the server. |
 | `POST /v1/live/channel`, `GET /v1/live/status`, `DELETE /v1/live/channel` | Select, inspect and stop the real Twitch IRC reader for the paired room. |
@@ -54,7 +54,7 @@ The PC handles accounts, input ownership, bounded plans, world snapshots and det
 
 `ServerConnection` saves server/token locally. HTTP 401/403 during world polling clears pairing; transport failures retry after 1.2 s and retain the last snapshot. This is not a guaranteed global freeze on network loss. The Twitch chat reader runs on the PC, so a phone network switch (Wi-Fi ↔ mobile data) does not interrupt chat input; the phone simply resumes polling once the tailnet is reachable again. From 0.20.1 the phone also re-pairs automatically after a server restart (debug pairing only) and re-selects the Live channel whenever the world snapshot does not show it; selecting the channel that is already connected is a no-op on the server, so these retries never drop the reader.
 
-The IRC reader is read-only: `justinfan` login, tags/commands capability negotiation, message-ID deduplication, numeric user IDs, PING/PONG, a client PING after 45 s of silence (Twitch itself only PINGs about every 5 minutes, so quiet channels used to trip the watchdog), a 90 s heartbeat watchdog and capped reconnect. Real raids use `USERNOTICE msg-id=raid`. A raid supplies a count and source, **not the names of all arrivals**. Named heroes come from participants; debug names are fixtures. The separate OAuth/EventSub adapter still exists in `apps/api/twitch.ts`; the private harness clears OAuth credentials. Do not ingest the same channel's raids through both paths.
+The IRC reader is read-only (ordinary conversation is ignored before the 0.5 s per-viewer cooldown, so "hi" followed by `!join` still joins; raids are never dropped under load): `justinfan` login, tags/commands capability negotiation, message-ID deduplication, numeric user IDs, PING/PONG, a client PING after 45 s of silence (Twitch itself only PINGs about every 5 minutes, so quiet channels used to trip the watchdog), a 90 s heartbeat watchdog and capped reconnect. Real raids use `USERNOTICE msg-id=raid`. A raid supplies a count and source, **not the names of all arrivals**. Named heroes come from participants; debug names are fixtures. The separate OAuth/EventSub adapter still exists in `apps/api/twitch.ts`; the private harness clears OAuth credentials. Do not ingest the same channel's raids through both paths.
 
 ### Optional Extension
 
