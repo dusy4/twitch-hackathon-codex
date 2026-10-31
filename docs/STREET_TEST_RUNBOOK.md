@@ -11,7 +11,7 @@
   ```
 
 - [ ] Existing Tailscale Serve forwards HTTPS to **127.0.0.1:3412**. If dependencies/assets need setup: `npm ci`, `npm run build` first. Restart loses private test data/pairing.
-- [ ] Phone **Tailscale on** in the authorized tailnet. On **mobile data**, open [health](https://raidrift-pc.tail7252b4.ts.net/health), then [APK share](https://raidrift-pc.tail7252b4.ts.net/apk/). Install the newest `RaidRift-MR-<version>.apk` there (0.20.1 was published Oct 31 22:30 and re-pairs/re-applies the channel by itself after a server restart; check the [overnight summary](https://dashboard.12industries.com/previews/raidrift-ui/) for a later known-good build); confirm the version in Setup diagnostics. No build has a device pass yet; this test is that pass.
+- [ ] Phone **Tailscale on** in the authorized tailnet. On **mobile data**, open [health](https://raidrift-pc.tail7252b4.ts.net/health), then [APK share](https://raidrift-pc.tail7252b4.ts.net/apk/). Install the newest `RaidRift-MR-<version>.apk` there (0.21.0 was published Oct 31 22:52; from 0.20.1 the phone re-pairs and re-applies the channel by itself after a server restart; check the [overnight summary](https://dashboard.12industries.com/previews/raidrift-ui/) for a later known-good build); confirm the version in Setup diagnostics. No build has a device pass yet; this test is that pass.
 - [ ] Charge battery, clean lens, free recording space, Do Not Disturb. Shade phone; avoid charging while hot. Start **Mobile data · 2.5 Mbps**; allow roughly 60 MB for three minutes plus overhead/setup. Headset reduces echo.
 - [ ] Safe textured pedestrian ground, good light; no traffic, private screens or unwilling bystanders. Stop before using controls. Arrange **two real viewers** and an observer checking received Twitch video/audio. Share `https://www.twitch.tv/YOUR_LOGIN/chat` with the real login. Extension is optional.
 
@@ -42,7 +42,7 @@
 | Stream error/drops/heat | Check mic permission, uplink/key privately; End, cool, restart with **Weak signal**. Confirm actual Twitch receipt. |
 | LIVE, no chat response | Check Tailscale/health, PC/Serve **3412**, login and pairing; viewer `!join` then `!wave`. Phone chat is simulator-only. Switching Wi-Fi ↔ mobile data is fine: the chat reader runs on the PC and keeps going; the phone resumes polling when the tailnet is back. |
 | Missing number/object | Reframe/rescan; use current number or `!dance`, not an old Twitch frame. |
-| Selfie stalls | Stay still, point at room; after timeout tap Selfie again to retry rear. |
+| Selfie stalls | Stay still, point at the room. From 0.20.2 it recovers by itself within 12 s (worst case the room resets: rescan). Tapping Selfie again also works. |
 
 **Record afterward:** APK version/hash, phone/OS/network, received recording; pass/fail/skipped for scan, two viewers, raid source, mic/SFX, selfie and walking. Keep secrets out. Skipped means **untested**.
 
