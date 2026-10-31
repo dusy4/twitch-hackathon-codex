@@ -21,10 +21,14 @@ import {
 } from "./compiler.js";
 /** One-word basics stay instant keyword actions even when the LLM planner is first. */
 const BASIC_COMMAND =
-  /^(?:!(?:rift|ourapp)\s+)?!?(join|jump|dance|wave|sit|stop|left|right|forward|back|backward|up|down|w|a|s|d)$/i;
+  /^(?:!(?:rift|ourapp)\s+)?!?(join|jump|dance|wave|sit|cheer|stop|left|right|forward|back|backward|up|down|w|a|s|d)$/i;
 /** "!rift go to there" / "!go to there" -> "go to there" for the model. */
 const stripCommandPrefix = (text: string) =>
-  text.trim().replace(/^!(?:rift|ourapp)\s+/i, "").replace(/^!/, "").trim() || text;
+  text
+    .trim()
+    .replace(/^!(?:rift|ourapp)\s+/i, "")
+    .replace(/^!/, "")
+    .trim() || text;
 import { mentions, targetNouns } from "./targets.js";
 import { credit } from "./economy.js";
 import type { Database } from "./db.js";
@@ -118,6 +122,9 @@ export class World extends EventEmitter {
   sequence = 0;
   completedActions = 0;
   private planningFence = 0;
+  private intents = new Map<string, number>();
+  private steerTimes = new Map<string, number>();
+  private steerSequence = 0;
   constructor(
     public db: Database,
     public channel: Record<string, any>,
@@ -137,6 +144,7 @@ export class World extends EventEmitter {
       config: { ...defaultConfig, ...channel.config },
       avatars: (saved?.avatars || []).map((a: Avatar) => ({
         ...a,
+        steer: null,
         arrival: undefined,
         spawnedAt: undefined,
         animation: "idle",
@@ -254,16 +262,17 @@ export class World extends EventEmitter {
       [who.id, this.channel.id],
     );
     this.emit("joined", { actorId: who.id, roomId: this.channel.id });
-    await this.db.transaction((tx) =>
-      credit(
-        tx,
-        who.id,
-        this.channel.id,
-        20,
-        `first-join:${who.reward_identity || who.id}`,
-        "First verified join",
-      ),
-    );
+    if (!who.twitch_id?.startsWith("ext:"))
+      await this.db.transaction((tx) =>
+        credit(
+          tx,
+          who.id,
+          this.channel.id,
+          20,
+          `first-join:${who.reward_identity || who.id}`,
+          "First verified join",
+        ),
+      );
     if (
       this.state.raid &&
       !this.state.raid.test &&
@@ -274,6 +283,69 @@ export class World extends EventEmitter {
         [this.state.raid.id, who.id],
       );
     return avatar;
+  }
+  /** Shared controller/chat steering. No renderer can choose an actor or mint rewards. */
+  cancelControl(actorId: string) {
+    this.intents.set(actorId, (this.intents.get(actorId) || 0) + 1);
+    const a = this.state.avatars.find((a) => a.id === actorId);
+    if (a?.steer) {
+      a.steer = null;
+      a.animation = "idle";
+      a.message = "";
+    }
+    const running = this.running.get(actorId);
+    if (running) this.finish(running, "interrupted");
+  }
+  async steer(who: Record<string, any>, x: number, y: number, holdMs = 600) {
+    if (![x, y].every((n) => Number.isFinite(n) && n >= -1 && n <= 1))
+      throw new GameError(
+        "INVALID_STEER",
+        "Direction must be between -1 and 1",
+        400,
+      );
+    if (this.state.config.paused)
+      throw new GameError("WORLD_PAUSED", "This world is paused", 409);
+    const now = Date.now();
+    const last = this.steerTimes.get(who.id);
+    if (last !== undefined && now >= last && now - last < 100)
+      throw new GameError(
+        "STEER_RATE",
+        "Send at most ten steering updates per second",
+        429,
+      );
+    this.steerTimes.set(who.id, now);
+    const intent = (this.intents.get(who.id) || 0) + 1;
+    this.intents.set(who.id, intent);
+    const fence = this.planningFence;
+    const a = await this.join(who);
+    if (
+      this.intents.get(who.id) !== intent ||
+      this.state.config.paused ||
+      fence !== this.planningFence
+    )
+      throw new GameError(
+        "WORLD_CHANGED",
+        "A newer instruction replaced this input",
+        409,
+      );
+    const running = this.running.get(a.id);
+    if (running) this.finish(running, "interrupted");
+    delete a.arrival;
+    a.target = null;
+    a.lastActive = now;
+    a.animation = x || y ? "walk" : "idle";
+    a.message = x || y ? "Moving" : "";
+    a.steer =
+      x || y
+        ? {
+            x,
+            y,
+            seq: ++this.steerSequence,
+            until: now + Math.min(1200, holdMs),
+          }
+        : null;
+    this.event("avatar.state", a);
+    return a;
   }
   async action(
     who: Record<string, any>,
@@ -323,7 +395,20 @@ export class World extends EventEmitter {
     if (sinceLast >= 0 && sinceLast < 500)
       throw new GameError("COOLDOWN", "Give your avatar a moment.", 429);
     this.cooldowns.set(who.id, now);
+    const intent = (this.intents.get(who.id) || 0) + 1;
+    this.intents.set(who.id, intent);
     const a = await this.join(who);
+    if (this.intents.get(who.id) !== intent)
+      throw new GameError(
+        "WORLD_CHANGED",
+        "A newer instruction replaced this action",
+        409,
+      );
+    if (a.steer) {
+      a.steer = null;
+      a.animation = "idle";
+      a.message = "Planning your next move";
+    }
     const planningFence = this.planningFence,
       planningEpoch = this.state.epoch;
     const stillCurrent = () =>
@@ -331,7 +416,8 @@ export class World extends EventEmitter {
       this.state.avatars.includes(a) &&
       this.planningFence === planningFence &&
       this.state.epoch === planningEpoch &&
-      this.cooldowns.get(who.id) === now;
+      this.cooldowns.get(who.id) === now &&
+      this.intents.get(who.id) === intent;
     // Open vocabulary: objects the request names that no track shows yet are
     // looked up once by the server detector on the phone's latest frame.
     const tried = new Map<string, SceneTrack | null>();
@@ -358,6 +444,12 @@ export class World extends EventEmitter {
       );
       if (missing.length) await resolve(missing);
     }
+    if (!stillCurrent())
+      throw new GameError(
+        "WORLD_CHANGED",
+        "A newer instruction replaced this action while resolving targets",
+        409,
+      );
     const tracks = targetHint
       ? this.state.tracks.filter((t) => t.id === targetHint)
       : this.state.tracks;
@@ -590,6 +682,7 @@ export class World extends EventEmitter {
     this.evidence.clear();
     for (const r of this.running.values()) this.finish(r, "scene_changed");
     for (const a of this.state.avatars) {
+      a.steer = null;
       delete a.arrival;
       a.target = null;
       a.animation = "idle";
@@ -606,6 +699,7 @@ export class World extends EventEmitter {
     this.state.props = [];
     this.state.raid = null;
     for (const a of this.state.avatars) {
+      a.steer = null;
       delete a.arrival;
       a.animation = "idle";
       a.target = null;
@@ -663,6 +757,28 @@ export class World extends EventEmitter {
       this.state.raid = null;
     for (const a of this.state.avatars) {
       const r = this.running.get(a.id);
+      if (a.steer) {
+        // x/y positions use normalized image coordinates; up/away decreases image y.
+        const elapsed = Math.max(
+          0,
+          Math.min(dt, (a.steer.until - (now - dt * 1000)) / 1000),
+        );
+        const magnitude = Math.max(1, Math.hypot(a.steer.x, a.steer.y));
+        a.x = Math.max(
+          0.02,
+          Math.min(0.98, a.x + (a.steer.x / magnitude) * elapsed * 0.25),
+        );
+        a.y = Math.max(
+          0.02,
+          Math.min(0.98, a.y - (a.steer.y / magnitude) * elapsed * 0.25),
+        );
+        if (now >= a.steer.until) {
+          a.steer = null;
+          a.animation = "idle";
+          a.message = "";
+        }
+        continue;
+      }
       if (a.arrival && !r) {
         [a.x, a.y] = arrivalPosition(a.arrival, now);
         a.animation = "walk";
@@ -804,6 +920,12 @@ export class World extends EventEmitter {
         if (q.progress >= 1) {
           await this.db.transaction(async (tx) => {
             for (const a of qualifying) {
+              const player = (
+                await tx.query("SELECT twitch_id FROM accounts WHERE id=$1", [
+                  a.id,
+                ])
+              ).rows[0];
+              if (player?.twitch_id?.startsWith("ext:")) continue;
               // credit() is idempotent per logical key. A player at the daily
               // cap is skipped instead of rolling back everyone's award.
               try {
@@ -858,6 +980,7 @@ export class World extends EventEmitter {
         .filter((a) => Date.now() - a.lastActive < 3600000)
         .map((a) => ({
           ...a,
+          steer: null,
           arrival: undefined,
           spawnedAt: undefined,
           target: null,

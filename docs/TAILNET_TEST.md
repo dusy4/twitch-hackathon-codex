@@ -1,5 +1,7 @@
 # Tailnet phone test server
 
+**Live input / Extension update (2026-10-31):** the paired capture token can start actual anonymous Twitch input with `POST /v1/live/channel {channel}` and inspect `GET /v1/live/status`. The world gains additive `live` and hero `steer` fields; [API.md](API.md) defines the exact Unity contract. Delete the selection to return to practice. Source changes require the integrator to restart the server; this development task did not restart port 3412. `--env-file` now allowlists `EXT_CLIENT_ID`, `EXT_SECRET`, `EXT_OWNER_ID` in addition to the existing planner keys. [TWITCH_EXTENSION.md](TWITCH_EXTENSION.md) covers Local/Hosted Test, the keyboard policy flag and owner setup. This remains a private debug harness even when input comes from real Twitch; never Funnel/tunnel the entire debug server to public viewers.
+
 A disposable, in-memory RaidRift server for testing the Android app from anywhere over Tailscale. It runs the
 **real** EventSub inbox/drain path, chat command path, quest evaluation and Shards ledger; only Twitch itself is
 simulated. Debug tools are on, so never expose it to the public internet.

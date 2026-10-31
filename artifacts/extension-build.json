@@ -1,0 +1,89 @@
+{
+  "builtAt": "2026-10-31T16:26:51.400Z",
+  "build": "review with shortcuts disabled",
+  "totalBytes": 929156,
+  "mobileBudgetBytes": 1000000,
+  "includesAllHtmlNoticesAndFontFallbacks": true,
+  "files": [
+    {
+      "path": "dist/twitch-extension/assets/main-B82WfvwT.css",
+      "bytes": 6846,
+      "sha256": "f33852c673ce1b579f6d56bdd858dbf4c32ba7b5e466d24652e8dddd6b443ab3"
+    },
+    {
+      "path": "dist/twitch-extension/assets/main-DyHFphYk.js",
+      "bytes": 848943,
+      "sha256": "f0780e76d89a31141b9e002b7e65b7140e3a6bdd1f6230a6a353d5798bf743f1"
+    },
+    {
+      "path": "dist/twitch-extension/assets/space-grotesk-latin-400-normal-BnQMeOim.woff",
+      "bytes": 17004,
+      "sha256": "d3fcfce61e3792f35b7c95c2f7f4f26c8d19c93998c03ad77d7bf0cd6d334e35"
+    },
+    {
+      "path": "dist/twitch-extension/assets/space-grotesk-latin-400-normal-CJ-V5oYT.woff2",
+      "bytes": 13388,
+      "sha256": "65fd17fcbd2e2f522940b5f67ead3d23329e02891aa5495e74d11a499c0b0673"
+    },
+    {
+      "path": "dist/twitch-extension/assets/space-grotesk-latin-600-normal-BflQw4A9.woff",
+      "bytes": 16884,
+      "sha256": "1c7ffb357cef0950935783c5a50e140e092f05c814da5b196e67a64e69cb2991"
+    },
+    {
+      "path": "dist/twitch-extension/assets/space-grotesk-latin-600-normal-DjKNqYRj.woff2",
+      "bytes": 13284,
+      "sha256": "685bbbf69fa616df1ef81847c85fc76be097ddfb3468ff2257be54511ab3130f"
+    },
+    {
+      "path": "dist/twitch-extension/component.html",
+      "bytes": 494,
+      "sha256": "f1a0aa5f90236350b894cb3ca1a91a4c1c9773abdb22fe122276ae24e9fd2309"
+    },
+    {
+      "path": "dist/twitch-extension/index.html",
+      "bytes": 494,
+      "sha256": "f1a0aa5f90236350b894cb3ca1a91a4c1c9773abdb22fe122276ae24e9fd2309"
+    },
+    {
+      "path": "dist/twitch-extension/mobile.html",
+      "bytes": 494,
+      "sha256": "f1a0aa5f90236350b894cb3ca1a91a4c1c9773abdb22fe122276ae24e9fd2309"
+    },
+    {
+      "path": "dist/twitch-extension/notices/beui-LICENSE.txt",
+      "bytes": 1093,
+      "sha256": "f77e8c10efd1e143694229ed58b57cb863d6b9dc052cdf33950c6f98a5f1709b"
+    },
+    {
+      "path": "dist/twitch-extension/notices/react-bits-LICENSE.txt",
+      "bytes": 2089,
+      "sha256": "783c9ce1a4b4a37cc719a78cbcdd7a16a0372f3b819d807fbb8c14af44914cd0"
+    },
+    {
+      "path": "dist/twitch-extension/notices/react-dom-LICENSE.txt",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
+    },
+    {
+      "path": "dist/twitch-extension/notices/react-LICENSE.txt",
+      "bytes": 1088,
+      "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
+    },
+    {
+      "path": "dist/twitch-extension/notices/SpaceGrotesk-OFL.txt",
+      "bytes": 4401,
+      "sha256": "18a4de52385f6b988782639d5d0cc1326e5a8c2de9a7f01d7b20d9aedcc60943"
+    },
+    {
+      "path": "dist/twitch-extension/notices/zod-LICENSE.txt",
+      "bytes": 1072,
+      "sha256": "3f1189b28e3866e0d979968d466b78f813f76827cfdca1fbb124cc0a5c8841f8"
+    },
+    {
+      "path": "dist/twitch-extension/panel.html",
+      "bytes": 494,
+      "sha256": "f1a0aa5f90236350b894cb3ca1a91a4c1c9773abdb22fe122276ae24e9fd2309"
+    }
+  ]
+}

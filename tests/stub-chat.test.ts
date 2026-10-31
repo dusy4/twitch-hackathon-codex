@@ -69,8 +69,8 @@ test("stub raid and three identified chatters travel through EventSub inbox and 
     );
     assert.deepEqual(bob, bobBefore);
     await event({ type: "chat", name: "Bob", text: "!d" });
-    assert.equal(w.running.get(bob.id)!.plan.steps[0].name, "walk");
-    assert.ok(w.running.get(bob.id)!.plan.steps[0].x! > bobBefore.x);
+    assert.equal(bob.animation, "walk");
+    assert.equal(bob.steer!.x, 1);
     await event({ type: "chat", name: "Charlie", text: "!wave" });
     assert.equal(
       w.state.avatars.find((a) => a.name === "Charlie")!.animation,
@@ -84,11 +84,7 @@ test("stub raid and three identified chatters travel through EventSub inbox and 
     );
     mock.timers.enable({ apis: ["Date"], now: Date.now() + 1000 });
     await event({ type: "chat", name: "Alice", text: "!rift make @Bob dance" });
-    assert.equal(
-      w.running.get(bob.id)!.plan.steps[0].name,
-      "walk",
-      "Alice cannot take over Bob",
-    );
+    assert.equal(bob.steer!.x, 1, "Alice cannot take over Bob");
     assert.ok(
       w.debugLog.some(
         (line) =>

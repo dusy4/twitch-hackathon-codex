@@ -1,0 +1,278 @@
+{
+  "recordedAt": "2026-10-31T16:31:40.234Z",
+  "branch": "fix/android-ar-recovery",
+  "scope": "Anonymous IRC Live backend, shared steering, four Extension surfaces and JWT EBS. No Unity edits, public deployment, paid calls or commits.",
+  "validation": {
+    "typecheck": {
+      "status": "pass",
+      "command": "node node_modules/typescript/bin/tsc --noEmit -p ."
+    },
+    "lint": {
+      "status": "pass",
+      "command": "npm run lint"
+    },
+    "units": {
+      "status": "pass",
+      "passed": 91,
+      "failed": 0,
+      "skipped": 1,
+      "skip": "Conditional external PostgreSQL test; no database credentials supplied",
+      "log": "artifacts/live-unit-tests.log"
+    },
+    "existingBrowserRegression": {
+      "status": "pass",
+      "passed": 14,
+      "skipped": 6,
+      "engines": [
+        "Chromium",
+        "Firefox",
+        "WebKit",
+        "mobile Chromium"
+      ],
+      "log": "artifacts/live-existing-e2e-final.log"
+    },
+    "extensionLocal": {
+      "status": "pass",
+      "passed": 4,
+      "log": "artifacts/extension-local-e2e.log",
+      "coverage": "Mock Twitch helper, locally signed fixture JWTs, real EBS/world/SSE, three independent heroes, held d-pad, release outside capture, focused WASD and typing/blur, prompt/numbered target/emote/id-share, no unsolicited idle steer, axe and overflow"
+    },
+    "extensionReview": {
+      "status": "pass",
+      "passed": 4,
+      "log": "artifacts/extension-review-e2e.log",
+      "keyboardShortcuts": false
+    },
+    "anonymousLiveTransport": {
+      "status": "pass",
+      "channel": "twitch",
+      "channelId": "12826",
+      "connected": true,
+      "error": null,
+      "scope": "Actual read-only anonymous room acknowledgement only. No real viewer command or raid rehearsal."
+    },
+    "designStatic": {
+      "failures": 0,
+      "warnings": 5,
+      "log": "artifacts/extension-design-lint.log",
+      "justifications": "Two upstream unused easing options; owner-requested single glass overlay; two original voxel geometry box shadows."
+    },
+    "designCdpInspector": {
+      "status": "blocked",
+      "reason": "Page.enable timeout with installed Chrome and bundled Chromium. No inspector pass claimed; Playwright screenshots/axe/overflow and direct visual review used."
+    },
+    "licenses": {
+      "records": 173,
+      "unknown": 0,
+      "manifest": "artifacts/dependency-licenses.json"
+    }
+  },
+  "builds": {
+    "review": {
+      "builtAt": "2026-10-31T16:26:51.400Z",
+      "build": "review with shortcuts disabled",
+      "totalBytes": 929156,
+      "mobileBudgetBytes": 1000000,
+      "includesAllHtmlNoticesAndFontFallbacks": true,
+      "files": [
+        {
+          "path": "dist/twitch-extension/assets/main-B82WfvwT.css",
+          "bytes": 6846,
+          "sha256": "f33852c673ce1b579f6d56bdd858dbf4c32ba7b5e466d24652e8dddd6b443ab3"
+        },
+        {
+          "path": "dist/twitch-extension/assets/main-DyHFphYk.js",
+          "bytes": 848943,
+          "sha256": "f0780e76d89a31141b9e002b7e65b7140e3a6bdd1f6230a6a353d5798bf743f1"
+        },
+        {
+          "path": "dist/twitch-extension/assets/space-grotesk-latin-400-normal-BnQMeOim.woff",
+          "bytes": 17004,
+          "sha256": "d3fcfce61e3792f35b7c95c2f7f4f26c8d19c93998c03ad77d7bf0cd6d334e35"
+        },
+        {
+          "path": "dist/twitch-extension/assets/space-grotesk-latin-400-normal-CJ-V5oYT.woff2",
+          "bytes": 13388,
+          "sha256": "65fd17fcbd2e2f522940b5f67ead3d23329e02891aa5495e74d11a499c0b0673"
+        },
+        {
+          "path": "dist/twitch-extension/assets/space-grotesk-latin-600-normal-BflQw4A9.woff",
+          "bytes": 16884,
+          "sha256": "1c7ffb357cef0950935783c5a50e140e092f05c814da5b196e67a64e69cb2991"
+        },
+        {
+          "path": "dist/twitch-extension/assets/space-grotesk-latin-600-normal-DjKNqYRj.woff2",
+          "bytes": 13284,
+          "sha256": "685bbbf69fa616df1ef81847c85fc76be097ddfb3468ff2257be54511ab3130f"
+        },
+        {
+          "path": "dist/twitch-extension/component.html",
+          "bytes": 494,
+          "sha256": "f1a0aa5f90236350b894cb3ca1a91a4c1c9773abdb22fe122276ae24e9fd2309"
+        },
+        {
+          "path": "dist/twitch-extension/index.html",
+          "bytes": 494,
+          "sha256": "f1a0aa5f90236350b894cb3ca1a91a4c1c9773abdb22fe122276ae24e9fd2309"
+        },
+        {
+          "path": "dist/twitch-extension/mobile.html",
+          "bytes": 494,
+          "sha256": "f1a0aa5f90236350b894cb3ca1a91a4c1c9773abdb22fe122276ae24e9fd2309"
+        },
+        {
+          "path": "dist/twitch-extension/notices/beui-LICENSE.txt",
+          "bytes": 1093,
+          "sha256": "f77e8c10efd1e143694229ed58b57cb863d6b9dc052cdf33950c6f98a5f1709b"
+        },
+        {
+          "path": "dist/twitch-extension/notices/react-bits-LICENSE.txt",
+          "bytes": 2089,
+          "sha256": "783c9ce1a4b4a37cc719a78cbcdd7a16a0372f3b819d807fbb8c14af44914cd0"
+        },
+        {
+          "path": "dist/twitch-extension/notices/react-dom-LICENSE.txt",
+          "bytes": 1088,
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
+        },
+        {
+          "path": "dist/twitch-extension/notices/react-LICENSE.txt",
+          "bytes": 1088,
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
+        },
+        {
+          "path": "dist/twitch-extension/notices/SpaceGrotesk-OFL.txt",
+          "bytes": 4401,
+          "sha256": "18a4de52385f6b988782639d5d0cc1326e5a8c2de9a7f01d7b20d9aedcc60943"
+        },
+        {
+          "path": "dist/twitch-extension/notices/zod-LICENSE.txt",
+          "bytes": 1072,
+          "sha256": "3f1189b28e3866e0d979968d466b78f813f76827cfdca1fbb124cc0a5c8841f8"
+        },
+        {
+          "path": "dist/twitch-extension/panel.html",
+          "bytes": 494,
+          "sha256": "f1a0aa5f90236350b894cb3ca1a91a4c1c9773abdb22fe122276ae24e9fd2309"
+        }
+      ]
+    },
+    "local": {
+      "builtAt": "2026-10-31T16:23:58.403Z",
+      "build": "private Local Test with focused keyboard",
+      "totalBytes": 929631,
+      "mobileBudgetBytes": 1000000,
+      "includesAllHtmlNoticesAndFontFallbacks": true,
+      "files": [
+        {
+          "path": "dist/twitch-extension/assets/main-B82WfvwT.css",
+          "bytes": 6846,
+          "sha256": "f33852c673ce1b579f6d56bdd858dbf4c32ba7b5e466d24652e8dddd6b443ab3"
+        },
+        {
+          "path": "dist/twitch-extension/assets/main-C_GypldI.js",
+          "bytes": 849418,
+          "sha256": "e28154f493db53e0befadeac572047885c6eea98d5e7887569f30e62a8189a77"
+        },
+        {
+          "path": "dist/twitch-extension/assets/space-grotesk-latin-400-normal-BnQMeOim.woff",
+          "bytes": 17004,
+          "sha256": "d3fcfce61e3792f35b7c95c2f7f4f26c8d19c93998c03ad77d7bf0cd6d334e35"
+        },
+        {
+          "path": "dist/twitch-extension/assets/space-grotesk-latin-400-normal-CJ-V5oYT.woff2",
+          "bytes": 13388,
+          "sha256": "65fd17fcbd2e2f522940b5f67ead3d23329e02891aa5495e74d11a499c0b0673"
+        },
+        {
+          "path": "dist/twitch-extension/assets/space-grotesk-latin-600-normal-BflQw4A9.woff",
+          "bytes": 16884,
+          "sha256": "1c7ffb357cef0950935783c5a50e140e092f05c814da5b196e67a64e69cb2991"
+        },
+        {
+          "path": "dist/twitch-extension/assets/space-grotesk-latin-600-normal-DjKNqYRj.woff2",
+          "bytes": 13284,
+          "sha256": "685bbbf69fa616df1ef81847c85fc76be097ddfb3468ff2257be54511ab3130f"
+        },
+        {
+          "path": "dist/twitch-extension/component.html",
+          "bytes": 494,
+          "sha256": "e352e4a007f727770aabdbd200398a74c1048750bd0c3b330c8c082c457e26f7"
+        },
+        {
+          "path": "dist/twitch-extension/index.html",
+          "bytes": 494,
+          "sha256": "e352e4a007f727770aabdbd200398a74c1048750bd0c3b330c8c082c457e26f7"
+        },
+        {
+          "path": "dist/twitch-extension/mobile.html",
+          "bytes": 494,
+          "sha256": "e352e4a007f727770aabdbd200398a74c1048750bd0c3b330c8c082c457e26f7"
+        },
+        {
+          "path": "dist/twitch-extension/notices/beui-LICENSE.txt",
+          "bytes": 1093,
+          "sha256": "f77e8c10efd1e143694229ed58b57cb863d6b9dc052cdf33950c6f98a5f1709b"
+        },
+        {
+          "path": "dist/twitch-extension/notices/react-bits-LICENSE.txt",
+          "bytes": 2089,
+          "sha256": "783c9ce1a4b4a37cc719a78cbcdd7a16a0372f3b819d807fbb8c14af44914cd0"
+        },
+        {
+          "path": "dist/twitch-extension/notices/react-dom-LICENSE.txt",
+          "bytes": 1088,
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
+        },
+        {
+          "path": "dist/twitch-extension/notices/react-LICENSE.txt",
+          "bytes": 1088,
+          "sha256": "da6d3703ed11cbe42bd212c725957c98da23cbff1998c05fa4b3d976d1a58e93"
+        },
+        {
+          "path": "dist/twitch-extension/notices/SpaceGrotesk-OFL.txt",
+          "bytes": 4401,
+          "sha256": "18a4de52385f6b988782639d5d0cc1326e5a8c2de9a7f01d7b20d9aedcc60943"
+        },
+        {
+          "path": "dist/twitch-extension/notices/zod-LICENSE.txt",
+          "bytes": 1072,
+          "sha256": "3f1189b28e3866e0d979968d466b78f813f76827cfdca1fbb124cc0a5c8841f8"
+        },
+        {
+          "path": "dist/twitch-extension/panel.html",
+          "bytes": 494,
+          "sha256": "e352e4a007f727770aabdbd200398a74c1048750bd0c3b330c8c082c457e26f7"
+        }
+      ]
+    },
+    "zip": {
+      "path": "artifacts/twitch-extension-review.zip",
+      "bytes": 227541,
+      "sha256": "95f554a23ae95fcb8690bb371fe16fa57ea5df079a370898d7550036e74d1433"
+    }
+  },
+  "screenshotEvidence": [
+    "artifacts/extension-chromium.png",
+    "artifacts/extension-mobile.png",
+    "artifacts/extension-review-chromium.png",
+    "artifacts/extension-review-mobile.png",
+    "artifacts/extension-collapsed-chromium.png",
+    "artifacts/extension-collapsed-mobile.png"
+  ],
+  "environmentNotes": [
+    "Codex bundled Node v24.22.1; repo node_modules. Restricted Windows os.userInfo required ignored test-only fallback preloader.",
+    "Playwright fixture processes managed separately on 3499 and 3401 with RAIDRIFT_E2E_EXTERNAL_SERVER=true; automatic Windows process-tree termination hung.",
+    "Firefox baseline crashed before page code; passing test runs used Mozilla debug environment flags MOZ_DISABLE_CONTENT_SANDBOX=1 and MOZ_DISABLE_GPU_SANDBOX=1. No product browser settings changed.",
+    "Independent suites use separate artifact directories. Extension test fixture resets between tests. Existing arrivals test polls the actual completion condition for up to 15 seconds to accommodate instrumented Windows rendering."
+  ],
+  "unverified": [
+    "Real Twitch user command -> phone action and incoming real raid with multiple human viewers",
+    "Installed Twitch Extension onAuthorized/id-share/token refresh, Local Test, Hosted Test, Console display combination and review approval",
+    "Public HTTPS EBS, DNS/tunnel/CORS/SSE from outside the tailnet; owner approval required",
+    "Unity camera-relative movement, measured geometry, tracking and broadcast/stream synchronization",
+    "External PostgreSQL and optional credentialed EventSub/Channel Points"
+  ],
+  "ownerChecklist": "docs/TWITCH_EXTENSION.md",
+  "nativeContract": "docs/API.md"
+}

@@ -3,7 +3,7 @@ export default defineConfig({
   webServer: {
     command: "node --import tsx scripts/qa-server.ts",
     url: "http://127.0.0.1:3401/health",
-    reuseExistingServer: false,
+    reuseExistingServer: process.env.RAIDRIFT_E2E_EXTERNAL_SERVER === "true",
     timeout: 30000,
   },
   testDir: "tests/e2e",

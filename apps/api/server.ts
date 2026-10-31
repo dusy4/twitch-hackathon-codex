@@ -1,4 +1,6 @@
 import { chatIntent } from "./chat-intent.js";
+import { TwitchIrc } from "./twitch-irc.js";
+import { installExtension } from "./extension.js";
 import Fastify from "fastify";
 import cookie from "@fastify/cookie";
 import staticFiles from "@fastify/static";
@@ -68,6 +70,11 @@ export async function createApp(
     relayUrl?: string;
     /** Open-vocabulary detector sidecar (services/ov-detector). Defaults to OV_DETECTOR_URL or http://127.0.0.1:3420. */
     ovDetectorUrl?: string;
+    /** Test seams; never exposed as HTTP input. */
+    ircUrl?: string;
+    extensionSecret?: string;
+    extensionOwnerId?: string;
+    extensionClientId?: string;
   } = {},
 ) {
   const debugTools = options.debugTools ?? process.env.DEBUG_TOOLS === "true";
@@ -182,7 +189,38 @@ export async function createApp(
       );
     // Native phone routes authenticate with a bearer capture token (never a
     // cookie), so browser origin/CSRF protections do not apply to them.
-    const bearerRoute = req.url.startsWith("/v1/native/");
+    const extensionRoute = req.url.startsWith("/v1/ext/");
+    const bearerRoute =
+      req.url.startsWith("/v1/native/") ||
+      req.url.startsWith("/v1/live/") ||
+      extensionRoute;
+    if (req.url.startsWith("/ext/")) {
+      reply.header(
+        "Content-Security-Policy",
+        "default-src 'self'; script-src 'self' https://extension-files.twitch.tv; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-ancestors https://*.twitch.tv https://*.ext-twitch.tv",
+      );
+    }
+    if (extensionRoute) {
+      const allowed = `https://${options.extensionClientId || process.env.EXT_CLIENT_ID || "unconfigured"}.ext-twitch.tv`;
+      if (
+        req.headers.origin &&
+        req.headers.origin !== allowed &&
+        req.headers.origin !== origin
+      )
+        throw new GameError(
+          "BAD_ORIGIN",
+          "Extension origin is not allowed",
+          403,
+        );
+      if (req.headers.origin)
+        reply
+          .header("Access-Control-Allow-Origin", req.headers.origin)
+          .header("Vary", "Origin");
+      reply
+        .header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        .header("Access-Control-Allow-Headers", "Authorization, Content-Type");
+      if (req.method === "OPTIONS") return reply.code(204).send();
+    }
     if (
       ["POST", "PATCH", "DELETE", "PUT"].includes(req.method) &&
       !req.url.startsWith("/v1/twitch/eventsub") &&
@@ -1557,13 +1595,34 @@ export async function createApp(
     w.log("chat", `${who.name}: ${text.slice(0, 200)}`);
     if (/^!join\s*$/i.test(text) || chatIntent(text) === "join") {
       try {
-        await w.join(who, true);
+        const hero = await w.join(who, true);
+        w.cancelControl(hero.id);
       } catch (error) {
         if (error instanceof GameError)
           w.log("error", `${who.name}: ${error.code} — ${error.message}`);
         throw error;
       }
       return { plan: "join", source: "keywords" };
+    }
+    const direction = text
+      .trim()
+      .match(/^!(?:(?:rift|ourapp)\s+)?(w|a|s|d|up|left|down|right)$/i)?.[1]
+      ?.toLowerCase();
+    if (direction) {
+      const [x, y] = (
+        {
+          w: [0, 1],
+          up: [0, 1],
+          a: [-1, 0],
+          left: [-1, 0],
+          s: [0, -1],
+          down: [0, -1],
+          d: [1, 0],
+          right: [1, 0],
+        } as Record<string, number[]>
+      )[direction];
+      await w.steer(who, x, y, 1200);
+      return { plan: `steer ${direction}`, source: "keywords" };
     }
     const result = await w.action(
       who,
@@ -1804,6 +1863,125 @@ export async function createApp(
       throw new GameError("REVOKED", "Pairing revoked", 401);
     return p.room;
   }
+  const liveReaders = new Map<string, TwitchIrc>();
+  const idleLive = () => ({
+    channel: null,
+    connected: false,
+    lastMessageAt: null,
+    viewersSeen: 0,
+    raidsSeen: 0,
+    error: null,
+  });
+  app.post("/v1/live/channel", async (req) => {
+    const room = await captureRoom(req);
+    const { channel } = body(
+      z
+        .object({
+          channel: z
+            .string()
+            .trim()
+            .regex(/^#?[A-Za-z0-9_]{1,25}$/),
+        })
+        .strict(),
+      req.body,
+    );
+    const w = await world(room);
+    liveReaders.get(room)?.stop();
+    const reader = new TwitchIrc(
+      channel,
+      {
+        changed: () => {
+          if (liveReaders.get(room) === reader) {
+            w.state.live = { ...reader.status };
+            w.event("live.status", w.state.live);
+          }
+        },
+        chat: async (m) => {
+          if (
+            liveReaders.get(room) !== reader ||
+            (!CHAT_COMMAND.test(m.text) && chatIntent(m.text) === null)
+          )
+            return;
+          const existing = (
+            await db.query(
+              "SELECT * FROM accounts WHERE twitch_id=$1 AND deleted=false",
+              [m.userId],
+            )
+          ).rows[0];
+          if (
+            !m.text.startsWith("!") &&
+            chatIntent(m.text) !== "join" &&
+            (!existing || !w.state.avatars.some((a) => a.id === existing.id))
+          )
+            return;
+          const who = await account(db, m.userId, m.name);
+          if (/^#[0-9a-f]{6}$/i.test(m.color)) {
+            await db.query(
+              "UPDATE accounts SET color=$2 WHERE id=$1 AND deleted=false",
+              [who.id, m.color],
+            );
+            who.color = m.color;
+          }
+          if (liveReaders.get(room) === reader)
+            await chatCommand(w, who, m.text, m.id);
+        },
+        raid: async (m) => {
+          if (liveReaders.get(room) === reader)
+            await w.raid(`irc:${m.id}`, m.sourceId, m.from, m.count, false);
+        },
+      },
+      { url: options.ircUrl },
+    );
+    liveReaders.set(room, reader);
+    w.state.mode = "LIVE TWITCH";
+    w.state.live = { ...reader.status };
+    reader.start();
+    return w.state.live;
+  });
+  app.delete("/v1/live/channel", async (req) => {
+    const room = await captureRoom(req),
+      w = await world(room);
+    liveReaders.get(room)?.stop();
+    liveReaders.delete(room);
+    w.state.live = idleLive();
+    const c = (
+      await db.query("SELECT connected FROM channels WHERE id=$1", [room])
+    ).rows[0];
+    w.state.mode =
+      w.channel.demo || room.startsWith("demo")
+        ? "SIMULATOR"
+        : c?.connected
+          ? "LIVE TWITCH"
+          : "OFFLINE";
+    w.event("live.status", w.state.live);
+    return w.state.live;
+  });
+  app.get(
+    "/v1/live/status",
+    async (req) =>
+      (await world(await captureRoom(req))).state.live || idleLive(),
+  );
+  app.options("/v1/ext/*", async (_req, reply) => reply.code(204).send());
+  installExtension(app, {
+    db,
+    command: chatCommand,
+    secret: options.extensionSecret,
+    resolveRoom: async (channel) => {
+      // Tailnet rooms use a synthetic id; only the explicitly configured owner maps to it.
+      const owner = options.extensionOwnerId || process.env.EXT_OWNER_ID;
+      const room =
+        owner === channel && options.debugRoom ? options.debugRoom : channel;
+      const w = await world(room);
+      const reader = liveReaders.get(room);
+      if (reader?.status.channelId && reader.status.channelId !== channel)
+        throw new GameError(
+          "EXT_CHANNEL_MISMATCH",
+          "This channel is not paired to this world",
+          403,
+        );
+      return w;
+    },
+  });
   function captureToken(room: string, version: number) {
     return security.sign({
       room,
@@ -2235,7 +2413,11 @@ export async function createApp(
       );
       w.state.config.paused = false;
       w.state.config.vision = true;
-      w.state.mode = w.channel.demo === true ? "SIMULATOR" : "LIVE TWITCH";
+      w.state.mode = liveReaders.has(room)
+        ? "LIVE TWITCH"
+        : w.channel.demo === true
+          ? "SIMULATOR"
+          : "LIVE TWITCH";
       w.log("info", "scene reset: avatars, props, raid and tracks cleared");
       w.event("world.snapshot", w.state);
       return { ok: true, queued: 0 };
@@ -2386,6 +2568,13 @@ export async function createApp(
     );
   }
   const webRoot = resolve(options.webRoot || "dist/web");
+  const extensionRoot = resolve("dist/twitch-extension");
+  if (existsSync(resolve(extensionRoot, "index.html")))
+    await app.register(staticFiles, {
+      root: extensionRoot,
+      prefix: "/ext/",
+      decorateReply: false,
+    });
   if (existsSync(resolve(webRoot, "index.html"))) {
     const htmlTemplate = await readFile(resolve(webRoot, "index.html"), "utf8");
     for (const path of ["/receiver", "/relay-receiver"])
@@ -2420,6 +2609,7 @@ export async function createApp(
     });
   }
   app.addHook("onClose", async () => {
+    for (const reader of liveReaders.values()) reader.stop();
     timers.forEach(clearInterval);
     closeMedia();
     closeWorldTransport();

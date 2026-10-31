@@ -67,3 +67,62 @@ The old `cosmetic` field is retained for compatibility and reflects the selected
 ## Implemented community construction
 
 `POST /v1/worlds/:id/construction` performs creator-enabled, revision-checked `create`, `place`, `remove` and `delete` operations with a UUID `requestId`. Authoritative world snapshots include active `structures`. Strict bodies, lease/budget rules, idempotent replay semantics and moderation permissions are described in `CONSTRUCTION.md`. No wallet endpoint is called by construction.
+
+## Implemented IRC Live mode (2026-10-31)
+
+These routes use `Authorization: Bearer <paired capture token>` with the same expiry, room, role and token-version revocation checks as `/v1/native/world`. No cookie or CSRF token is required. They do not require Twitch app credentials.
+
+| Route | Request | Response |
+| --- | --- | --- |
+| `POST /v1/live/channel` | `{channel: string}` Twitch login, optional leading `#`, case-insensitive, 1–25 letters/numbers/underscores | Live status; start/switch asynchronously |
+| `DELETE /v1/live/channel` | No body | Idle Live status; stops reconnects |
+| `GET /v1/live/status` | No body | Live status |
+
+```json
+{
+  "channel": "your_channel",
+  "channelId": "123456",
+  "connected": true,
+  "lastMessageAt": 1793450000000,
+  "viewersSeen": 3,
+  "raidsSeen": 1,
+  "error": null
+}
+```
+
+`channelId` is optional until Twitch supplies `room-id`. `connected` means the selected room acknowledged the connection; it becomes false on disconnect, timeout or stop. `lastMessageAt` is epoch milliseconds for the last PRIVMSG/USERNOTICE, or null before any. `viewersSeen` is distinct valid chat user IDs observed this selection, capped at 100,000; it is not concurrent audience or hero count. `raidsSeen` counts valid deduplicated raid notices observed this selection. Counters reset on start/switch, not reconnect. Error is null when healthy; it describes transport errors/notices, not viewer-command failures. Idle status has `channel:null`, `connected:false`, timestamps null, counters zero, error null.
+
+`GET /v1/native/world`, ordinary snapshots and world transport now include optional `live` containing this full status. Older consumers may ignore it; absence means no IRC selection. Starting Live changes `mode` to `LIVE TWITCH`; deleting it restores `SIMULATOR` for demo-owned rooms, otherwise the connected OAuth world's `LIVE TWITCH` or `OFFLINE`. Resetting practice actors preserves a selected IRC reader's Live mode. Selection is process-local, not restored from a save. Existing heroes remain. Live reads cannot impersonate another player through `/v1/native/chat` (403). Stop/kill/pause and moderation remain server-authoritative. See [TWITCH_EXTENSION.md](TWITCH_EXTENSION.md) for the owner workflow and optional credentialed EventSub boundary.
+
+## Implemented held steering / Unity contract
+
+Each `avatars[]` hero may contain the following additive field:
+
+```json
+"steer": { "x": 1.0, "y": 0.0, "seq": 42, "until": 1793450000600 }
+```
+
+`x,y` are finite floats in `[-1,1]`, relative to the **streamer's current camera view**: positive x = right, negative x = left, positive y = forward/away, negative y = back/towards the camera. They are directions, not target coordinates. Diagonal speed is normalized to avoid a speed boost. `seq` is a server-assigned increasing integer in this world process and resets on process restart. Reset the consumer's comparison baseline on world-epoch changes and ignore older samples from the same epoch. `until` is server epoch milliseconds. `steer:null` or absent means idle input. Stop at `until` even if the next snapshot is lost. Use server time/HTTP Date for clock offset; never extend expiry based on the phone clock or packet arrival time.
+
+Extension steering (`POST /v1/ext/steer {x,y}`) refreshes a **600 ms** lease. Send at most 10 updates/s, including release; the frontend spaces requests at least 110 ms apart and permits only one steer request in flight. `{x:0,y:0}` releases. Server enforces both a 100 ms minimum interval and ten requests per rolling second, returning 429 on excess. A lost release times out. Chat `!w/!up`, `!a/!left`, `!s/!down`, `!d/!right` uses the identical action with a **1,200 ms** lease, since chat cannot express a continuous held key.
+
+Accepted planner/command input cancels steer; steer cancels a running action and invalidates older pending target/model work for that hero. Pause, scene reset, explicit join command and expiry clear steer. Other heroes are unaffected. A viewer owns one hero keyed to its server account, never a caller-supplied actor ID. Steering is ephemeral, not restored from world saves, and has no wallet mutation.
+
+The backend also advances legacy `avatar.x/y` normalized image coordinates at 0.25 units/s with a `[.02,.98]` boundary; positive steer y decreases image y. **Unity should consume the steer vector directly**, project current camera right and horizontal forward onto its measured support plane, use its existing movement speed/collision rules, and stop on untracked/unsupported geometry. Avoid applying both that movement and the image-coordinate delta. This backend contract is implemented/tested; no Unity source was changed and physical camera-relative navigation remains the Unity engineer's integration/validation task.
+
+## Implemented Extension EBS
+
+All `/v1/ext/*` requests use the Twitch helper JWT in `Authorization: Bearer <JWT>`. Verify HS256 against base64-decoded `EXT_SECRET`, expiry (seconds), viewer/moderator/broadcaster role, numeric `channel_id`, and `opaque_user_id`; external-role tokens and arbitrary actor/name/channel body fields are refused. CORS is restricted to the configured Extension CDN origin and same-origin Local Test. OPTIONS requires no token. `user_id` links to chat identity only if the JWT is not unlinked; otherwise `ext:<opaque_user_id>` stays separate, displayed as `viewer-xxxx`. Opaque accounts can play but receive no join/quest Shards before identity sharing. A shared token proves both identities for hero reconciliation. Known Twitch display names are refreshed by chat; no app credentials are required to resolve an existing chat account.
+
+| Route | Body / result |
+| --- | --- |
+| `POST /v1/ext/join` | Strict `{}`; spawn/claim authenticated hero |
+| `POST /v1/ext/steer` | Strict `{x:number,y:number}`; direction/release |
+| `POST /v1/ext/emote` | Strict `{emote:"jump"|"dance"|"wave"|"sit"|"cheer"}` |
+| `POST /v1/ext/prompt` | Strict `{prompt:string≤500,targetHint?:trackId}`; existing chat/planner path |
+| `GET /v1/ext/state` | State below; no account allocation just for reading |
+| `GET /v1/ext/events` | SSE `event: state`, same JSON state at 5 Hz; stream closes at JWT expiry, channel remap, slow-client backpressure or server shutdown |
+
+State: `{serverTime:epochMs,roomId,live?,hero:Avatar|null,targets:[{id,number:number|null,label}],roster:[{id,name,color,animation}]}`. Number is parsed from the phone's exact `class:"spot N"`. Numbered markers use an observed attribute as their label (e.g. sofa), otherwise their class. Unnumbered objects use their class (e.g. chair), keeping appearance attributes such as red separate from the target noun. All targets remain selectable by ID. Targets mirror visible tracks, expire on the ordinary world tracking lifetime, and are never renumbered by the Extension. Roster is a small preview capped at 30. Mutation results contain the same state. SSE clients use streaming fetch so tokens stay in headers, never URLs; refresh/reconnect on `onAuthorized`. Maximum two streams per viewer/room, 20 reads/s per identity, ten steer requests/s, two join/emote/prompt requests/s combined, plus existing actor cooldown/AI/world gates. Model output and user text have no privileged authority. UI labels are schema-validated and rendered as escaped text.
+
+`/ext/` serves `dist/twitch-extension` when built. Build-time `VITE_EBS_ORIGIN` points Hosted Test at its approved HTTPS EBS. Missing `EXT_SECRET` fails closed with 503; no fixture JWT is accepted by a normal deployment. Owner setup, review restrictions, public-origin options and test commands: [TWITCH_EXTENSION.md](TWITCH_EXTENSION.md).

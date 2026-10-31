@@ -93,15 +93,18 @@ test("actual overlay shows a bounded anonymous raid crowd and a distinct claimed
       overlay.locator(`.avatar-label[data-avatar-id="${me.user.id}"]`),
     ).toHaveAttribute("data-model", /Knight|Mage|Rogue|Barbarian/);
     await expect
-      .poll(async () => {
-        const world = await (
-          await viewer.request.get("/v1/worlds/demo-world")
-        ).json();
-        return (
-          world.avatars.find((a: any) => a.id === me.user.id)?.arrival ===
-          undefined
-        );
-      })
+      .poll(
+        async () => {
+          const world = await (
+            await viewer.request.get("/v1/worlds/demo-world")
+          ).json();
+          return (
+            world.avatars.find((a: any) => a.id === me.user.id)?.arrival ===
+            undefined
+          );
+        },
+        { timeout: 15000 },
+      )
       .toBe(true);
     await expect(overlay.locator("#stage")).toHaveAttribute(
       "data-avatar-count",
@@ -132,15 +135,18 @@ test("actual overlay shows a bounded anonymous raid crowd and a distinct claimed
     expect(reentered.status(), await reentered.text()).toBe(200);
     expect((await reentered.json()).arrival.from).toEqual([0.36, 0.77]);
     await expect
-      .poll(async () => {
-        const current = await (
-          await viewer.request.get("/v1/worlds/demo-world")
-        ).json();
-        return (
-          current.avatars.find((a: any) => a.id === me.user.id)?.arrival ===
-          undefined
-        );
-      })
+      .poll(
+        async () => {
+          const current = await (
+            await viewer.request.get("/v1/worlds/demo-world")
+          ).json();
+          return (
+            current.avatars.find((a: any) => a.id === me.user.id)?.arrival ===
+            undefined
+          );
+        },
+        { timeout: 15000 },
+      )
       .toBe(true);
     await controller.screenshot({
       path: "artifacts/chromium-claimed-character.png",

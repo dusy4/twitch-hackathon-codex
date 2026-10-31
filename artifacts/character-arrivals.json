@@ -1,11 +1,13 @@
 {
-  "runAt": "2026-10-29T00:33:06.057Z",
+  "runAt": "2026-10-31T16:26:59.228Z",
   "input": "Labelled simulator raid, actual browser overlay and independent authenticated simulator viewer",
-  "anonymousVisualInstances": 0,
-  "newActorId": "061955a7-7931-4440-a02d-55dee41839d7",
+  "reportedViewers": 247,
+  "anonymousVisualInstances": 65,
+  "newActorId": "72908083-dee1-4895-af47-0bbc65ece448",
   "avatarIds": [
-    "306dfa40-d693-4243-94ca-382f7d1cf51e",
-    "061955a7-7931-4440-a02d-55dee41839d7"
+    "e15808c3-5b8d-47f2-9a24-de5b9c156012",
+    "1f93ea21-e10a-4b61-8803-16d2e5ce7d1a",
+    "72908083-dee1-4895-af47-0bbc65ece448"
   ],
   "arrival": {
     "from": [
@@ -13,25 +15,25 @@
       0.77
     ],
     "to": [
-      0.6200000000000001,
+      0.68,
       0.79
     ],
-    "startedAt": 1793233968152,
+    "startedAt": 1793464010066,
     "durationMs": 1500
   },
   "settled": {
-    "id": "061955a7-7931-4440-a02d-55dee41839d7",
+    "id": "72908083-dee1-4895-af47-0bbc65ece448",
     "name": "Luna",
     "color": "#ae80ff",
     "cosmetic": "",
     "equipment": {},
-    "x": 0.6200000000000001,
+    "x": 0.68,
     "y": 0.79,
-    "spawnedAt": 1793233979045,
+    "spawnedAt": 1793464014910,
     "animation": "wave",
     "message": "Stepping through the rift",
     "target": null,
-    "lastActive": 1793233979045,
-    "animationAt": 1793233980738
+    "lastActive": 1793464014910,
+    "animationAt": 1793464016611
   }
 }

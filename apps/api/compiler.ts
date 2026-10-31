@@ -242,9 +242,21 @@ export function localCompile(
       (t.source === "server" || t.confidence >= 0.6) &&
       now - t.seenAt < TRACK_TTL_MS,
   );
-  let first = -1;
-  let named: SceneTrack[] = [];
-  for (const t of fresh) {
+  const numbered = prompt.match(
+    /(?:\bspot\s*#?|\b(?:to|on|onto|at)\s+#?|#)(\d{1,2})\b/,
+  );
+  let first = numbered?.index ?? -1;
+  let named: SceneTrack[] = numbered
+    ? fresh.filter(
+        (t) => t.class.toLowerCase() === `spot ${Number(numbered[1])}`,
+      )
+    : [];
+  if (numbered && !named.length)
+    throw new GameError(
+      "TARGET_NOT_VISIBLE",
+      `Spot ${Number(numbered[1])} isn't on screen right now.`,
+    );
+  for (const t of numbered ? [] : fresh) {
     const at = mentionIndex(t.class, prompt);
     if (at < 0) continue;
     if (first < 0 || at < first) {
@@ -474,11 +486,19 @@ export const COMPAT_DEFAULT_MODEL = "openai/gpt-oss-20b";
 export function aiProvider(env = process.env): AIProvider | null {
   if (env.ALLOW_PAID_AI !== "true") return null;
   if (env.AI_PROVIDER === "compat") {
-    const url = (env.PLANNER_BASE_URL || COMPAT_DEFAULT_URL).replace(/\/+$/, "");
+    const url = (env.PLANNER_BASE_URL || COMPAT_DEFAULT_URL).replace(
+      /\/+$/,
+      "",
+    );
     const key = env.PLANNER_API_KEY || env.GROQ_API_KEY || "";
     const local = /^https?:\/\/(127\.|localhost|\[::1\])/.test(url);
     return key || local
-      ? { provider: "compat", model: env.PLANNER_MODEL || COMPAT_DEFAULT_MODEL, url, key }
+      ? {
+          provider: "compat",
+          model: env.PLANNER_MODEL || COMPAT_DEFAULT_MODEL,
+          url,
+          key,
+        }
       : null;
   }
   if (env.AI_PROVIDER === "opencode")
@@ -550,17 +570,34 @@ export function extractJson(text: string): unknown {
 }
 /** Words viewers use vs. the phone detector's names (COCO via SurfaceLabels: sofa, table, tv, plant, person). */
 const SYNONYMS: Record<string, string[]> = {
-  couch: ["sofa"], sofa: ["couch"], settee: ["sofa"],
-  desk: ["table"], table: ["desk"],
-  television: ["tv"], screen: ["tv", "laptop"], monitor: ["tv"],
-  puppy: ["dog"], doggy: ["dog"], kitty: ["cat"], kitten: ["cat"],
-  human: ["person"], guy: ["person"], girl: ["person"], man: ["person"], woman: ["person"],
-  plant: ["potted plant", "plant"], flower: ["plant"],
-  seat: ["chair", "sofa"], stool: ["chair"], armchair: ["chair", "sofa"],
-  mug: ["cup"], glass: ["cup", "wine glass"],
+  couch: ["sofa"],
+  sofa: ["couch"],
+  settee: ["sofa"],
+  desk: ["table"],
+  table: ["desk"],
+  television: ["tv"],
+  screen: ["tv", "laptop"],
+  monitor: ["tv"],
+  puppy: ["dog"],
+  doggy: ["dog"],
+  kitty: ["cat"],
+  kitten: ["cat"],
+  human: ["person"],
+  guy: ["person"],
+  girl: ["person"],
+  man: ["person"],
+  woman: ["person"],
+  plant: ["potted plant", "plant"],
+  flower: ["plant"],
+  seat: ["chair", "sofa"],
+  stool: ["chair"],
+  armchair: ["chair", "sofa"],
+  mug: ["cup"],
+  glass: ["cup", "wine glass"],
 };
 /** Furniture a character can stand or sit on; falls back to the phone's scanned "furniture top". */
-const FURNITURE = /\b(bed|sofa|couch|table|desk|chair|seat|ottoman|bench|stool|shelf|furniture|top)\b/;
+const FURNITURE =
+  /\b(bed|sofa|couch|table|desk|chair|seat|ottoman|bench|stool|shelf|furniture|top)\b/;
 /** Finds (and inserts into the world) tracks for nouns nobody has seen yet. */
 export type TargetResolver = (nouns: string[]) => Promise<SceneTrack[]>;
 /**
@@ -591,7 +628,10 @@ export async function bindTargets(
     if (number) {
       const spot = all.find((t) => t.class === `spot ${Number(number[1])}`);
       if (!spot)
-        throw new GameError("TARGET_NOT_VISIBLE", `Spot ${Number(number[1])} isn't on screen right now.`);
+        throw new GameError(
+          "TARGET_NOT_VISIBLE",
+          `Spot ${Number(number[1])} isn't on screen right now.`,
+        );
       bound.set(raw, spot.id);
       s.target = spot.id;
       continue;
@@ -604,7 +644,12 @@ export async function bindTargets(
     const idLike = !asked && /[-_#\d]/.test(raw);
     // A mangled id ("ph-chair", "chair_2") still names its class: "chair".
     const fromId = idLike
-      ? normalizeWords(raw.replace(/^(ph|phone|track)[-_]/i, "").replace(/[-_#]?\d+$/, "").replace(/[-_#]+/g, " "))
+      ? normalizeWords(
+          raw
+            .replace(/^(ph|phone|track)[-_]/i, "")
+            .replace(/[-_#]?\d+$/, "")
+            .replace(/[-_#]+/g, " "),
+        )
       : "";
     const alias = SYNONYMS[noun] ?? SYNONYMS[fromId] ?? [];
     let named = all.filter(
@@ -651,7 +696,9 @@ async function compileOpenCode(
   endpoint?: { url: string; key?: string },
 ) {
   let res: Response;
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
   if (endpoint) {
     if (endpoint.key) headers.Authorization = `Bearer ${endpoint.key}`;
   } else {
@@ -671,12 +718,15 @@ async function compileOpenCode(
   // Small reasoning models (gpt-oss) answer this constrained task fine with minimal reasoning.
   if (endpoint && /gpt-oss/.test(model)) body.reasoning_effort = "low";
   try {
-    res = await fetcher(endpoint ? `${endpoint.url}/chat/completions` : OPENCODE_URL, {
-      method: "POST",
-      signal: AbortSignal.timeout(10000),
-      headers,
-      body: JSON.stringify(body),
-    });
+    res = await fetcher(
+      endpoint ? `${endpoint.url}/chat/completions` : OPENCODE_URL,
+      {
+        method: "POST",
+        signal: AbortSignal.timeout(10000),
+        headers,
+        body: JSON.stringify(body),
+      },
+    );
   } catch (error) {
     throw new GameError(
       "AI_UNAVAILABLE",
@@ -743,20 +793,46 @@ export async function compileAI(
     );
   if (provider.provider === "compat") {
     try {
-      return await compileOpenCode(prompt, tracks, provider.model, fetcher, observedAt, resolve, {
-        url: provider.url!,
-        key: provider.key,
-      });
+      return await compileOpenCode(
+        prompt,
+        tracks,
+        provider.model,
+        fetcher,
+        observedAt,
+        resolve,
+        {
+          url: provider.url!,
+          key: provider.key,
+        },
+      );
     } catch (error) {
       // Busy chat can hit the small model's rate limit (Groq free tier 429): retry once on OpenCode Go
       // when configured; the world falls back to keywords after that.
-      if (!(error instanceof GameError) || error.code !== "AI_UNAVAILABLE" || !process.env.OPENCODE_GO_API_KEY)
+      if (
+        !(error instanceof GameError) ||
+        error.code !== "AI_UNAVAILABLE" ||
+        !process.env.OPENCODE_GO_API_KEY
+      )
         throw error;
-      return compileOpenCode(prompt, tracks, process.env.OPENCODE_MODEL || "deepseek-v4.1-flash", fetcher, observedAt, resolve);
+      return compileOpenCode(
+        prompt,
+        tracks,
+        process.env.OPENCODE_MODEL || "deepseek-v4.1-flash",
+        fetcher,
+        observedAt,
+        resolve,
+      );
     }
   }
   if (provider.provider === "opencode")
-    return compileOpenCode(prompt, tracks, provider.model, fetcher, observedAt, resolve);
+    return compileOpenCode(
+      prompt,
+      tracks,
+      provider.model,
+      fetcher,
+      observedAt,
+      resolve,
+    );
   const res = await fetcher("https://api.openai.com/v1/responses", {
     method: "POST",
     signal: AbortSignal.timeout(10000),

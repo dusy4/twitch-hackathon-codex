@@ -116,6 +116,8 @@ export const Config = z.object({
 });
 export { defaultConfig } from "./settings.js";
 export type Avatar = {
+  /** Camera-relative held input. Positive y means away from the streamer. */
+  steer?: { x: number; y: number; seq: number; until: number } | null;
   spawnedAt?: number;
   arrival?: import("./arrivals.js").AvatarArrival;
   id: string;
@@ -140,6 +142,7 @@ export type Prop = {
   expires: number;
 };
 export type WorldSnapshot = {
+  live?: LiveStatus;
   structures?: import("./construction.js").CommunityStructure[];
   duels?: import("./duels.js").DuelState[];
   roomId: string;
@@ -159,6 +162,21 @@ export type WorldSnapshot = {
   } | null;
   quests: QuestState[];
 };
+export type LiveStatus = {
+  channel: string | null;
+  channelId?: string;
+  connected: boolean;
+  lastMessageAt: number | null;
+  viewersSeen: number;
+  raidsSeen: number;
+  error: string | null;
+};
+export const SteerInput = z
+  .object({
+    x: z.number().finite().min(-1).max(1),
+    y: z.number().finite().min(-1).max(1),
+  })
+  .strict();
 export type QuestState = {
   id: string;
   title: string;
