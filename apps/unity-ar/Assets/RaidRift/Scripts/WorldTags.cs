@@ -125,7 +125,7 @@ namespace RaidRift
             Material plateMat = null;
             go.GetComponent<MeshRenderer>().sharedMaterial = textMat;
             text.fontSize = 96;
-            text.characterSize = 0.018f; // fx-banner preview: 0.012 was too small for a 720p stream
+            text.characterSize = 0.011f; // PlaySmoke play-9 at full scale: 0.018 filled the frame (the fx-banner shot is the 0.6x pop-in)
             text.anchor = TextAnchor.MiddleCenter;
             text.alignment = TextAlignment.Center;
             text.richText = true;
@@ -170,6 +170,9 @@ namespace RaidRift
                 {
                     vp.x = Mathf.Clamp(vp.x, 0.2f, 0.8f);
                     vp.y = Mathf.Clamp(vp.y, 0.2f, 0.74f);
+                    // Phone tilted down: the point above the rift is only ~0.6 m deep and the banner filled the
+                    // frame (PlaySmoke play-9). Keep it at least 1.4 m out.
+                    vp.z = Mathf.Max(vp.z, 1.4f);
                     p = _cam.ViewportToWorldPoint(vp);
                 }
                 transform.position = p;

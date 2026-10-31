@@ -299,7 +299,7 @@ namespace RaidRift
         {
             if (_i == null) return;
             if (first) CameraFeel.Shake(0.25f);
-            Spawn(_i.magicPoof, pos + Vector3.up * 0.1f, 0.55f);
+            Spawn(_i.magicPoof, pos + Vector3.up * 0.1f, first ? 0.45f : 0.32f); // PlaySmoke play-60: three in a row filled the frame
             for (int n = 0; n < 12; n++)
                 Emit(_i._sparks, pos + Vector3.up * 0.06f, (outward * 0.6f + Random.insideUnitSphere * 0.6f + Vector3.up * 0.3f), Random.Range(0.012f, 0.025f), Random.Range(0.25f, 0.45f), Pick());
             for (int n = 0; n < 2; n++)
@@ -353,7 +353,7 @@ namespace RaidRift
                     break;
                 case "wave":
                 case "greet":
-                    Spawn(_i.hitLight, head, 0.45f);
+                    Spawn(_i.hitLight, head, 0.3f); // Command() already flashes one: PlaySmoke play-wave was a big white halo
                     for (int n = 0; n < 8; n++) Emit(_i._sparks, head, Random.insideUnitSphere * 0.35f + Vector3.up * 0.3f, 0.035f, 0.7f, Bright(pop));
                     break;
                 default:

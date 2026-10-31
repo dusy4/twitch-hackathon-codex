@@ -19,7 +19,7 @@ namespace RaidRift
             selfie.RoomLost += SelfieRoomLost;
         }
 
-        void SelfieRoomLost() => Button("reset-room");
+        void SelfieRoomLost() => ResetRoom();
 
         /// <summary>ARCore may reset its world origin when the physical camera changes, and the rear camera can come
         /// back without positional tracking. Never keep a room in the wrong frame: once tracking is steady, compare
@@ -36,7 +36,7 @@ namespace RaidRift
                 if (Time.realtimeSinceStartup - start > 10f)
                 {
                     if (session != null) session.Reset();
-                    Button("reset-room");
+                    ResetRoom();
                     hud.Toast("Room tracking restarted · point at the floor to land again", 4f);
                     yield break;
                 }
@@ -47,7 +47,7 @@ namespace RaidRift
             float yaw = Mathf.Abs(Mathf.DeltaAngle(cam.localEulerAngles.y, selfie.SavedCameraRotation.eulerAngles.y));
             if (moved > 0.6f || yaw > 40f)
             {
-                Button("reset-room");
+                ResetRoom();
                 hud.Toast("Room realigned after selfie · point at the floor to land again", 4f);
             }
         }

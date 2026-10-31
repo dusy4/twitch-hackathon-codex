@@ -117,6 +117,7 @@ namespace RaidRift
                 landscape = Screen.width >= Screen.height,
             });
             _liveMode = true;
+            _announced = false;
             // A clean broadcast: the scan grid becomes the invisible occluder.
             SetScanMode(2);
             hud.SetMode(true, "● LIVE");
@@ -137,6 +138,8 @@ namespace RaidRift
         }
 
         StreamCaption _caption;
+        bool _announced; // title card shown for this broadcast
+        float _endArmedAt = -10f;
         const string PrefCaption = "rr.live.caption";
         static bool StreamCaptionOn { get => PlayerPrefs.GetInt(PrefCaption, 1) == 1; set { PlayerPrefs.SetInt(PrefCaption, value ? 1 : 0); PlayerPrefs.Save(); } }
 
@@ -158,6 +161,14 @@ namespace RaidRift
             string chip = publisher.IsLive ? $"● LIVE {(int)up.TotalMinutes:00}:{up.Seconds:00}" : publisher.State.StartsWith("error") ? "● OFFLINE" : "● " + publisher.State.ToUpperInvariant();
             hud.SetMode(true, chip);
             hud.SetLiveStats(_heroes.Count, publisher.BitrateKbps);
+            // First moment Twitch actually receives video: an in-world title card, so early viewers know what to do.
+            if (publisher.IsLive && !_announced && !(selfie != null && selfie.WorldPaused))
+            {
+                _announced = true;
+                var cam = arCamera.transform;
+                WorldTags.Banner(cam.position + cam.forward * 1.6f, arCamera, "RAIDRIFT", "type !join in chat to drop in a hero", 3.5f);
+                Sfx.Play("rift_open", 0.4f);
+            }
             // The world can be a stale snapshot while the tailnet is down: say so instead of "chat connected".
             string chat = _live && !server.Connected ? "game server unreachable · retrying (stream continues)"
                 : world?.LiveChannel != null ? (world.LiveConnected ? $"#{world.LiveChannel} chat connected" : $"#{world.LiveChannel} chat reconnecting…") : "no channel chat";
@@ -197,7 +208,13 @@ namespace RaidRift
                     _nextMaterialPass = 0f;
                     break;
                 case "chat": hud.ToggleChat(); break;
-                case "end-live": if (_liveMode) EndLive(); break;
+                case "end-live":
+                    if (!_liveMode) break;
+                    // Walking with the phone: one stray tap must not end the broadcast. Second tap within 3 s does.
+                    if (Time.unscaledTime - _endArmedAt > 3f) { _endArmedAt = Time.unscaledTime; hud.Toast("Tap End again to stop the stream", 3f); break; }
+                    _endArmedAt = -10f;
+                    EndLive();
+                    break;
                 case "caption": StreamCaptionOn = !StreamCaptionOn; hud.Toast(StreamCaptionOn ? "Stream shows how to !join" : "No hint on stream"); break;
                 case "motion": CameraFeel.ReducedMotion = !CameraFeel.ReducedMotion; hud.Toast(CameraFeel.ReducedMotion ? "Reduced motion: no screen shake" : "Full camera effects"); break;
                 case "mic": if (publisher != null) { publisher.MicMuted = !publisher.MicMuted; hud.Toast(publisher.MicMuted ? "Mic muted on stream" : "Mic live"); } break;
@@ -220,25 +237,42 @@ namespace RaidRift
                     hud.Toast(Sfx.Muted ? "Sound off" : "Sound on");
                     if (!Sfx.Muted) Sfx.Play("pickup");
                     break;
-                case "offline": _live = false; server.Stop(); ClearHeroes(); hud.Toast("Offline test room"); break;
+                case "offline" when _liveMode && Time.unscaledTime - _offlineArmedAt > 3f:
+                    // Broadcasting: going offline drops Twitch chat while the stream keeps running. Confirm.
+                    _offlineArmedAt = Time.unscaledTime;
+                    hud.Toast("Still live · tap again to disconnect chat (stream keeps running)", 3f);
+                    break;
+                case "offline": _offlineArmedAt = -10f; _live = false; server.Stop(); ClearHeroes(); hud.Toast("Offline test room"); break;
                 case "server-raid": if (_live) server.DebugRaid((ok, text) => hud.Toast(ok ? "Server test raid sent" : "Raid failed · " + text)); else hud.Toast("Pair with the server first"); break;
                 case "reset-room":
-                    room.ResetRoom();
-                    _landed = false; _candidate = null;
-                    SetScanMode(1);
-                    ClearHeroes();
-                    if (_rift != null) Destroy(_rift.gameObject);
-                    if (_marker != null) Destroy(_marker);
-                    if (moths != null) moths.Clear();
-                    // Nothing from the previous room may resolve as a target: places, labels, in-flight frames.
-                    if (sceneTracks != null) sceneTracks.ResetScene();
-                    if (surfaceLabels != null) surfaceLabels.Clear();
-                    if (detector != null) detector.ResetDetections();
-                    _roam.Clear();
-                    trail.Clear();
-                    hud.Toast("Room scan reset");
+                    // Destructive mid-stream (rift + heroes go): a landed room needs a second tap within 3 s.
+                    if (_landed && Time.unscaledTime - _resetArmedAt > 3f) { _resetArmedAt = Time.unscaledTime; hud.Toast("Tap again to rescan the room (the party re-lands)", 3f); break; }
+                    _resetArmedAt = -10f;
+                    ResetRoom();
                     break;
             }
+            RefreshButtons();
+        }
+
+        float _resetArmedAt = -10f, _offlineArmedAt = -10f;
+
+        /// <summary>Forget the scanned room: navigation, landing, rift, heroes, targets. Also used by selfie recovery.</summary>
+        void ResetRoom()
+        {
+            room.ResetRoom();
+            _landed = false; _candidate = null;
+            SetScanMode(1);
+            ClearHeroes();
+            if (_rift != null) Destroy(_rift.gameObject);
+            if (_marker != null) Destroy(_marker);
+            if (moths != null) moths.Clear();
+            // Nothing from the previous room may resolve as a target: places, labels, in-flight frames.
+            if (sceneTracks != null) sceneTracks.ResetScene();
+            if (surfaceLabels != null) surfaceLabels.Clear();
+            if (detector != null) detector.ResetDetections();
+            _roam.Clear();
+            trail.Clear();
+            hud.Toast("Room scan reset");
             RefreshButtons();
         }
 

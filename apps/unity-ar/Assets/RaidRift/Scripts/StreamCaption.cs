@@ -87,7 +87,7 @@ namespace RaidRift
             // Nobody in yet: one clear call to action. Party present: the command menu.
             _text.text = heroes == 0
                 ? "Type <color=#92ffe0>!join</color> in chat to drop in a hero"
-                : "<color=#92ffe0>!join</color>  ·  !wave  ·  !jump  ·  !dance  ·  <color=#c79bff>!rift go to 3</color>";
+                : "<color=#92ffe0>!join</color>  ·  !wave  ·  !jump  ·  !dance  ·  !rift go to 3";
         }
     }
 }
