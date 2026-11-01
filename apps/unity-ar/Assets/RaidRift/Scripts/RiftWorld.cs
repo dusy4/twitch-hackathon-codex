@@ -131,7 +131,7 @@ namespace RaidRift
 
         void RenderFor(Camera cam)
         {
-            if (_rendering || cam == null || cam == _riftCamera || _riftCamera == null) return;
+            if (_rendering || _autoFallback || cam == null || cam == _riftCamera || _riftCamera == null) return;
             var pose = cam.transform.localToWorldMatrix;
             var proj = cam.projectionMatrix;
             if (Application.isPlaying && _renderedFrame == Time.frameCount && _renderedFor == cam && _renderedProj == proj && _renderedPose == pose) return;
@@ -144,6 +144,27 @@ namespace RaidRift
                 _renderedFrame = Time.frameCount; _renderedFor = cam; _renderedProj = proj; _renderedPose = pose;
             }
             finally { _rendering = false; }
+        }
+
+        // Safety net (not testable on a phone tonight): if the window is visible but the hook has not rendered for
+        // 30 frames, go back to the old behaviour (rift camera renders itself each frame with the AR projection).
+        bool _autoFallback;
+        Renderer _windowRenderer;
+
+        void CheckRenderPath()
+        {
+            if (_autoFallback || _riftCamera == null || _window == null || _age < 1f) return;
+            if (_windowRenderer == null) _windowRenderer = _window.GetComponent<Renderer>();
+            if (_windowRenderer == null || !_windowRenderer.isVisible || Time.frameCount - _renderedFrame < 30) return;
+            _autoFallback = true;
+            _riftCamera.enabled = true;
+            Debug.LogWarning("[RaidRift] rift window: on-demand render never fired, falling back to an always-on rift camera");
+        }
+
+        void LateUpdate()
+        {
+            if (!_autoFallback || _riftCamera == null || _arCamera == null) return;
+            _riftCamera.projectionMatrix = _arCamera.projectionMatrix;
         }
 
         [ExecuteAlways] // editor previews (FxPreview, HudPreview) render outside play mode
@@ -200,6 +221,7 @@ namespace RaidRift
         void Update()
         {
             _age += Time.deltaTime;
+            CheckRenderPath();
             if (UpdateClose()) return;
             // Window opens with a little overshoot; the paint then spreads across the real room.
             float t = Mathf.Clamp01(_age / 1.1f);
