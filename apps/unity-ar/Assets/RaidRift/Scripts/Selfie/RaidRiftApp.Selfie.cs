@@ -105,11 +105,26 @@ namespace RaidRift
             // Owner 2026-11-01: "I'm just switching the camera — remember where they persist." The front camera has no
             // room tracking, so the party is not drawn here; every hero stays exactly where it stood (paused, hidden)
             // and is shown again in place when the room camera returns. Joins/leaves are still tracked.
-            _heroRoot.gameObject.SetActive(false);
-            WorldTags.Clear();
+            bool gyro = selfie.IsSelfie && !selfie.IsSwitching && selfie.GyroView;
             if (selfie.IsSelfie && !selfie.IsSwitching) KeepSelfieRoster(world);
+            // Gyro view: the camera is aimed by the phone's rotation from where it stood, so the room content can be
+            // drawn where it really is — point the selfie camera at a hero and it is there. Positions never change.
+            foreach (var pair in _selfieHidden) if (pair.Key != null) pair.Key.SetActive(gyro ? pair.Value : false);
+            _heroRoot.gameObject.SetActive(gyro);
+            if (gyro)
+            {
+                foreach (var state in world.Heroes)
+                    if (_heroes.TryGetValue(state.Id, out var h) && h.Spawned)
+                    {
+                        h.DisplayName = state.Name;
+                        h.Message = state.Message;
+                        h.Act(state.Animation, state.Serial); // emotes play in place; no room targets in selfie
+                    }
+                WorldTags.Update(arCamera, _heroes.Values, true);
+            }
+            else WorldTags.Clear();
             hud.SetStatus($"Selfie party · {_heroes.Count} heroes", "Room scan and navigation paused",
-                selfie.IsSwitching ? "Switching cameras…" : !selfie.IsSelfie ? "Point at the room · tap selfie to retry" : "Party is waiting in the room · flip back to see them");
+                selfie.IsSwitching ? "Switching cameras…" : !selfie.IsSelfie ? "Point at the room · tap selfie to retry" : selfie.GyroView ? "Turn to where your party stands · stay in place" : "Party is waiting in the room · flip back to see them");
             hud.SetScan(1f, "");
             hud.SetFeed(UseServer ? _serverLines : _playground.Messages);
             LiveTick(world); // Publisher retains the same Camera.targetTexture.

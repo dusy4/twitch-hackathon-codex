@@ -9,12 +9,15 @@ namespace RaidRift
     /// <summary>
     /// Camera-first phone HUD built in code (concept: Unity/vfx-incoming/ui-concept-1.png). The camera view is the
     /// hero; chrome is small, frosted and out of the centre:
-    ///   top-left   account chip (demo) or LIVE · timer · heroes · network chips (live)
+    ///   top-left   account chip (demo) or, live, an IRL-Pro-style status cluster (vfx-incoming/irlpro/NOTES.md):
+    ///              [LIVE | timer] [heroes] / stream health strip (signal bars, Mbps, bitrate history, fps) /
+    ///              dropped-frames warning (only while frames are being dropped)
     ///   top-centre scan progress chip while the room is being mapped
-    ///   top-right  mic + red end-stream (live)
+    ///   top-right  mic + red end-stream, device chip (battery %, temperature) under them (live)
     ///   right      vertical rail of round glass icon buttons
+    ///   left edge  segmented mic level meter (live, once the app feeds SetMicLevel)
     ///   bottom     hint pill, big round primary action (test raid), reset; chat lines fading bottom-left
-    /// Icons: Lucide (ISC) font; text: Inter + Space Grotesk (OFL). Diagnostics live in the Setup sheet.
+    /// Icons: Phosphor Fill (MIT) font; text: Inter + Space Grotesk (OFL). Diagnostics live in the Setup sheet.
     /// </summary>
     public class Hud : MonoBehaviour
     {
@@ -26,17 +29,22 @@ namespace RaidRift
         static readonly Color Mint = new Color(0.35f, 0.945f, 0.784f); // #59F1C8
         static readonly Color LiveRed = new Color(1f, 0.25f, 0.33f);
         static readonly Color Dim = new Color(1f, 1f, 1f, 0.62f);
+        static readonly Color Amber = new Color(1f, 0.74f, 0.25f);
 
         // Phosphor Fill codepoints (solid icons, MIT; @phosphor-icons/web fill/style.css)
         const string IconUsers = "\ue68e", IconScan = "\uebb6", IconChat = "\ue168", IconMap = "\ue31a", IconSettings = "\ue272",
             IconMic = "\ue326", IconMicOff = "\ue328", IconEnd = "\ue46e", IconReset = "\ue038", IconZap = "\ue2de", IconWifi = "\ue4ea",
             IconSwords = "\ue5ba", IconX = "\ue4f6", IconSparkles = "\ue6a2", IconFootprints = "\ue73a", IconSelfie = "\ue7a4",
             IconBroadcast = "\ue0f2", IconTwitch = "\ue5ce", IconKey = "\ue2d6", IconGauge = "\ue628", IconLink = "\ue2e2", IconPlug = "\ue946",
-            IconMonitor = "\ue32e", IconSpeaker = "\ue44a", IconCube = "\ue1da", IconFlask = "\ue79e", IconInfo = "\ue2ce", IconEyeSlash = "\ue224";
+            IconMonitor = "\ue32e", IconSpeaker = "\ue44a", IconCube = "\ue1da", IconFlask = "\ue79e", IconInfo = "\ue2ce", IconEyeSlash = "\ue224",
+            IconBatteryFull = "\ue0c0", IconBatteryHigh = "\ue0c2", IconBatteryMedium = "\ue0c6", IconBatteryLow = "\ue0c4",
+            IconBatteryWarning = "\ue0c8", IconBatteryCharging = "\ue0ba", IconThermometer = "\ue5cc", IconWarning = "\ue4e0",
+            IconSignalFull = "\ue142", IconSignalHigh = "\ue144", IconSignalMedium = "\ue148", IconSignalLow = "\ue146",
+            IconSignalX = "\ue14e", IconCaret = "\ue13a";
 
         Font _font, _bold, _display, _icons;
         RectTransform _root, _safe;
-        Text _title, _subtitle, _hint, _toast, _liveInfo, _quality, _diag, _scanLabel, _livePill, _liveTimer, _liveHeroes, _liveNet;
+        Text _title, _subtitle, _hint, _toast, _liveInfo, _quality, _diag, _scanLabel, _livePill, _liveTimer, _liveHeroes;
         Image _scanBar;
         GameObject _account, _liveChips, _liveActions, _primary, _scanChip, _hintPill, _toastPill, _chatRow, _setup;
         readonly List<Text> _feedLines = new List<Text>();
@@ -70,22 +78,39 @@ namespace RaidRift
             _account.SetActive(!live);
             _liveChips.SetActive(live);
             _liveActions.SetActive(live);
+            _health.SetActive(live);
+            _device.SetActive(live && _deviceKnown);
+            if (!live) _dropWarn.SetActive(false);
+            _micMeter.SetActive(live && _micSeen);
             _primary.SetActive(!live && !_scanning);
+            if (live != _laidOutLive) LayoutForMode(live);
             if (live && _livePill != null)
             {
                 // chip arrives as "● LIVE 12:03" / "● CONNECTING" / "● OFFLINE"
                 var parts = (chip ?? "").Replace("●", "").Trim().Split(' ');
                 bool on = parts.Length > 0 && parts[0] == "LIVE";
-                _livePill.text = on ? "LIVE" : (parts.Length > 0 ? parts[0] : "");
-                _livePill.transform.parent.GetComponent<Image>().color = on ? LiveRed : new Color(0.3f, 0.3f, 0.36f, 0.9f);
-                _liveTimer.text = on && parts.Length > 1 ? parts[1] : "--:--";
+                if (on != _onAir || _livePill.text.Length == 0 || !on && _livePill.text != parts[0])
+                {
+                    _onAir = on;
+                    _livePill.text = on ? "LIVE" : (parts.Length > 0 && parts[0].Length > 0 ? parts[0] : "OFFLINE");
+                    _livePillBg.color = on ? LiveRed : new Color(0.32f, 0.32f, 0.4f, 0.95f);
+                    // On air: red [● LIVE] + timer; otherwise the state word fills the whole pill.
+                    float w = on ? 252 : Mathf.Max(200, 64 + _livePill.text.Length * 17);
+                    _livePillLayout.preferredWidth = _livePillLayout.minWidth = w;
+                    _livePillBg.rectTransform.offsetMax = on ? new Vector2(116 - w + 6, -6) : new Vector2(-6, -6);
+                    _liveTimer.gameObject.SetActive(on);
+                    _liveDot.gameObject.SetActive(on);
+                    _livePill.rectTransform.offsetMin = new Vector2(on ? 30 : 0, 0);
+                    RefreshNetwork();
+                }
+                if (on) _liveTimer.text = parts.Length > 1 ? parts[1] : "00:00";
             }
         }
 
         public void SetLiveStats(int heroes, int kbps)
         {
-            if (_liveHeroes != null) _liveHeroes.text = heroes.ToString();
-            if (_liveNet != null) _liveNet.text = kbps > 0 ? $"{kbps / 1000f:0.0} Mbps" : "—";
+            if (_liveHeroes != null) _liveHeroes.text = heroes.ToString(Inv);
+            if (kbps != _kbps) { _kbps = kbps; RefreshNetwork(); }
         }
 
         public void SetLiveInfo(string info, string quality, string channel)
@@ -93,6 +118,268 @@ namespace RaidRift
             if (_liveInfo != null) _liveInfo.text = info;
             if (_quality != null) _quality.text = quality;
             if (_channelInput != null && !_channelInput.isFocused && string.IsNullOrEmpty(_channelInput.text)) _channelInput.text = channel;
+            // Network quality is judged against the selected quality's bitrate ("HD · 4.5 Mbps") unless the app sets it.
+            if (!_targetSet && quality != null)
+            {
+                var m = System.Text.RegularExpressions.Regex.Match(quality, @"(\d+(?:[.,]\d+)?)\s*Mbps");
+                if (m.Success && float.TryParse(m.Groups[1].Value.Replace(',', '.'), System.Globalization.NumberStyles.Float, Inv, out var mbps))
+                    _targetKbps = Mathf.RoundToInt(mbps * 1000f);
+            }
+            // Until the app calls SetStreamHealth, read fps / dropped frames from the live diagnostics line
+            // ("… · 30 fps · dropped 12 · …") so the health strip and drop warning work without app changes.
+            if (!_healthSet && info != null)
+            {
+                var m = System.Text.RegularExpressions.Regex.Match(info, @"([\d.,]+) fps · dropped (\d+)");
+                if (m.Success && float.TryParse(m.Groups[1].Value.Replace(',', '.'), System.Globalization.NumberStyles.Float, Inv, out var fps))
+                    ApplyStreamHealth(fps, int.Parse(m.Groups[2].Value, Inv));
+            }
+        }
+
+        // ---------------- live health (IRL-Pro-style stats) ----------------
+        static readonly System.Globalization.CultureInfo Inv = System.Globalization.CultureInfo.InvariantCulture;
+        const int HistoryLength = 30;
+        const float SampleEvery = 0.5f;
+        readonly int[] _history = new int[HistoryLength];
+        Image[] _historyBars;
+        int _kbps, _targetKbps = 4500, _dropped = -1, _dropBurst;
+        float _fps = -1f, _dropUntil, _nextSample, _micLevel, _micShown, _battery = -1f, _celsius = float.NaN, _nextDevicePoll;
+        bool _targetSet, _healthSet, _batteryOverride, _thermalOverride, _charging, _micSeen, _micOn = true, _deviceKnown, _onAir, _laidOutLive;
+        Text _kbpsText, _fpsText, _signalIcon, _batteryIcon, _batteryText, _thermoIcon, _thermoText, _dropText;
+        Image _livePillBg, _liveDot;
+        LayoutElement _livePillLayout;
+        GameObject _health, _device, _dropWarn, _micMeter;
+        Image[] _micSegments;
+
+        /// <summary>Bitrate the stream is aiming for; network quality = current / target (default: parsed from the quality name).</summary>
+        public void SetTargetBitrate(int kbps)
+        {
+            _targetSet = kbps > 0;
+            if (kbps > 0) _targetKbps = kbps;
+            RefreshNetwork();
+        }
+
+        /// <summary>Encoder fps + total dropped frames since the stream started (LivePublisher.SendFps / DroppedFrames).
+        /// A rising drop count shows the amber "frames dropped" chip for a few seconds.</summary>
+        public void SetStreamHealth(float fps, int droppedTotal)
+        {
+            _healthSet = true;
+            ApplyStreamHealth(fps, droppedTotal);
+        }
+
+        void ApplyStreamHealth(float fps, int droppedTotal)
+        {
+            _fps = fps;
+            if (_dropped >= 0 && droppedTotal > _dropped)
+            {
+                if (Time.unscaledTime > _dropUntil) _dropBurst = 0;
+                _dropBurst += droppedTotal - _dropped;
+                _dropUntil = Time.unscaledTime + 6f;
+            }
+            _dropped = droppedTotal;
+            RefreshNetwork();
+            RefreshDropWarning();
+        }
+
+        /// <summary>Microphone input level 0..1 (peak or RMS of the streamed mic). The left-edge meter appears on the first call.</summary>
+        public void SetMicLevel(float level01)
+        {
+            _micLevel = Mathf.Clamp01(level01);
+            _micShown = Mathf.Max(_micShown, _micLevel);
+            if (!_micSeen) { _micSeen = true; if (_micMeter != null) _micMeter.SetActive(_live); }
+            RefreshMicMeter();
+        }
+
+        /// <summary>Device temperature in °C (e.g. from Android thermal / battery temperature). Overrides the built-in
+        /// battery-temperature read; NaN = unknown.</summary>
+        public void SetThermal(float celsius)
+        {
+            _thermalOverride = !float.IsNaN(celsius);
+            _celsius = celsius;
+            RefreshDevice();
+        }
+
+        /// <summary>Battery level 0..1 + charging; overrides SystemInfo (used by previews / when the app knows better).</summary>
+        public void SetDeviceStatus(float battery01, bool charging)
+        {
+            _batteryOverride = battery01 >= 0f;
+            _battery = battery01;
+            _charging = charging;
+            RefreshDevice();
+        }
+
+        /// <summary>Fills the bitrate history graph at once (previews / restoring after a scene reload).</summary>
+        public void SeedBitrateHistory(IList<int> kbps)
+        {
+            if (kbps == null) return;
+            for (int i = 0; i < HistoryLength; i++)
+            {
+                int src = kbps.Count - HistoryLength + i;
+                _history[i] = src >= 0 ? kbps[src] : 0;
+            }
+            RefreshNetwork();
+        }
+
+        void TickLive()
+        {
+            if (Time.unscaledTime >= _nextSample)
+            {
+                _nextSample = Time.unscaledTime + SampleEvery;
+                Array.Copy(_history, 1, _history, 0, HistoryLength - 1);
+                _history[HistoryLength - 1] = _onAir ? _kbps : 0;
+                RefreshNetwork();
+            }
+            if (_dropWarn.activeSelf && Time.unscaledTime > _dropUntil) RefreshDropWarning();
+            if (_micSeen)
+            {
+                // Quick fall towards the latest level, like a hardware meter.
+                _micShown = Mathf.Max(_micLevel, _micShown - Time.unscaledDeltaTime * 1.6f);
+                RefreshMicMeter();
+            }
+            if (_liveDot != null && _liveDot.gameObject.activeSelf)
+                _liveDot.color = new Color(1, 1, 1, 0.55f + 0.45f * Mathf.Abs(Mathf.Sin(Time.unscaledTime * 2.2f)));
+        }
+
+        /// <summary>Signal bars + Mbps + bitrate history + fps, coloured by current/target bitrate.</summary>
+        void RefreshNetwork()
+        {
+            if (_kbpsText == null) return;
+            float ratio = _targetKbps > 0 ? _kbps / (float)_targetKbps : 1f;
+            bool on = _onAir && _kbps > 0;
+            Color c = !on ? LiveRed : ratio >= 0.7f ? Mint : ratio >= 0.4f ? Amber : LiveRed;
+            _signalIcon.text = !on ? IconSignalX : ratio >= 0.85f ? IconSignalFull : ratio >= 0.6f ? IconSignalHigh : ratio >= 0.35f ? IconSignalMedium : IconSignalLow;
+            _signalIcon.color = c;
+            _kbpsText.text = !on ? "<color=#ffffff88>—</color>"
+                : _kbps >= 1000 ? $"{(_kbps / 1000f).ToString("0.0", Inv)}<size=18><color=#ffffffaa> Mbps</color></size>"
+                : $"{_kbps.ToString(Inv)}<size=18><color=#ffffffaa> kbps</color></size>";
+            _fpsText.text = _fps >= 0 && on ? $"{Mathf.RoundToInt(_fps).ToString(Inv)}<size=17> fps</size>" : "";
+            _fpsText.color = _fps >= 0 && _fps < 24 ? Amber : Dim;
+            float top = _targetKbps * 1.25f;
+            foreach (var k in _history) top = Mathf.Max(top, k);
+            for (int i = 0; i < HistoryLength; i++)
+            {
+                int k = _history[i];
+                float r = _targetKbps > 0 ? k / (float)_targetKbps : 1f;
+                var bar = _historyBars[i];
+                var rt = bar.rectTransform;
+                rt.anchorMax = new Vector2(rt.anchorMax.x, Mathf.Max(0.08f, k / top));
+                var col = k <= 0 ? new Color(1, 1, 1, 0.18f) : r >= 0.7f ? Mint : r >= 0.4f ? Amber : LiveRed;
+                col.a = k <= 0 ? 0.18f : Mathf.Lerp(0.35f, 1f, i / (float)(HistoryLength - 1)); // older samples fade
+                bar.color = col;
+            }
+        }
+
+        void RefreshDropWarning()
+        {
+            if (_dropWarn == null) return;
+            bool show = _live && Time.unscaledTime <= _dropUntil && _dropBurst > 0;
+            if (_dropWarn.activeSelf != show) _dropWarn.SetActive(show);
+            if (show) _dropText.text = $"{_dropBurst.ToString(Inv)} frame{(_dropBurst == 1 ? "" : "s")} dropped <color=#ffffff99>· weak upload</color>";
+        }
+
+        void RefreshMicMeter()
+        {
+            if (_micSegments == null) return;
+            int n = _micSegments.Length;
+            int lit = _micOn ? Mathf.RoundToInt(_micShown * n) : 0;
+            for (int i = 0; i < n; i++)
+            {
+                float t = i / (float)(n - 1);
+                var c = t > 0.85f ? LiveRed : t > 0.65f ? Amber : Mint;
+                c.a = i < lit ? 1f : 0.2f;
+                if (!_micOn) c = new Color(1, 1, 1, 0.12f);
+                _micSegments[i].color = c;
+            }
+        }
+
+        void PollDevice()
+        {
+            if (Time.unscaledTime < _nextDevicePoll) return;
+            _nextDevicePoll = Time.unscaledTime + 5f;
+            if (!_batteryOverride)
+            {
+                _battery = SystemInfo.batteryLevel; // -1 where unknown (editor / desktop)
+                var s = SystemInfo.batteryStatus;
+                _charging = s == BatteryStatus.Charging || s == BatteryStatus.Full;
+            }
+            if (!_thermalOverride) _celsius = ReadBatteryCelsius();
+            RefreshDevice();
+        }
+
+        bool _thermalReadFailed;
+
+        /// <summary>Android battery temperature (sticky ACTION_BATTERY_CHANGED intent, tenths of °C) — the
+        /// temperature IRL streamers watch; NaN elsewhere or if the read fails.</summary>
+        float ReadBatteryCelsius()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (_thermalReadFailed) return float.NaN;
+            try
+            {
+                using (var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                using (var activity = player.GetStatic<AndroidJavaObject>("currentActivity"))
+                using (var filter = new AndroidJavaObject("android.content.IntentFilter", "android.intent.action.BATTERY_CHANGED"))
+                {
+                    // registerReceiver(null, filter) returns the sticky intent; raw JNI because a null receiver
+                    // can't be matched by AndroidJavaObject.Call's signature lookup.
+                    var cls = AndroidJNI.GetObjectClass(activity.GetRawObject());
+                    var mid = AndroidJNI.GetMethodID(cls, "registerReceiver",
+                        "(Landroid/content/BroadcastReceiver;Landroid/content/IntentFilter;)Landroid/content/Intent;");
+                    var raw = AndroidJNI.CallObjectMethod(activity.GetRawObject(), mid,
+                        new[] { new jvalue { l = IntPtr.Zero }, new jvalue { l = filter.GetRawObject() } });
+                    AndroidJNI.DeleteLocalRef(cls);
+                    if (raw == IntPtr.Zero) return float.NaN;
+                    using (var intent = new AndroidJavaObject(raw))
+                    {
+                        AndroidJNI.DeleteLocalRef(raw);
+                        int tenths = intent.Call<int>("getIntExtra", "temperature", int.MinValue);
+                        return tenths == int.MinValue ? float.NaN : tenths / 10f;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                _thermalReadFailed = true;
+                Debug.LogWarning("[RaidRift] battery temperature unavailable: " + e.Message);
+                return float.NaN;
+            }
+#else
+            return float.NaN;
+#endif
+        }
+
+        void RefreshDevice()
+        {
+            if (_batteryText == null) return;
+            bool hasBattery = _battery >= 0f, hasTemp = !float.IsNaN(_celsius);
+            _deviceKnown = hasBattery || hasTemp;
+            if (_device.activeSelf != (_live && _deviceKnown)) _device.SetActive(_live && _deviceKnown);
+            if (!_deviceKnown) return;
+            int pct = Mathf.RoundToInt(_battery * 100f);
+            var bc = !hasBattery ? Dim : _charging ? Mint : pct <= 15 ? LiveRed : pct <= 30 ? Amber : Color.white;
+            _batteryIcon.text = _charging ? IconBatteryCharging : pct <= 15 ? IconBatteryWarning : pct <= 35 ? IconBatteryLow : pct <= 65 ? IconBatteryMedium : pct <= 90 ? IconBatteryHigh : IconBatteryFull;
+            _batteryIcon.color = bc == Color.white ? Mint : bc;
+            _batteryText.text = hasBattery ? pct.ToString(Inv) + "<size=17>%</size>" : "—";
+            _batteryText.color = bc;
+            var tc = !hasTemp ? Dim : _celsius >= 43f ? LiveRed : _celsius >= 39f ? Amber : Color.white;
+            _thermoIcon.color = tc == Color.white ? Dim : tc;
+            _thermoText.text = hasTemp ? Mathf.RoundToInt(_celsius).ToString(Inv) + "<size=17>°C</size>" : "—";
+            _thermoText.color = tc;
+            _thermoIcon.gameObject.SetActive(hasTemp);
+            _thermoText.gameObject.SetActive(hasTemp);
+            var r = _device.GetComponent<RectTransform>();
+            r.offsetMin = new Vector2(hasTemp ? -262 : -136, r.offsetMin.y);
+        }
+
+        /// <summary>Toast / scan chip / chat feed move out of the way of the live status cluster.</summary>
+        void LayoutForMode(bool live)
+        {
+            _laidOutLive = live;
+            var toast = _toastPill.GetComponent<RectTransform>();
+            toast.offsetMin = new Vector2(-380, live ? -450 : -214); toast.offsetMax = new Vector2(380, live ? -366 : -130);
+            var scan = _scanChip.GetComponent<RectTransform>();
+            scan.offsetMin = new Vector2(-230, live ? -346 : -96); scan.offsetMax = new Vector2(230, live ? -250 : 0);
+            var feed = _feedCard.GetComponent<RectTransform>();
+            feed.offsetMin = new Vector2(live ? 44 : 8, 24);
         }
 
         /// <summary>Room mapping progress 0..1 (chip hidden at ≥ 1 or &lt; 0).</summary>
@@ -119,7 +406,11 @@ namespace RaidRift
         public void SetButton(string id, string title, bool on)
         {
             if (!_buttons.TryGetValue(id, out var b) || b.icon == null) return;
-            if (id == "mic") b.icon.text = title != null && title.Contains("off") ? IconMicOff : IconMic;
+            if (id == "mic")
+            {
+                b.icon.text = title != null && title.Contains("off") ? IconMicOff : IconMic;
+                if (_micOn != on) { _micOn = on; RefreshMicMeter(); }
+            }
             b.icon.color = on ? Mint : Color.white;
             if (b.ring != null) b.ring.color = on ? new Color(Mint.r, Mint.g, Mint.b, 0.75f) : Edge;
         }
@@ -173,7 +464,7 @@ namespace RaidRift
             _sheetCovered = open;
             if (_underSheet == null)
             {
-                var gos = new[] { _account, _primary, _hintPill, _scanChip };
+                var gos = new[] { _account, _primary, _hintPill, _scanChip, _liveChips, _health, _device, _dropWarn, _micMeter };
                 _underSheet = new CanvasGroup[gos.Length];
                 for (int i = 0; i < gos.Length; i++)
                 {
@@ -244,6 +535,8 @@ namespace RaidRift
         {
             if (_toastPill != null && _toastPill.activeSelf && Time.time > _toastUntil) _toastPill.SetActive(false);
             CoverUnderSheet();
+            PollDevice();
+            if (_live) TickLive();
             if (_flash != null)
             {
                 _flashAmount = Mathf.MoveTowards(_flashAmount, 0f, Time.deltaTime * 1.8f);
@@ -319,16 +612,63 @@ namespace RaidRift
             var b = chip.gameObject.AddComponent<Button>();
             b.onClick.AddListener(() => Press("setup"));
 
-            // Live chips row: [● LIVE] [00:24] [heroes] [network]
+            // Live row 1: [● LIVE | 24:17] [heroes]   (IRL Pro keeps status as small outlined chips at the edges)
             var row = Rect("LiveChips", _safe);
-            Anchor(row, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -76), new Vector2(760, 0));
+            Anchor(row, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -76), new Vector2(600, 0));
             var h = row.gameObject.AddComponent<HorizontalLayoutGroup>();
-            h.spacing = 18; h.childControlWidth = true; h.childControlHeight = true; h.childForceExpandWidth = false; h.childForceExpandHeight = true;
+            h.spacing = 12; h.childControlWidth = true; h.childControlHeight = true; h.childForceExpandWidth = false; h.childForceExpandHeight = true;
             _liveChips = row.gameObject;
-            _livePill = ChipText(row, null, "LIVE", LiveRed, 130, true);
-            _liveTimer = ChipText(row, null, "--:--", Glass, 140, false);
-            _liveHeroes = ChipText(row, IconUsers, "0", Glass, 130, false);
-            _liveNet = ChipText(row, IconWifi, "—", Glass, 200, false);
+            var pill = Box("LivePill", row, Glass, true);
+            Border(pill);
+            _livePillLayout = pill.gameObject.AddComponent<LayoutElement>();
+            _livePillLayout.preferredWidth = _livePillLayout.minWidth = 252;
+            var red = Box("OnAir", pill, LiveRed, true);
+            Anchor(red, Vector2.zero, Vector2.one, new Vector2(6, 6), new Vector2(116 - 252 + 6, -6));
+            _livePillBg = red.GetComponent<Image>();
+            _liveDot = Circle("Dot", red, 14, Color.white).GetComponent<Image>();
+            _liveDot.rectTransform.anchorMin = _liveDot.rectTransform.anchorMax = new Vector2(0, 0.5f);
+            _liveDot.rectTransform.anchoredPosition = new Vector2(24, 0);
+            _livePill = Label(red, "LIVE", 25, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter, new Vector2(30, 0), new Vector2(-6, 0));
+            _livePill.font = _display;
+            _liveTimer = Label(pill, "00:00", 27, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter, new Vector2(126, 0), new Vector2(-8, 0));
+            _liveTimer.font = _display;
+            _liveHeroes = ChipText(row, IconUsers, "0", Glass, 118, false);
+
+            // Live row 2: stream health strip — signal bars · Mbps · bitrate history · fps.
+            var health = Pill("Health", _safe, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -158), new Vector2(476, -90));
+            _health = health.gameObject;
+            _signalIcon = Icon(health, IconSignalFull, 30, Mint);
+            Anchor(_signalIcon.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(16, 0), new Vector2(56, 0));
+            _kbpsText = Label(health, "—", 26, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft, new Vector2(64, 0), Vector2.zero);
+            Anchor(_kbpsText.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(64, 0), new Vector2(196, 0));
+            _kbpsText.font = _display;
+            _kbpsText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            var graph = Rect("BitrateGraph", health);
+            Anchor(graph, new Vector2(0, 0), new Vector2(0, 1), new Vector2(200, 16), new Vector2(380, -16));
+            _historyBars = new Image[HistoryLength];
+            for (int i = 0; i < HistoryLength; i++)
+            {
+                var bar = Rect("Bar", graph);
+                bar.anchorMin = new Vector2(i / (float)HistoryLength, 0); bar.anchorMax = new Vector2((i + 1) / (float)HistoryLength, 0.08f);
+                bar.offsetMin = Vector2.zero; bar.offsetMax = new Vector2(-1.5f, 0);
+                var img = bar.gameObject.AddComponent<Image>(); img.raycastTarget = false;
+                _historyBars[i] = img;
+            }
+            _fpsText = Label(health, "", 24, FontStyle.Bold, Dim, TextAnchor.MiddleRight, new Vector2(384, 0), new Vector2(-18, 0));
+            _fpsText.horizontalOverflow = HorizontalWrapMode.Overflow;
+
+            // Live row 3: dropped-frames warning (amber), only while frames are being dropped.
+            var warn = Box("DropWarning", _safe, new Color(0.16f, 0.1f, 0.02f, 0.78f), true);
+            Anchor(warn, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -228), new Vector2(476, -170));
+            var wb = Rect("Border", warn); Stretch(wb);
+            var wbi = wb.gameObject.AddComponent<Image>();
+            wbi.sprite = RoundedRing(); wbi.type = Image.Type.Sliced; wbi.color = new Color(Amber.r, Amber.g, Amber.b, 0.7f); wbi.raycastTarget = false;
+            _dropWarn = warn.gameObject;
+            var wi = Icon(warn, IconWarning, 28, Amber);
+            Anchor(wi.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(16, 0), new Vector2(56, 0));
+            _dropText = Label(warn, "", 23, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft, new Vector2(64, 0), new Vector2(-16, 0));
+            _dropWarn.SetActive(false);
+            RefreshNetwork();
         }
 
         Text ChipText(RectTransform row, string icon, string text, Color fill, float width, bool strong)
@@ -371,6 +711,21 @@ namespace RaidRift
             mic.anchorMin = mic.anchorMax = new Vector2(0, 0.5f); mic.anchoredPosition = new Vector2(50, 0);
             var end = RoundButton("end-live", group, IconEnd, 100, LiveRed);
             end.anchorMin = end.anchorMax = new Vector2(1, 0.5f); end.anchoredPosition = new Vector2(-50, 0);
+
+            // Device chip under them: battery % + temperature (IRL Pro shows both top-right; phones throttle when hot).
+            var dev = Pill("Device", _safe, new Vector2(1, 1), new Vector2(1, 1), new Vector2(-262, -184), new Vector2(0, -116));
+            _device = dev.gameObject;
+            _batteryIcon = Icon(dev, IconBatteryHigh, 32, Mint);
+            Anchor(_batteryIcon.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(14, 0), new Vector2(54, 0));
+            _batteryText = Label(dev, "—", 25, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft, Vector2.zero, Vector2.zero);
+            Anchor(_batteryText.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(60, 0), new Vector2(124, 0));
+            _batteryText.font = _display; _batteryText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _thermoIcon = Icon(dev, IconThermometer, 28, Dim);
+            Anchor(_thermoIcon.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(132, 0), new Vector2(166, 0));
+            _thermoText = Label(dev, "—", 25, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft, Vector2.zero, Vector2.zero);
+            Anchor(_thermoText.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(170, 0), new Vector2(250, 0));
+            _thermoText.font = _display; _thermoText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _device.SetActive(false);
         }
 
         void BuildRail()
@@ -451,6 +806,23 @@ namespace RaidRift
             }
             _feedCard.SetActive(false);
 
+            // Mic level meter: a column of segments on the left edge, lit from the bottom (IRL Pro), mic glyph below.
+            var meter = Rect("MicMeter", _safe);
+            Anchor(meter, Vector2.zero, Vector2.zero, new Vector2(0, 24), new Vector2(30, 24 + 44 + 16 * 19));
+            _micMeter = meter.gameObject;
+            var mg = Icon(meter, IconMic, 26, Dim);
+            Anchor(mg.rectTransform, Vector2.zero, new Vector2(1, 0), Vector2.zero, new Vector2(0, 34));
+            _micSegments = new Image[16];
+            for (int i = 0; i < _micSegments.Length; i++)
+            {
+                var seg = Box("Seg", meter, Mint, true);
+                Anchor(seg, Vector2.zero, new Vector2(1, 0), new Vector2(4, 44 + i * 19), new Vector2(-4, 44 + i * 19 + 13));
+                seg.GetComponent<Image>().raycastTarget = false;
+                _micSegments[i] = seg.GetComponent<Image>();
+            }
+            RefreshMicMeter();
+            _micMeter.SetActive(false);
+
             // Chat input: frosted pill with send button, above the feed.
             var row = Pill("ChatRow", _safe, new Vector2(0, 0), new Vector2(0.62f, 0), new Vector2(0, 320), new Vector2(0, 416));
             _chatRow = row.gameObject;
@@ -492,37 +864,40 @@ namespace RaidRift
             scroll.viewport = viewport; scroll.content = content; scroll.horizontal = false; scroll.movementType = ScrollRect.MovementType.Clamped;
             scroll.scrollSensitivity = 40;
 
-            Section(content, "GO LIVE ON TWITCH", LiveRed);
-            _channelInput = InputRow(content, IconTwitch, "Twitch channel (chat + raids)");
-            _keyInput = InputRow(content, IconKey, "Stream key · stays on this phone");
+            // Grouped like IRL Pro's preference screens: coloured section header, one card per group, rows divided
+            // by hairlines, a one-line explanation under the row title, switches for On/Off values.
+            var stream = Section(content, "STREAM TO TWITCH", LiveRed);
+            _channelInput = InputRow(stream, IconTwitch, "Twitch channel (chat + raids)");
+            _keyInput = InputRow(stream, IconKey, "Stream key · stays on this phone");
             _keyInput.contentType = InputField.ContentType.Password;
-            _quality = SettingRow(content, IconGauge, "Quality", "quality", "HD");
+            _quality = SettingRow(stream, IconGauge, "Quality", "Lower it on mobile data", "quality", "HD");
             var go = Row(Box("Go live", content, new Color(LiveRed.r, LiveRed.g, LiveRed.b, 0.95f), true), 104);
             var goIcon = Icon(go, IconBroadcast, 40, Color.white);
             Anchor(goIcon.rectTransform, new Vector2(0.5f, 0), new Vector2(0.5f, 1), new Vector2(-120, 0), new Vector2(-70, 0));
-            Label(go, "Go live", 34, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter, new Vector2(30, 0), Vector2.zero);
+            Label(go, "Go live", 34, FontStyle.Bold, Color.white, TextAnchor.MiddleCenter, new Vector2(30, 0), Vector2.zero).font = _display;
             go.gameObject.AddComponent<Button>().onClick.AddListener(() => { OnGoLive?.Invoke(_channelInput.text.Trim().TrimStart('#').ToLowerInvariant(), _keyInput.text.Trim()); _setup.SetActive(false); });
-            SettingRow(content, IconEnd, "End stream · back to demo", "end-live", null);
-            _settingValues["caption"] = SettingRow(content, IconChat, "\"!join\" hint on stream", "caption", "On");
-            _liveInfo = Label(Row(Rect("Info", content), 70), "", 22, FontStyle.Normal, Dim, TextAnchor.UpperLeft, new Vector2(8, 0), Vector2.zero);
+            _liveInfo = Label(Row(Rect("Info", content), 76), "", 21, FontStyle.Normal, Dim, TextAnchor.UpperLeft, new Vector2(12, 0), new Vector2(-12, -6));
+            var onAir = Section(content, "ON STREAM", LiveRed);
+            _settingValues["caption"] = SettingRow(onAir, IconChat, "\"!join\" hint", "Caption telling viewers how to join", "caption", "On");
+            SettingRow(onAir, IconEnd, "End stream", "Back to the demo room · tap twice", "end-live", null);
 
-            Section(content, "ROOM", Mint);
-            _settingValues["scan"] = SettingRow(content, IconCube, "Room mesh", "scan", "Floor");
-            SettingRow(content, IconSelfie, "Selfie camera", "selfie", null);
-            SettingRow(content, IconReset, "Reset room scan", "reset-room", null);
+            var room = Section(content, "ROOM", Mint);
+            _settingValues["scan"] = SettingRow(room, IconCube, "Room mesh", "How the scanned room looks", "scan", "Floor");
+            SettingRow(room, IconSelfie, "Selfie camera", "Front camera with the heroes", "selfie", null);
+            SettingRow(room, IconReset, "Reset room scan", "Map the room again", "reset-room", null);
 
-            Section(content, "COMFORT", Violet);
-            _settingValues["sound"] = SettingRow(content, IconSpeaker, "Sound", "sound", "On");
-            _settingValues["motion"] = SettingRow(content, IconEyeSlash, "Reduced motion", "motion", "Off");
+            var comfort = Section(content, "COMFORT", Violet);
+            _settingValues["sound"] = SettingRow(comfort, IconSpeaker, "Sound", null, "sound", "On");
+            _settingValues["motion"] = SettingRow(comfort, IconEyeSlash, "Reduced motion", "Calmer flashes and shakes", "motion", "Off");
 
-            Section(content, "SERVER & TESTING", Dim);
-            _serverInput = InputRow(content, IconLink, ServerConnection.DefaultServer);
-            _tokenInput = InputRow(content, IconKey, "Pairing token · empty = debug pairing");
+            var dev = Section(content, "SERVER & TESTING", Dim);
+            _serverInput = InputRow(dev, IconLink, ServerConnection.DefaultServer);
+            _tokenInput = InputRow(dev, IconKey, "Pairing token · empty = debug pairing");
             _tokenInput.contentType = InputField.ContentType.Password;
-            SettingRow(content, IconPlug, "Pair with server", "pair", null);
-            SettingRow(content, IconFlask, "Offline test room", "offline", null);
-            SettingRow(content, IconZap, "Server test raid", "server-raid", null);
-            SettingRow(content, IconMonitor, "Stream to PC (WebRTC)", "stream", null);
+            SettingRow(dev, IconPlug, "Pair with server", null, "pair", null);
+            SettingRow(dev, IconFlask, "Offline test room", null, "offline", null);
+            SettingRow(dev, IconZap, "Server test raid", null, "server-raid", null);
+            SettingRow(dev, IconMonitor, "Stream to PC (WebRTC)", null, "stream", null);
             var diagRow = Row(Rect("Diagnostics", content), 110);
             var di = Icon(diagRow, IconInfo, 26, new Color(1, 1, 1, 0.4f));
             Anchor(di.rectTransform, new Vector2(0, 1), new Vector2(0, 1), new Vector2(8, -40), new Vector2(44, -4));
@@ -531,30 +906,90 @@ namespace RaidRift
         }
 
         readonly Dictionary<string, Text> _settingValues = new Dictionary<string, Text>();
+        readonly Dictionary<string, (Image track, RectTransform knob)> _switches = new Dictionary<string, (Image, RectTransform)>();
+        Color _sectionTint = Hot;
 
         /// <summary>Right-hand value of a settings row (e.g. "scan" → "Hidden", "sound" → "Off").</summary>
         public void SetSetting(string id, string value)
         {
             if (_settingValues.TryGetValue(id, out var t) && t != null) t.text = value;
+            if (_switches.TryGetValue(id, out var s)) SetSwitch(s.track, s.knob, value == "On");
         }
 
-        void Section(RectTransform content, string text, Color color)
+        void SetSwitch(Image track, RectTransform knob, bool on)
         {
-            var t = Label(Row(Rect("Section", content), 64), text, 24, FontStyle.Bold, color, TextAnchor.LowerLeft, new Vector2(8, 6), Vector2.zero);
+            track.color = on ? Mint : new Color(1, 1, 1, 0.2f);
+            knob.anchoredPosition = new Vector2(on ? 15 : -15, 0);
+        }
+
+        /// <summary>Coloured header + a rounded card the following rows go into.</summary>
+        RectTransform Section(RectTransform content, string text, Color color)
+        {
+            var t = Label(Row(Rect("Section", content), 62), text, 22, FontStyle.Bold, color, TextAnchor.LowerLeft, new Vector2(14, 10), Vector2.zero);
             t.font = _display;
+            _sectionTint = color;
+            var g = Box("Group " + text, content, new Color(1f, 1f, 1f, 0.05f), true);
+            Border(g);
+            var v = g.gameObject.AddComponent<VerticalLayoutGroup>();
+            v.spacing = 0; v.padding = new RectOffset(0, 0, 4, 4);
+            v.childControlHeight = true; v.childControlWidth = true; v.childForceExpandHeight = false; v.childForceExpandWidth = true;
+            return g;
         }
 
-        /// <summary>Icon tile + label + optional value + chevron. Tapping invokes the action.</summary>
-        Text SettingRow(RectTransform content, string icon, string title, string action, string value)
+        /// <summary>Hairline between rows of a group (not above the first).</summary>
+        void Divider(RectTransform group, RectTransform row)
         {
-            var r = Row(Box("Row " + title, content, new Color(1f, 1f, 1f, 0.06f), true), 88);
-            Border(r);
-            var tile = Box("Tile", r, new Color(Hot.r, Hot.g, Hot.b, 0.28f), true);
-            tile.anchorMin = tile.anchorMax = new Vector2(0, 0.5f); tile.sizeDelta = new Vector2(60, 60); tile.anchoredPosition = new Vector2(48, 0);
+            int rows = 0;
+            foreach (Transform c in group)
+            {
+                var le = c.GetComponent<LayoutElement>(); // != null, not `is`: Unity's fake null in the editor
+                if (le != null && !le.ignoreLayout) rows++;
+            }
+            if (rows <= 1) return;
+            var d = Box("Divider", row, new Color(1, 1, 1, 0.08f), false);
+            Anchor(d, new Vector2(0, 1), new Vector2(1, 1), new Vector2(98, -1), new Vector2(-20, 0));
+            d.GetComponent<Image>().raycastTarget = false;
+        }
+
+        /// <summary>Icon tile + title (+ grey explanation) + value / switch / chevron. Tapping invokes the action.</summary>
+        Text SettingRow(RectTransform group, string icon, string title, string subtitle, string action, string value)
+        {
+            var r = Row(Box("Row " + title, group, new Color(1f, 1f, 1f, 0f), false), subtitle != null ? 108 : 92);
+            Divider(group, r);
+            var tile = Box("Tile", r, new Color(_sectionTint.r, _sectionTint.g, _sectionTint.b, 0.26f), true);
+            tile.anchorMin = tile.anchorMax = new Vector2(0, 0.5f); tile.sizeDelta = new Vector2(58, 58); tile.anchoredPosition = new Vector2(50, 0);
             Icon(tile, icon, 30, Color.white);
-            Label(r, title, 28, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft, new Vector2(98, 0), new Vector2(-220, 0));
+            bool isSwitch = value == "On" || value == "Off";
+            float right = value == null ? -76 : isSwitch ? -140 : -250;
+            if (subtitle != null)
+            {
+                Label(r, title, 28, FontStyle.Bold, Color.white, TextAnchor.LowerLeft, new Vector2(98, 54), new Vector2(right, -12));
+                var st = Label(r, subtitle, 21, FontStyle.Normal, new Color(1, 1, 1, 0.5f), TextAnchor.UpperLeft, new Vector2(98, 0), new Vector2(right, -58));
+                st.horizontalOverflow = HorizontalWrapMode.Wrap;
+            }
+            else Label(r, title, 28, FontStyle.Bold, Color.white, TextAnchor.MiddleLeft, new Vector2(98, 0), new Vector2(right, 0));
             Text val = null;
-            if (value != null) val = Label(r, value, 26, FontStyle.Normal, Mint, TextAnchor.MiddleRight, new Vector2(300, 0), new Vector2(-34, 0));
+            if (value != null)
+            {
+                val = Label(r, value, 25, FontStyle.Normal, Mint, TextAnchor.MiddleRight, new Vector2(-240, 0), new Vector2(-28, 0));
+                val.rectTransform.anchorMin = new Vector2(1, 0);
+                if (isSwitch)
+                {
+                    val.gameObject.SetActive(false); // the switch shows it
+                    var track = Box("Switch", r, Mint, true);
+                    track.anchorMin = track.anchorMax = new Vector2(1, 0.5f); track.sizeDelta = new Vector2(76, 46); track.anchoredPosition = new Vector2(-66, 0);
+                    var knob = Circle("Knob", track, 36, Color.white);
+                    knob.anchorMin = knob.anchorMax = new Vector2(0.5f, 0.5f);
+                    var trackImg = track.GetComponent<Image>(); trackImg.raycastTarget = false;
+                    _switches[action] = (trackImg, knob);
+                    SetSwitch(trackImg, knob, value == "On");
+                }
+            }
+            else
+            {
+                var caret = Icon(r, IconCaret, 24, new Color(1, 1, 1, 0.35f));
+                Anchor(caret.rectTransform, new Vector2(1, 0), new Vector2(1, 1), new Vector2(-56, 0), new Vector2(-22, 0));
+            }
             var b = r.gameObject.AddComponent<Button>();
             b.onClick.AddListener(() =>
             {
@@ -568,13 +1003,13 @@ namespace RaidRift
             return val;
         }
 
-        InputField InputRow(RectTransform content, string icon, string placeholder)
+        InputField InputRow(RectTransform group, string icon, string placeholder)
         {
-            var r = Row(Box("Input row", content, new Color(1f, 1f, 1f, 0.06f), true), 88);
-            Border(r);
+            var r = Row(Rect("Input row", group), 92);
+            Divider(group, r);
             var ic = Icon(r, icon, 30, Dim);
-            Anchor(ic.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(26, 0), new Vector2(72, 0));
-            return Input(r, placeholder, new Vector2(82, 6), new Vector2(-12, -6), false);
+            Anchor(ic.rectTransform, new Vector2(0, 0), new Vector2(0, 1), new Vector2(26, 0), new Vector2(74, 0));
+            return Input(r, placeholder, new Vector2(76, 8), new Vector2(-16, -8), false);
         }
 
         void Press(string id)
@@ -639,6 +1074,7 @@ namespace RaidRift
         void Border(RectTransform r)
         {
             var b = Rect("Border", r); Stretch(b);
+            b.gameObject.AddComponent<LayoutElement>().ignoreLayout = true; // decoration, not a row of a group
             var img = b.gameObject.AddComponent<Image>();
             img.sprite = RoundedRing(); img.type = Image.Type.Sliced; img.color = Edge; img.raycastTarget = false;
         }

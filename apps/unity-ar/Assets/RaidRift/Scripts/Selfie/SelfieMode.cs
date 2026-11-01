@@ -6,6 +6,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
+using UnityEngine.InputSystem;
 
 namespace RaidRift
 {
@@ -87,6 +88,7 @@ namespace RaidRift
             _worldTracking = session.requestedTrackingMode;
             _worldLight = cameraManager.requestedLightEstimation;
             _worldCameraPosition = arCamera.transform.localPosition;
+            BeginGyroView();
             _worldCameraRotation = arCamera.transform.localRotation;
             var origin = faceManager.GetComponent<XROrigin>();
             _selfieSpace = origin != null ? origin.TrackablesParent : faceManager.transform;
@@ -177,7 +179,7 @@ namespace RaidRift
         void CameraFrame(ARCameraFrameEventArgs args)
         {
             if (_saved && _targetSelfie && cameraManager.currentFacingDirection == CameraFacingDirection.User && _selfieSpace != null)
-                arCamera.transform.SetPositionAndRotation(_selfieSpace.position, _selfieSpace.rotation);
+                if (!GyroView) arCamera.transform.SetPositionAndRotation(_selfieSpace.position, _selfieSpace.rotation); // gyro view sets it in LateUpdate
             if (!IsSwitching && (!_saved || _targetSelfie)) return;
             var expected = _targetSelfie ? CameraFacingDirection.User : CameraFacingDirection.World;
             bool ready = cameraManager.currentFacingDirection == expected && args.projectionMatrix.HasValue;
@@ -204,6 +206,56 @@ namespace RaidRift
             }
         }
 
+        // ---------------- gyro selfie view (owner 2026-11-01: "point the selfie camera at where they stand") ----------------
+        // ARCore's front camera has no room tracking. While the streamer stands still, the phone's attitude sensor gives
+        // the rotation: at the flip we align the sensor frame to the AR world (W), then the front camera = W · G(t) turned
+        // 180° about its up axis, at the flip position. Heroes keep their room positions and appear where they stand;
+        // ARCore's mirrored front projection reflects them like the selfie image. Walking during selfie is not tracked.
+        public bool GyroView { get; private set; }
+        AttitudeSensor _attitude;
+        Vector3 _flipPos;
+        Quaternion _flipRot, _gyroWorld = Quaternion.identity;
+        bool _gyroCalibrating;
+
+        void BeginGyroView()
+        {
+            GyroView = false;
+            _flipPos = arCamera.transform.position;
+            _flipRot = arCamera.transform.rotation;
+            _attitude = AttitudeSensor.current;
+            if (_attitude == null) return;
+            if (!_attitude.enabled) InputSystem.EnableDevice(_attitude);
+            _gyroCalibrating = true;
+        }
+
+        static Quaternion ScreenRoll() => Screen.orientation == ScreenOrientation.LandscapeLeft ? Quaternion.Euler(0f, 0f, -90f)
+            : Screen.orientation == ScreenOrientation.LandscapeRight ? Quaternion.Euler(0f, 0f, 90f)
+            : Screen.orientation == ScreenOrientation.PortraitUpsideDown ? Quaternion.Euler(0f, 0f, 180f) : Quaternion.identity;
+
+        bool ReadDevice(out Quaternion g)
+        {
+            g = Quaternion.identity;
+            if (_attitude == null || !_attitude.enabled) return false;
+            var q = _attitude.attitude.ReadValue();
+            if (Mathf.Abs(q.x) + Mathf.Abs(q.y) + Mathf.Abs(q.z) < 1e-6f) return false; // no sample yet
+            // Android rotation vector (right-handed) → Unity camera rotation for the rear camera in portrait.
+            g = Quaternion.Euler(90f, 0f, 0f) * new Quaternion(q.x, q.y, -q.z, -q.w) * ScreenRoll();
+            return true;
+        }
+
+        void LateUpdate()
+        {
+            if (!_saved || arCamera == null) return;
+            if (_gyroCalibrating && ReadDevice(out var g0))
+            {
+                _gyroWorld = _flipRot * Quaternion.Inverse(g0); // sensor frame → AR world, so G(flip) = rear pose at flip
+                _gyroCalibrating = false;
+                GyroView = true;
+            }
+            if (GyroView && _targetSelfie && cameraManager != null && cameraManager.currentFacingDirection == CameraFacingDirection.User && ReadDevice(out var g))
+                arCamera.transform.SetPositionAndRotation(_flipPos, _gyroWorld * g * Quaternion.Euler(0f, 180f, 0f));
+        }
+
         void RestoreWorld()
         {
             if (_sessionSubsystem != null) _sessionSubsystem.configurationChooser = _worldChooser;
@@ -216,6 +268,7 @@ namespace RaidRift
             _behaviours.Clear();
             _renderers.Clear();
             _saved = false;
+            GyroView = false;
         }
 
         void Update()
