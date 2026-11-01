@@ -22,9 +22,9 @@ namespace RaidRift
         // Cartoon FX Remaster Free (owner's Asset Store license), assigned by BuildTools. Scaled to 30 cm heroes.
         public GameObject impactGlow, groundHit, magicPoof, hitLight, comicWow, firework, runeAura, souls, fallingStars;
 
-        static void Spawn(GameObject prefab, Vector3 pos, float scale, Vector3? face = null, Color? rootTint = null)
+        static GameObject Spawn(GameObject prefab, Vector3 pos, float scale, Vector3? face = null, Color? rootTint = null)
         {
-            if (prefab == null) return;
+            if (prefab == null) return null;
             var rot = face.HasValue && face.Value.sqrMagnitude > 1e-4f ? Quaternion.LookRotation(face.Value) : Quaternion.identity;
             var go = Instantiate(prefab, pos, rot);
             foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true)) { var m = ps.main; m.scalingMode = ParticleSystemScalingMode.Hierarchy; }
@@ -33,12 +33,16 @@ namespace RaidRift
             go.transform.localScale = Vector3.one * scale;
             NoCameraShake(go);
             Destroy(go, 5f); // CFXR clears itself too; this is the backstop
+            return go;
         }
 
         /// <summary>CFXR's own shake moves the tracked AR camera (breaks registration). Turn it off on every spawn,
         /// even after a fresh pack import resets CFXR_Effect.cs; CameraFeel provides the shake instead.</summary>
         static void NoCameraShake(GameObject go)
         {
+            // CFXR lights (hit light, impact glow, firework, rune aura) next to the window flooded the lit voxel world
+            // behind it white for a frame (PlaySmoke play-36): they only light the real-room layer.
+            foreach (var l in go.GetComponentsInChildren<Light>(true)) l.cullingMask &= ~(1 << RiftWorld.Layer);
             foreach (var mb in go.GetComponentsInChildren<MonoBehaviour>(true))
             {
                 if (mb == null || mb.GetType().FullName != "CartoonFX.CFXR_Effect") continue;

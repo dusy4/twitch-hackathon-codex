@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -55,6 +55,15 @@ namespace RaidRift.EditorTools
             _frame++;
             var app = Object.FindFirstObjectByType<RaidRiftApp>();
             if (app == null) { if (_frame > 300) Finish("RaidRiftApp not found in the scene"); return; }
+            // Moths at the lens draw their glowing trail as a frame-filling slab (play-36 before 0.21.28).
+            var mothRoot = Object.FindFirstObjectByType<RiftMoths>();
+            if (mothRoot != null && app.arCamera != null)
+                foreach (Transform moth in mothRoot.transform)
+                {
+                    float d = Vector3.Distance(moth.position, app.arCamera.transform.position);
+                    if (d < 0.55f && !_mothNear) { _mothNear = true; Problems.Add($"moth {d:0.00} m from the lens"); }
+                    _mothMin = Mathf.Min(_mothMin, d);
+                }
             var button = typeof(RaidRiftApp).GetMethod("Button", BindingFlags.Instance | BindingFlags.NonPublic);
             int step = (_frame - 60) / 8; // one press every 8 frames after warm-up
             if (_frame >= 60 && (_frame - 60) % 8 == 0 && step < Buttons.Length)
@@ -213,6 +222,8 @@ namespace RaidRift.EditorTools
         static Vector3? _riftStart;
         static int _maxHeroes;
         static readonly HashSet<float> _shots = new HashSet<float>();
+        static bool _mothNear;
+        static float _mothMin = 99f;
 
         /// <summary>What the stream would get: the AR camera (rift, heroes, tags, VFX, CameraFeel) at 720x1280.</summary>
         static void Snapshot(Camera cam, string name)
@@ -290,7 +301,7 @@ namespace RaidRift.EditorTools
                 var rift = typeof(RaidRiftApp).GetField("_rift", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(app) as Component;
                 if (rift != null) { app.arCamera.transform.LookAt(rift.transform.position + Vector3.up * 0.55f); _framed = true; }
             }
-            foreach (var at in new[] { 0.9f, 2.5f, 6f, 11f, 16f })
+            foreach (var at in new[] { 0.9f, 2.5f, 3.5f, 6f, 11f, 16f })
                 if (_raided && t - _raidAt >= at && !_shots.Contains(at)) { _shots.Add(at); Snapshot(app.arCamera, "play-" + Mathf.RoundToInt(at * 10)); }
             // Street walk: 10 m forward over 6 s with Follow on -> the rift should relocate (>8 m) and heroes keep up.
             if (_followed && t - _raidAt > 13f && t - _raidAt < 19f)
@@ -374,6 +385,7 @@ namespace RaidRift.EditorTools
             SessionState.SetBool(Flag, false);
             if (fatal != null) Problems.Add(fatal);
             foreach (var p in Problems) Debug.Log("[RaidRift] playsmoke PROBLEM " + p);
+            Debug.Log($"[RaidRift] playsmoke closest moth to the lens: {_mothMin:0.00} m");
             Debug.Log(Problems.Count == 0 ? "[RaidRift] playsmoke PASS (" + _frame + " frames)" : "[RaidRift] playsmoke FAIL " + Problems.Count);
             EditorApplication.isPlaying = false;
             if (Application.isBatchMode) EditorApplication.Exit(Problems.Count == 0 ? 0 : 1);

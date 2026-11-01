@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -252,16 +252,52 @@ namespace RaidRift
             _rift = rift;
             _exit = exit;
             Entering = true;
+            _hopT = -1f;
             Spawned = true;
             Agent.enabled = false;
             var dir = Vector3.ProjectOnPlane(exit - inside, Vector3.up);
             transform.SetPositionAndRotation(inside, Quaternion.LookRotation(dir.sqrMagnitude > 1e-4f ? dir.normalized : Vector3.back));
         }
 
+        // Burst-out hop (VFX-PLAN "Hero arrival"): the last ~0.25 m out of the window is a crouch (80 ms), a stretched
+        // launch and a 0.15 m arc over 0.34 s, then the usual landing. -1 = still walking, 2 = hop done.
+        float _hopT = -1f, _hopLift;
+        Vector3 _hopFrom;
+        const float HopCrouch = 0.08f, HopAir = 0.34f, HopDistance = 0.25f;
+
         void UpdateEntrance()
         {
             var to = _exit - transform.position;
             to.y = 0f;
+            _hopLift = 0f;
+            if (_hopT < 0f && to.magnitude <= HopDistance && to.magnitude > 0.05f)
+            {
+                _hopT = 0f;
+                _hopFrom = transform.position;
+                _squash = 0.18f; // crouch
+            }
+            if (_hopT >= 0f && _hopT < 2f)
+            {
+                float prev = _hopT;
+                _hopT += Time.deltaTime;
+                if (_hopT < HopCrouch) return; // anticipation: hold still, squashed
+                if (prev < HopCrouch)
+                {
+                    _squash = -0.14f; // stretch on launch
+                    PlayRestart("Jump_Full_Short");
+                    Sfx.PlayAt("hop", transform.position, 0.45f);
+                }
+                float t = Mathf.Clamp01((_hopT - HopCrouch) / HopAir);
+                var p = Vector3.Lerp(_hopFrom, new Vector3(_exit.x, _hopFrom.y, _exit.z), t);
+                _hopLift = 4f * 0.15f * t * (1f - t);
+                transform.position = p;
+                _visual.localPosition = new Vector3(0f, _hopLift, 0f);
+                SetLayer(_rift != null && _rift.IsInside(transform.position) ? RiftWorld.Layer : 0);
+                if (t < 1f) return;
+                _hopT = 2f;
+                _visual.localPosition = Vector3.zero;
+                to = Vector3.zero;
+            }
             float step = WalkSpeed * 1.6f * Time.deltaTime;
             if (to.magnitude <= step)
             {
@@ -271,7 +307,7 @@ namespace RaidRift
                     Entering = false;
                     SetLayer(0);
                     _groundY = _exit.y;
-                    Land(0.6f);
+                    Land(0.8f); // after the burst-out hop: a firmer squash (still below the 0.9 "heavy" camera hit)
                     Fx.Sparkle(_exit + Vector3.up * 0.12f, SparkMint, 14, 0.6f);
                     // Out of the rift = the way the hero walked (position already equals _exit here).
                     RiftFx.Arrival(_exit, Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized, Time.time - _lastArrival > 2f);
@@ -439,7 +475,16 @@ namespace RaidRift
         {
             // Never draw a hero before it has been placed on the floor (no ghosts at the session origin).
             if (_visual.gameObject.activeSelf != Spawned) _visual.gameObject.SetActive(Spawned);
-            if (Entering) { UpdateEntrance(); Play("Walking_A"); _groundY = transform.position.y; UpdateShadow(0f); return; }
+            if (Entering)
+            {
+                UpdateEntrance();
+                if (!Entering) return; // landed this frame: normal update from the next one
+                if (_hopT < 0f) Play("Walking_A");
+                _groundY = transform.position.y;
+                ApplySquash();
+                UpdateShadow(_hopLift);
+                return;
+            }
             if (Placed && Agent.isOnOffMeshLink) { _lastMoved = Time.time; UpdateLinkJump(); ApplySquash(); return; }
             if (Placed && !_linkJump) _groundY = transform.position.y;
             if (Placed && Agent.velocity.sqrMagnitude > 0.0025f) _lastMoved = Time.time;

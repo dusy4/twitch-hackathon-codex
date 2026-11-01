@@ -11,6 +11,7 @@ namespace RaidRift
         class Moth
         {
             public Transform t, wingL, wingR;
+            public TrailRenderer trail;
             public Vector3 vel;
             public float seed, speed;
         }
@@ -31,6 +32,7 @@ namespace RaidRift
             {
                 var m = Create(i % 3 == 0 ? new Color(0.55f, 1f, 0.88f, 1f) : new Color(0.85f, 0.6f, 1f, 1f));
                 m.t.position = origin + Random.insideUnitSphere * 0.2f;
+                m.trail.Clear(); // no segment from where the moth was created
                 m.vel = (forward + Random.insideUnitSphere * 0.6f + Vector3.up * 0.3f).normalized * Random.Range(0.8f, 1.4f);
                 _moths.Add(m);
                 if (_moths.Count <= 2) Sfx.Loop("moth_flutter", m.t, 0.25f, 3f);
@@ -54,7 +56,7 @@ namespace RaidRift
             trail.endColor = new Color(color.r, color.g, color.b, 0f);
             trail.minVertexDistance = 0.02f;
             trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            return new Moth { t = root, wingL = wingL, wingR = wingR, seed = Random.value * 100f, speed = Random.Range(0.25f, 0.5f) };
+            return new Moth { t = root, wingL = wingL, wingR = wingR, trail = trail, seed = Random.value * 100f, speed = Random.Range(0.25f, 0.5f) };
         }
 
         Transform Quad(Transform parent, Color color, float size)
@@ -89,10 +91,24 @@ namespace RaidRift
                 float h = p.y - floor;
                 if (h < 0.35f) steer.y += 1.5f;
                 if (h > 1.9f) steer.y -= 1.5f;
-                var fromCam = p - _cam.transform.position;
-                if (fromCam.magnitude < 0.6f) steer += fromCam.normalized * 3f; // keep 0.6 m off the lens
+                var eye = _cam.transform.position;
+                var fromCam = p - eye;
+                float near = fromCam.magnitude;
+                if (near < 0.9f) steer += fromCam / Mathf.Max(near, 0.01f) * 6f * (0.9f - near) / 0.3f; // steer off the lens early
                 m.vel = Vector3.Lerp(m.vel, steer.normalized * m.speed, 1f - Mathf.Exp(-1.6f * dt));
-                m.t.position = p + m.vel * dt;
+                var next = p + m.vel * dt;
+                // Hard floor: never closer than 0.6 m. PlaySmoke found moths 0-25 cm from the lens (the soft steer lost to
+                // the anchor pull while the party follows the phone): its glowing trail then filled the frame as a slab.
+                var off = next - eye;
+                if (off.magnitude < 0.6f)
+                {
+                    var n = off.sqrMagnitude > 1e-6f ? off.normalized : -_cam.transform.forward;
+                    next = eye + n * 0.6f;
+                    m.vel = Vector3.ProjectOnPlane(m.vel, n) + n * 0.1f;
+                }
+                m.t.position = next;
+                bool trailOk = (next - eye).magnitude > 0.8f;
+                if (m.trail.emitting != trailOk) { m.trail.emitting = trailOk; if (!trailOk) m.trail.Clear(); }
                 if (m.vel.sqrMagnitude > 1e-4f) m.t.rotation = Quaternion.LookRotation(m.vel.normalized);
                 // Flapping: wings rotate about the body's forward axis.
                 float flap = Mathf.Sin(time * 22f + m.seed) * 55f;

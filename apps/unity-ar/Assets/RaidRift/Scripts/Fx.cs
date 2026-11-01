@@ -40,6 +40,12 @@ namespace RaidRift
             var p = Take();
             p.t.position = pos;
             p.vel = vel; p.color = color; p.size = size; p.life = life; p.age = 0f; p.gravity = gravity;
+            // Ready to draw now: a fresh primitive is a 1 m quad with the material's own colour, and an emit after this
+            // LateUpdate (coroutines, other LateUpdates) drew that slab for a frame (PlaySmoke play-36/37).
+            p.t.localScale = Vector3.one * size;
+            if (_cam != null) p.t.rotation = _cam.transform.rotation;
+            p.block.SetColor(ColorId, color);
+            p.r.SetPropertyBlock(p.block);
             _live.Add(p);
         }
 
