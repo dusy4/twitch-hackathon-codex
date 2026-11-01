@@ -281,7 +281,7 @@ namespace RaidRift
             var disc = GameObject.CreatePrimitive(PrimitiveType.Quad);
             Destroy(disc.GetComponent<Collider>());
             disc.transform.SetParent(badge.transform, false);
-            disc.transform.localScale = Vector3.one * 0.28f;
+            disc.transform.localScale = Vector3.one * 0.12f; // AR review #2: big screen-constant badges looked stuck on the lens
             disc.transform.localPosition = new Vector3(0f, 0f, 0.002f);
             var dr = disc.GetComponent<Renderer>();
             dr.sharedMaterial = Resources.Load<Material>("Materials/BlobShadow");
@@ -294,7 +294,7 @@ namespace RaidRift
             text.text = label == null ? n.ToString() : $"{n}\n<size=40>{label}</size>";
             text.richText = true;
             text.fontSize = 96;
-            text.characterSize = 0.012f; // fx-spots preview: viewers must read it on a 720p stream to type "!go to 3"
+            text.characterSize = 0.0065f; // fx-spots preview: viewers must read it on a 720p stream to type "!go to 3"
             text.anchor = TextAnchor.MiddleCenter;
             text.alignment = TextAlignment.Center;
             text.fontStyle = FontStyle.Normal; // the font itself is bold
@@ -317,7 +317,7 @@ namespace RaidRift
                 badge.rotation = Quaternion.LookRotation(badge.position - cam.transform.position, Vector3.up);
                 // Far spots keep a readable size on stream (like name tags), capped so near ones stay small.
                 float dist = (badge.position - cam.transform.position).magnitude;
-                badge.localScale = Vector3.one * Mathf.Clamp(dist / 1.4f, 1f, 2.6f);
+                badge.localScale = Vector3.one * Mathf.Clamp(dist / 1.4f, 1f, 1.3f); // keep perspective so markers sit in the room
                 badge.localPosition = new Vector3(0f, 0.1f + 0.1f * badge.localScale.y + Mathf.Sin(Time.time * 2f + _seed) * 0.012f, 0f);
                 transform.GetChild(0).localScale = Vector3.one * (0.15f + Mathf.Sin(Time.time * 3f + _seed) * 0.015f);
             }

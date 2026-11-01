@@ -110,8 +110,10 @@ namespace RaidRift
             _view.Create();
             _riftCamera.targetTexture = _view;
             _windowMat.SetTexture("_RiftTex", _view);
-            // Rendered on demand by the window (WindowHook), never on its own schedule: see RenderFor.
-            _riftCamera.enabled = false;
+            // AR review #4 (2026-11-01): back to the 0.20 always-on render path (LateUpdate copies the AR projection);
+            // the on-demand nested Camera.Render inside the AR camera's culling was the only render change near AR.
+            _riftCamera.enabled = true;
+            _autoFallback = true;
             quad.AddComponent<WindowHook>().owner = this;
             _age = 0f;
             Sfx.Play("rift_open", 0.95f); // layered riser + sub-boom impact + crystal tail

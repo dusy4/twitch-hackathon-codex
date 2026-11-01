@@ -130,7 +130,7 @@ namespace RaidRift
             if (publisher != null) publisher.StopLive();
             if (_live) server.StopLiveChannel();
             _liveMode = false;
-            Application.targetFrameRate = 60; // undo a thermal 30 fps cap
+            // ARSession (matchFrameRate) owns the frame rate (AR review #6)
             hud.SetBackdrop(null);
             hud.SetMode(false, "DEMO");
             hud.Toast("Stream ended · back to demo mode");
@@ -145,6 +145,7 @@ namespace RaidRift
 
         void LiveTick(WorldState world)
         {
+            RiftFx.Broadcasting = _liveMode && publisher != null && publisher.IsLive; // effects 2x only on the 720p stream
             if (_caption == null && arCamera != null) { _caption = StreamCaption.Create(arCamera); StreamHearts.Create(arCamera); }
             if (_caption != null) _caption.Tick(_liveMode && StreamCaptionOn, _heroes.Count, sceneTracks != null ? sceneTracks.ShownSpot : 0); // in the broadcast, not the HUD
             string quality = Qualities[_quality].name;
@@ -156,7 +157,7 @@ namespace RaidRift
             hud.SetBackdrop(publisher.View); // null after a failure/stop: the camera renders to the screen again
             // Phone too hot (encoder already dropped below 30 fps): stop rendering 60 fps nobody sees on stream.
             // Capture active (also while reconnecting), not "delivering": a hot phone stays capped during a reconnect.
-            Application.targetFrameRate = publisher.View != null && publisher.TargetFps > 0 && publisher.TargetFps < 30 ? 30 : 60;
+            // ARSession owns the frame rate (AR review #6)
             var up = System.TimeSpan.FromSeconds(publisher.UptimeSeconds);
             string chip = publisher.IsLive ? $"● LIVE {(int)up.TotalMinutes:00}:{up.Seconds:00}" : publisher.State.StartsWith("error") ? "● OFFLINE" : "● " + publisher.State.ToUpperInvariant();
             hud.SetMode(true, chip);
@@ -335,7 +336,7 @@ namespace RaidRift
             if (UpdateSelfie()) return; // SELFIE: includes both transitions; world logic below is unchanged.
             bool tracking = ARSession.state == ARSessionState.SessionTracking;
             if (!_landed) UpdateLanding(tracking);
-            else { AutoFollow(); RelocateRift(tracking); }
+            else { AutoFollow(); CloseRiftWhenRaidersOut(); } // the rift no longer follows the streamer
             TrackStreamerPace();
             RiftFx.FloorY = room.FloorY;
             RiftFx.SetAmbient(_rift != null ? _rift.transform : null);
@@ -589,7 +590,7 @@ namespace RaidRift
                 if (!hero.Spawned)
                 {
                     if (!_landed || !room.HasNavMesh) { index++; continue; }
-                    if (_rift == null) OpenRiftForJoin(state.Name); // first viewer in: the rift tears open on stream
+                    // Owner 2026-11-01: the portal opens once, for a raid only; joiners just appear in the world (poof).
                     // With a rift open, everyone walks out of the rift world onto the real floor.
                     if (_rift != null && room.Sample(_rift.Foot(index), 0.5f, out var exit))
                     {
@@ -625,7 +626,7 @@ namespace RaidRift
                 bool run;
                 bool commanded = Time.time - hero.LastCommand < 8f;
                 bool following = _follow || trail.Current == RiftTrail.Phase.Fragments || trail.Current == RiftTrail.Phase.Shrine;
-                hero.Pace = following ? Mathf.Min(_streamerPace * 1.25f, 2.2f) : 0f;
+                hero.Pace = 0f; // calm walking like 0.20 (AR review #1: sprint/slide read as content swimming)
                 if (_tapGoal.HasValue && Time.time < _tapGoalUntil) { goal = Slot(_tapGoal.Value, index); run = (hero.transform.position - goal).magnitude > 1.2f; }
                 else if (commanded)
                 {
@@ -641,7 +642,7 @@ namespace RaidRift
                     float far = (hero.transform.position - goal).magnitude;
                     // Close to their slot: free to roam, but in front of the lens (roaming around the floor under the
                     // phone put half the party behind the streamer or filling the frame, PlaySmoke play-walk).
-                    bool walking = _streamerPace > 0.45f; // streamer on the move: keep formation, don't wander off
+                    bool walking = false; // AR review #1: hand sway was read as walking; was: _streamerPace > 0.45f; // streamer on the move: keep formation, don't wander off
                     if (!walking && far < 1.2f && FollowCenter(out var near)) { Roam(hero, near, 0.8f); index++; continue; }
                     run = far > 1.0f || walking;
                 }
@@ -792,6 +793,7 @@ namespace RaidRift
 
         void AutoFollow()
         {
+            return; // owner 2026-11-01: heroes live in the world where they landed; Follow stays a manual button
             if (_follow || _followTouched || _heroes.Count == 0 || !room.FloorUnderCamera(out var floor)) return;
             if ((new Vector2(floor.x - _origin.x, floor.z - _origin.z)).magnitude < 4.5f) return;
             _follow = true;
@@ -819,6 +821,17 @@ namespace RaidRift
         /// <summary>The stage travels with an IRL streamer: once the party follows and the streamer is 8 m+ from
         /// the rift, it collapses and tears open again ~1.6 m ahead on scanned floor, so new raiders arrive where
         /// the stream is now, not back at the first room.</summary>
+        /// <summary>Owner 2026-11-01: "after the raid the portal opens one time, that's it — then the characters live
+        /// in the world". Once every raider has walked out (and at least 6 s after the tear), the rift collapses and
+        /// stays gone; heroes keep living in the room. The next real raid opens a new one.</summary>
+        void CloseRiftWhenRaidersOut()
+        {
+            if (_rift == null || _rift.Closing || Time.time - _raidOpened < 6f) return;
+            foreach (var h in _heroes.Values) if (h.Entering || !h.Spawned) return;
+            _rift.Collapse();
+            _rift = null;
+        }
+
         void RelocateRift(bool tracking)
         {
             if (!tracking || !_follow || _rift == null || Time.time < _nextRelocate || Time.time - _raidOpened < 8f) return;
@@ -873,7 +886,7 @@ namespace RaidRift
             var flat = Vector3.ProjectOnPlane(arCamera.transform.forward, Vector3.up).normalized;
             // Street walk: heroes run 0.9 m/s, a streamer walks ~1.3 m/s, so the party drifts behind the lens and
             // vanished from the stream until 6 m. While following, one that is 3.5 m+ behind the phone hops ahead.
-            bool behind = following && dist > 3.5f && Vector3.Dot(hero.transform.position - floor, flat) < 0f;
+            bool behind = following && dist > 5f && Vector3.Dot(hero.transform.position - floor, flat) < 0f;
             if (dist < 6f && !behind && !(following && hero.Stuck && dist > 2.5f)) return;
             var c = Random.insideUnitCircle * 0.4f;
             if (room.Sample(floor + flat * (following ? 1.5f : 1.0f) + new Vector3(c.x, 0f, c.y), 0.6f, out var to)) hero.RiftHop(to);
@@ -908,7 +921,7 @@ namespace RaidRift
             var flat = Vector3.ProjectOnPlane(cam.forward, Vector3.up);
             flat = flat.sqrMagnitude > 1e-4f ? flat.normalized : _away;
             float floorY = room.FloorY ?? cam.position.y - 1.3f;
-            var ahead = cam.position + flat * 1.5f;
+            var ahead = cam.position + flat * 0.9f;
             ahead.y = floorY;
             if (room.Sample(ahead, 0.8f, out center)) return true;
             var nearer = cam.position + flat * 0.9f;

@@ -33,7 +33,7 @@ namespace RaidRift
             {
                 if (selfie == null || selfie.WorldPaused) yield break; // flipped again: the next return re-checks
                 steady = UnityEngine.XR.ARFoundation.ARSession.state == UnityEngine.XR.ARFoundation.ARSessionState.SessionTracking ? steady + 1 : 0;
-                if (Time.realtimeSinceStartup - start > 10f)
+                if (Time.realtimeSinceStartup - start > 20f)
                 {
                     if (session != null) session.Reset();
                     ResetRoom();
@@ -45,7 +45,7 @@ namespace RaidRift
             var cam = arCamera.transform;
             float moved = (cam.localPosition - selfie.SavedCameraPosition).magnitude;
             float yaw = Mathf.Abs(Mathf.DeltaAngle(cam.localEulerAngles.y, selfie.SavedCameraRotation.eulerAngles.y));
-            if (moved > 0.6f || yaw > 40f)
+            if (moved > 1.5f || yaw > 90f)
             {
                 ResetRoom();
                 hud.Toast("Room realigned after selfie · point at the floor to land again", 4f);

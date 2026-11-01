@@ -255,7 +255,8 @@ namespace RaidRift
 
         /// <summary>Sparks/streaks sized in metres are 2–5 px at 720p from 1.5 m (fx-sheet preview): scale them up
         /// so the stream sees them. Chips, smoke, rings and flares keep their physical sizes.</summary>
-        const float StreamReadable = 2.0f;
+        public static bool Broadcasting; // set by the app while live
+        static float StreamReadable => Broadcasting ? 2.0f : 1.0f; // AR review #3: double size only for the 720p stream
 
         static void Emit(ParticleSystem ps, Vector3 pos, Vector3 vel, float size, float life, Color color, float rotation = 0f)
         {
