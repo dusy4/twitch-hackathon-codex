@@ -323,6 +323,18 @@ namespace RaidRift
             }
         }
 
+        /// <summary>Lowest numbered spot whose marker is showing now (0 = none): the stream caption names a real one.</summary>
+        public int ShownSpot
+        {
+            get
+            {
+                int best = 0;
+                if (!showSpots) return 0;
+                foreach (var s in _spots) if (s.marker != null && s.marker.activeInHierarchy && (best == 0 || s.n < best)) best = s.n;
+                return best;
+            }
+        }
+
         public void ClearSpots()
         {
             foreach (var s in _spots) if (s.marker != null) Destroy(s.marker);

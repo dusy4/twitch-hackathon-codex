@@ -146,7 +146,7 @@ namespace RaidRift
         void LiveTick(WorldState world)
         {
             if (_caption == null && arCamera != null) { _caption = StreamCaption.Create(arCamera); StreamHearts.Create(arCamera); }
-            if (_caption != null) _caption.Tick(_liveMode && StreamCaptionOn, _heroes.Count); // in the broadcast, not the HUD
+            if (_caption != null) _caption.Tick(_liveMode && StreamCaptionOn, _heroes.Count, sceneTracks != null ? sceneTracks.ShownSpot : 0); // in the broadcast, not the HUD
             string quality = Qualities[_quality].name;
             if (!_liveMode || publisher == null)
             {

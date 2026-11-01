@@ -16,7 +16,7 @@ namespace RaidRift
         Text _text;
         CanvasGroup _group;
         bool _show;
-        int _heroes = -1;
+        int _heroes = -1, _spot = -1;
 
         public static StreamCaption Create(Camera cam)
         {
@@ -66,14 +66,14 @@ namespace RaidRift
             var sh = _text.gameObject.AddComponent<Shadow>();
             sh.effectColor = new Color(0f, 0f, 0f, 0.7f);
             sh.effectDistance = new Vector2(2f, -2f);
-            Set(0);
+            Set(0, 3);
         }
 
         /// <summary>Called every frame by the app: live state and current hero count.</summary>
-        public void Tick(bool live, int heroes)
+        public void Tick(bool live, int heroes, int spot = 3)
         {
             _show = live;
-            if (heroes != _heroes) Set(heroes);
+            if (heroes != _heroes || spot != _spot) Set(heroes, spot);
             // Selfie: ARCore mirrors the front projection; un-mirror the caption so it reads on stream.
             if (_cam != null) _pill.localScale = new Vector3(_cam.projectionMatrix.m00 < 0f ? -1f : 1f, 1f, 1f);
             float target = _show ? 1f : 0f;
@@ -81,13 +81,14 @@ namespace RaidRift
             if (_canvas.enabled != _group.alpha > 0.001f) _canvas.enabled = _group.alpha > 0.001f;
         }
 
-        void Set(int heroes)
+        void Set(int heroes, int spot)
         {
             _heroes = heroes;
+            _spot = spot;
             // Nobody in yet: one clear call to action. Party present: the command menu.
             _text.text = heroes == 0
                 ? "Type <color=#92ffe0>!join</color> in chat to drop in a hero"
-                : "<color=#92ffe0>!join</color>  ·  !wave  ·  !jump  ·  !dance  ·  !rift go to 3";
+                : "<color=#92ffe0>!join</color>  ·  !wave  ·  !jump  ·  !dance" + (spot > 0 ? "  ·  !rift go to " + spot : ""); // a number that is on screen now
         }
     }
 }
