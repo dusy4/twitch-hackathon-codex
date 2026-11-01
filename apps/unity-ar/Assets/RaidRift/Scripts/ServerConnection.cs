@@ -13,9 +13,9 @@ namespace RaidRift
     /// 401/403 drop the token (revoked/expired); other errors keep the last world and retry.</summary>
     public class ServerConnection : MonoBehaviour
     {
-        // The public server is the VPS (tailnet HTTPS on :8446; raidrift.12industries.com exposes only /ext + /v1/ext).
-        public const string DefaultServer = "https://vibejam2026-2.tail7252b4.ts.net:8446";
-        const string RetiredServer = "https://raidrift-pc.tail7252b4.ts.net";
+                // Public server (VPS behind Caddy). Phones pair themselves: no Tailscale, no setup.
+        public const string DefaultServer = "https://raidrift.12industries.com";
+        static readonly string[] RetiredServers = { "https://raidrift-pc.tail7252b4.ts.net", "https://vibejam2026-2.tail7252b4.ts.net:8446" };
         const string PrefServer = "raidrift.server";
         const string PrefToken = "raidrift.token";
 
@@ -32,9 +32,9 @@ namespace RaidRift
         {
             Server = PlayerPrefs.GetString(PrefServer, DefaultServer);
             Token = PlayerPrefs.GetString(PrefToken, "");
-            if (Server == RetiredServer)
+            if (Array.IndexOf(RetiredServers, Server) >= 0)
             {
-                // The PC server is retired; its capture token means nothing on the VPS, so pair again.
+                // Old private servers are retired; their capture tokens mean nothing on the public one, so pair again.
                 Server = DefaultServer;
                 Token = "";
                 PlayerPrefs.SetString(PrefServer, Server);
@@ -86,8 +86,14 @@ namespace RaidRift
         IEnumerator PairOnce(bool quiet)
         {
             Status = "Pairing with " + Server + "…";
-            using (var req = UnityWebRequest.Get(Server + "/v1/debug/pair"))
+            // Every install is its own streamer room: a random install id kept on the phone always maps to the same room.
+            string device = PlayerPrefs.GetString("raidrift.device", "");
+            if (device.Length < 16) { device = Guid.NewGuid().ToString("N"); PlayerPrefs.SetString("raidrift.device", device); PlayerPrefs.Save(); }
+            using (var req = new UnityWebRequest(Server + "/v1/native/pair", "POST"))
             {
+                req.uploadHandler = new UploadHandlerRaw(System.Text.Encoding.UTF8.GetBytes("{\"device\":\"" + device + "\"}"));
+                req.downloadHandler = new DownloadHandlerBuffer();
+                req.SetRequestHeader("Content-Type", "application/json");
                 req.timeout = 8;
                 yield return req.SendWebRequest();
                 if (req.result != UnityWebRequest.Result.Success)

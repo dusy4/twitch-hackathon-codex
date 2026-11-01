@@ -1986,8 +1986,11 @@ export async function createApp(
     resolveRoom: async (channel) => {
       // Tailnet rooms use a synthetic id; only the explicitly configured owner maps to it.
       const owner = options.extensionOwnerId || process.env.EXT_OWNER_ID;
+      // A phone that is live on this Twitch channel owns the viewers' extension (per-phone rooms).
+      let live: string | undefined;
+      for (const [id, r] of liveReaders) if (r.status.channelId === channel) live = id;
       const room =
-        owner === channel && options.debugRoom ? options.debugRoom : channel;
+        live ?? (owner === channel && options.debugRoom ? options.debugRoom : channel);
       const w = await world(room);
       const reader = liveReaders.get(room);
       if (reader?.status.channelId && reader.status.channelId !== channel)
@@ -2007,6 +2010,42 @@ export async function createApp(
       exp: Date.now() + CAPTURE_TOKEN_MS,
     });
   }
+  // Public phone pairing: every installed app is its own streamer room (its own heroes, its own Twitch chat once it
+  // goes live). The phone sends a random install id it keeps; the same id always gets the same room back.
+  const pairHits = new Map<string, number[]>();
+  app.post("/v1/native/pair", async (req, reply) => {
+    reply.header("Cache-Control", "private, no-store");
+    const ip = String(req.headers["x-forwarded-for"] || req.ip || "").split(",")[0].trim();
+    const now = Date.now();
+    const hits = (pairHits.get(ip) || []).filter((t) => now - t < 60_000);
+    if (hits.length >= 10)
+      throw new GameError("RATE_LIMITED", "Too many pairing attempts", 429);
+    hits.push(now);
+    pairHits.set(ip, hits);
+    const { device } = body(
+      z.object({ device: z.string().regex(/^[A-Za-z0-9-]{16,64}$/) }).strict(),
+      req.body,
+    );
+    const room = `phone-${createHash("sha256").update(device).digest("hex").slice(0, 16)}`;
+    let c = (
+      await db.query("SELECT token_version FROM channels WHERE id=$1", [room])
+    ).rows[0];
+    if (!c) {
+      const host = await account(db, `phone-host-${room}`, "Streamer", false);
+      await db.query(
+        "INSERT INTO channels(id,owner_id,config,connected) VALUES($1,$2,$3,true) ON CONFLICT DO NOTHING",
+        [
+          room,
+          host.id,
+          JSON.stringify({ ...defaultConfig, title: "RaidRift", paused: false, vision: true, ai: true }),
+        ],
+      );
+      c = (
+        await db.query("SELECT token_version FROM channels WHERE id=$1", [room])
+      ).rows[0];
+    }
+    return { server: origin, room, token: captureToken(room, c.token_version) };
+  });
   app.get("/v1/native/world", async (req, reply) => {
     reply.header("Cache-Control", "private, no-store");
     const raw = (await world(await captureRoom(req))).state;
@@ -2636,6 +2675,14 @@ export async function createApp(
     await app.register(staticFiles, {
       root: extensionRoot,
       prefix: "/ext/",
+      decorateReply: false,
+    });
+  // Public phone app download (APK_DIR, e.g. ~/raidrift/apk on the VPS): testers install from /apk/.
+  const apkRoot = process.env.APK_DIR ? resolve(process.env.APK_DIR) : "";
+  if (apkRoot && existsSync(apkRoot))
+    await app.register(staticFiles, {
+      root: apkRoot,
+      prefix: "/apk/",
       decorateReply: false,
     });
   if (existsSync(resolve(webRoot, "index.html"))) {
