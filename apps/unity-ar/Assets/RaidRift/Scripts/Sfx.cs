@@ -132,17 +132,48 @@ namespace RaidRift
             _instance._source.PlayOneShot(clip, volume);
         }
 
-        /// <summary>Positional one-shot with pitch/volume jitter.</summary>
+        readonly Dictionary<string, float> _lastPlayed = new Dictionary<string, float>();
+        readonly Dictionary<AudioSource, bool> _minor = new Dictionary<AudioSource, bool>();
+
+        /// <summary>Positional one-shot with pitch/volume jitter. VFX plan: the same cue within 80 ms plays once (a raid
+        /// landing 12 heroes is one thud, not 12 stacked ones clipping the stream mix), and footsteps only take a free
+        /// voice, never one that is still playing a crunch, stinger or teleport.</summary>
         public static void PlayAt(string id, Vector3 position, float volume = 0.6f, float jitter = 0.12f)
         {
             if (_instance == null || Muted || !_instance.TryClip(id, out var clip)) return;
-            var s = _instance._pool[_instance._next];
-            _instance._next = (_instance._next + 1) % _instance._pool.Count;
+            float now = Time.unscaledTime;
+            if (_instance._lastPlayed.TryGetValue(id, out var last) && now - last < 0.08f) return;
+            _instance._lastPlayed[id] = now;
+            bool minor = id == "step";
+            var s = _instance.Voice(minor);
+            if (s == null) return;
+            _instance._minor[s] = minor;
             s.transform.position = position;
             s.pitch = 1f + Random.Range(-jitter, jitter);
             s.volume = volume * Random.Range(0.85f, 1f);
             s.clip = clip;
             s.Play();
+        }
+
+        /// <summary>A free voice first; otherwise a footstep is dropped, and anything else replaces a playing footstep
+        /// before it falls back to round-robin.</summary>
+        AudioSource Voice(bool minor)
+        {
+            int n = _pool.Count;
+            for (int k = 0; k < n; k++)
+            {
+                var s = _pool[(_next + k) % n];
+                if (!s.isPlaying) { _next = (_next + k + 1) % n; return s; }
+            }
+            if (minor) return null;
+            for (int k = 0; k < n; k++)
+            {
+                var s = _pool[(_next + k) % n];
+                if (_minor.TryGetValue(s, out var m) && m) { _next = (_next + k + 1) % n; return s; }
+            }
+            var r = _pool[_next];
+            _next = (_next + 1) % n;
+            return r;
         }
     }
 }

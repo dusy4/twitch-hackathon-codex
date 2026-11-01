@@ -22,12 +22,14 @@ namespace RaidRift
         // Cartoon FX Remaster Free (owner's Asset Store license), assigned by BuildTools. Scaled to 30 cm heroes.
         public GameObject impactGlow, groundHit, magicPoof, hitLight, comicWow, firework, runeAura, souls, fallingStars;
 
-        static void Spawn(GameObject prefab, Vector3 pos, float scale, Vector3? face = null)
+        static void Spawn(GameObject prefab, Vector3 pos, float scale, Vector3? face = null, Color? rootTint = null)
         {
             if (prefab == null) return;
             var rot = face.HasValue && face.Value.sqrMagnitude > 1e-4f ? Quaternion.LookRotation(face.Value) : Quaternion.identity;
             var go = Instantiate(prefab, pos, rot);
             foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true)) { var m = ps.main; m.scalingMode = ParticleSystemScalingMode.Hierarchy; }
+            // Tints only the root system (e.g. the poof's cloud), so coloured children like its stars keep their colours.
+            if (rootTint.HasValue && go.TryGetComponent<ParticleSystem>(out var root)) { var m = root.main; m.startColor = new ParticleSystem.MinMaxGradient(rootTint.Value); }
             go.transform.localScale = Vector3.one * scale;
             NoCameraShake(go);
             Destroy(go, 5f); // CFXR clears itself too; this is the backstop
@@ -299,7 +301,8 @@ namespace RaidRift
         {
             if (_i == null) return;
             if (first) CameraFeel.Shake(0.25f);
-            Spawn(_i.magicPoof, pos + Vector3.up * 0.1f, first ? 0.45f : 0.32f); // PlaySmoke play-60: three in a row filled the frame
+            // PlaySmoke play-60: three in a row filled the frame; the stock grey-white cloud read as dirty smoke: rift lavender.
+            Spawn(_i.magicPoof, pos + Vector3.up * 0.1f, first ? 0.45f : 0.32f, null, new Color(0.8f, 0.62f, 1f, 0.75f));
             for (int n = 0; n < 12; n++)
                 Emit(_i._sparks, pos + Vector3.up * 0.06f, (outward * 0.6f + Random.insideUnitSphere * 0.6f + Vector3.up * 0.3f), Random.Range(0.012f, 0.025f), Random.Range(0.25f, 0.45f), Pick());
             for (int n = 0; n < 2; n++)
