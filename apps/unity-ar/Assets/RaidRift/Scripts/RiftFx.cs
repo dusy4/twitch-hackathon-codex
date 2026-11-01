@@ -13,6 +13,7 @@ namespace RaidRift
     public class RiftFx : MonoBehaviour
     {
         static RiftFx _i;
+        static float _lastMajor = -100f;
         ParticleSystem _sparks, _streaks, _chips, _smoke, _rings, _flares;
         Transform _floorPlane;
 
@@ -115,6 +116,9 @@ namespace RaidRift
             _nightDots = new[] { _sparks.GetComponent<ParticleSystemRenderer>().sharedMaterial, _streaks.GetComponent<ParticleSystemRenderer>().sharedMaterial };
             _streaks.GetComponent<ParticleSystemRenderer>().renderMode = ParticleSystemRenderMode.Stretch;
             var sr = _streaks.GetComponent<ParticleSystemRenderer>(); sr.velocityScale = 0.06f; sr.lengthScale = 1.2f;
+            // A spark/streak passing near the lens must stay a spark, not a screen-sized wedge (play-realraid).
+            sr.maxParticleSize = 0.05f;
+            _sparks.GetComponent<ParticleSystemRenderer>().maxParticleSize = 0.05f;
             _flares = Make("Flares", add, "Fx/Flare", 16, 0f);
             _smoke = Make("Smoke", alpha, "Fx/Smoke", 48, 0.12f, grow: 2.2f);
             _rings = Make("Rings", add, "Fx/Ring", 24, 0f, grow: 10f);
@@ -267,7 +271,10 @@ namespace RaidRift
             // Reads at 720p: a dense inward pull of streaks + motes and a seam glow that swells into the tear.
             for (int n = 0; n < 48; n++)
             {
-                var from = center + Random.onUnitSphere * Random.Range(0.4f, 1.0f) * scale;
+                var off = Random.onUnitSphere * Random.Range(0.4f, 1.0f) * scale;
+                float toward = Vector3.Dot(off, -facing.normalized);
+                if (toward > 0f) off += facing.normalized * toward * 0.7f; // mostly not between the opening and the lens
+                var from = center + off;
                 float life = Random.Range(0.3f, 0.6f);
                 Emit(n % 3 == 0 ? _i._sparks : _i._streaks, from, (center - from) / life, Random.Range(0.02f, 0.045f) * scale, life, Pick());
             }
@@ -282,6 +289,9 @@ namespace RaidRift
         public static void Tear(Vector3 center, Vector3 facing, Vector3 floor, float scale = 1f, bool raid = false, float feel = 1f)
         {
             if (_i == null) return;
+            // VFX plan: one major screen cue per 4 s (a raid right after the first !join opened the rift, a relocation
+            // right after a raid): the second one keeps its visuals but only a light camera feel.
+            if (Time.time - _lastMajor < 4f) feel *= 0.3f; else _lastMajor = Time.time;
             CameraFeel.Impact((raid ? 1f : 0.72f) * feel);
             Emit(_i._flares, center - facing.normalized * 0.25f * scale, Vector3.zero, 1.2f * scale, 0.18f, Crack);
             // Shockwave: thin ring 0.08 → 0.8 m over 0.36 s (+ delayed echo for raids).

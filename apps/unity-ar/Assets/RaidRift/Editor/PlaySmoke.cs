@@ -213,7 +213,13 @@ namespace RaidRift.EditorTools
                 case 8:
                     // A second raid lands while the crowd is still walking out of the rift: they must re-target the new one.
                     if (t - _serverAt >= 0.8f && app.server.World.Raid.Id != "irc:2")
+                    {
+                        int entering = 0;
+                        foreach (var o in heroes.Values) if (((Hero)o).Entering) entering++;
+                        Debug.Log("[RaidRift] playsmoke second raid while " + entering + " heroes are walking out");
+                        if (entering == 0) Problems.Add("raid during entrance: nobody was entering (test timing)");
                         app.server.World.Raid = new RaidState { Id = "irc:2", From = "SecondRaider", Count = 7, Started = 2, Test = false };
+                    }
                     if (t - _serverAt < 7f) break;
                     int stuck = 0;
                     foreach (var o in heroes.Values) { var hh = (Hero)o; if (hh.Entering || !hh.Placed) stuck++; }
