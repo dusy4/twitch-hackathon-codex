@@ -77,7 +77,7 @@ The NavMesh agent radius is 7 cm, height 30 cm, climb 8 cm, slope limit 40°, vo
 
 ## Heroes and walking
 
-Four KayKit Adventurers models—Knight, Mage, Rogue, Barbarian—are imported through glTFast with legacy animation clips. Models are assigned deterministically from hero ID; the phone does not implement every website cosmetic. Heroes are about **30 cm** high, use `NavMeshAgent`, smooth facing, contact shadows, footstep variants, jump arcs and landing squash/effects. Missing model imports show a capsule placeholder.
+Four KayKit Adventurers models—Knight, Mage, Rogue, Barbarian—are imported through glTFast with legacy animation clips. Models are assigned deterministically from hero ID; the phone does not implement every website cosmetic. Heroes are about **30 cm** high, use `NavMeshAgent`, smooth facing, contact shadows, footstep variants, jump arcs and landing squash/effects. Missing model imports show a capsule placeholder. Arriving heroes walk out of the rift window and finish with a short burst-out hop (crouch, ~15 cm arc over 0.34 s, squash landing; 0.21.28+).
 
 Raised walkable islands 15 cm–1 m above the floor can receive bidirectional jump links, with measured endpoints and bounded gaps. Each bake limits the top samples and links. Agents explicitly animate the link traversal; this is not arbitrary climbing or a guarantee that every chair is reachable.
 
@@ -134,7 +134,7 @@ See [sidecar setup and recorded PC benchmarks](../services/ov-detector/README.md
 
 ## Camera feel, effects and audio
 
-`RiftWorld` renders an original voxel world through a portal window. `RiftFx` adds charge, tear, floor shockwave, sparks, bouncing chips, smoke, ambient embers, command/emote feedback and arrival effects. `RiftMoths` adds ambient life. Kenney CC0 textures support the original particle systems.
+`RiftWorld` renders an original voxel world through a portal window. `RiftFx` adds charge, tear, floor shockwave, sparks, bouncing chips, smoke, ambient embers, command/emote feedback and arrival effects. `RiftMoths` adds ambient life (at most 8; from 0.21.28 they keep a hard 0.6 m clearance from the lens and draw no trail inside 0.8 m, because a glowing trail next to the lens could fill the whole frame). Kenney CC0 textures support the original particle systems.
 
 `CameraFeel` applies shake, zoom punch, chromatic pulse, flash, vignette and a small bloom to the **composited image**, keeping tracked camera pose unchanged. This affects phone and broadcast appearance. Reduced motion disables shake/zoom/fringe; flashes and bloom are not all disabled. From 0.21.7 bloom and flash scale down with ARCore's light estimate in bright daylight (bloom to ~30%, flash to ~50%), and from 0.21.8 sparks switch from additive glow to alpha-blended dots outdoors. It is not a photosensitivity guarantee.
 
