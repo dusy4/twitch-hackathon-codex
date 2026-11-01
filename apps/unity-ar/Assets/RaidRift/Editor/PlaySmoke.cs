@@ -211,7 +211,14 @@ namespace RaidRift.EditorTools
                     _serverStep = 8; _serverAt = t;
                     break;
                 case 8:
-                    if (t - _serverAt < 5f) break;
+                    // A second raid lands while the crowd is still walking out of the rift: they must re-target the new one.
+                    if (t - _serverAt >= 0.8f && app.server.World.Raid.Id != "irc:2")
+                        app.server.World.Raid = new RaidState { Id = "irc:2", From = "SecondRaider", Count = 7, Started = 2, Test = false };
+                    if (t - _serverAt < 7f) break;
+                    int stuck = 0;
+                    foreach (var o in heroes.Values) { var hh = (Hero)o; if (hh.Entering || !hh.Placed) stuck++; }
+                    if (stuck > 0) Problems.Add("raid during entrance: " + stuck + " heroes never landed");
+                    Debug.Log("[RaidRift] playsmoke raid during entrance: heroes not landed after 6 s = " + stuck);
                     var crowdActs = new[] { "wave", "jump", "dance", "cheer", "spell" };
                     int ci = 0;
                     foreach (var hs in app.server.World.Heroes) { hs.Animation = crowdActs[ci % crowdActs.Length]; hs.Serial += 100; hs.Message = "!" + hs.Animation; ci++; }

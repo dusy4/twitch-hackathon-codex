@@ -151,6 +151,9 @@ namespace RaidRift
         bool _autoFallback;
         Renderer _windowRenderer;
 
+        // Hidden for a selfie (or re-enabled) leaves _renderedFrame stale: never let that read as "the hook stalled".
+        void OnEnable() { _renderedFrame = Time.frameCount; }
+
         void CheckRenderPath()
         {
             if (_autoFallback || _riftCamera == null || _window == null || _age < 1f) return;

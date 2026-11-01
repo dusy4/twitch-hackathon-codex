@@ -521,6 +521,11 @@ namespace RaidRift
             var banner = world.Raid.Test ? "TEST RAID" : $"RAID · {world.Raid.From} · {world.Raid.Count}";
             // The rift window stands just behind the landing spot; heroes walk out onto the spot.
             _rift = RiftWorld.Create(_origin + _away * 0.45f, arCamera.transform.position, arCamera);
+            // Heroes still walking out of the replaced rift (join rift, then a raid): hand them the new one, or they
+            // float in the real room behind the new window while it scales up.
+            int re = 0;
+            foreach (var h in _heroes.Values)
+                if (h.Entering && room.Sample(_rift.Foot(re), 0.5f, out var reExit)) { h.BeginEntrance(_rift, h.transform.position, reExit); re++; }
             _raidOpened = Time.time;
             hud.Flash(new Color(0.75f, 0.5f, 1f), 0.8f);
             StartCoroutine(TearSequence(_rift, 1f, !world.Raid.Test));
@@ -542,8 +547,11 @@ namespace RaidRift
         /// A later raid replaces this rift with the full raid opening.</summary>
         void OpenRiftForJoin(string name)
         {
-            var d = arCamera.transform.position - _origin;
-            if (new Vector2(d.x, d.z).magnitude > 6f) return;
+            // Only when the landing spot is in shot (in front, within 4 m): otherwise the tear and the hop happen off
+            // stream, and the old poof arrival near the streamer reads better.
+            var d = Vector3.ProjectOnPlane(_origin - arCamera.transform.position, Vector3.up);
+            var fwd = Vector3.ProjectOnPlane(arCamera.transform.forward, Vector3.up);
+            if (d.magnitude > 4f || (fwd.sqrMagnitude > 1e-4f && Vector3.Dot(d.normalized, fwd.normalized) < 0.3f)) return;
             if (_marker != null) Destroy(_marker);
             _rift = RiftWorld.Create(_origin + _away * 0.45f, arCamera.transform.position, arCamera);
             _raidOpened = Time.time;

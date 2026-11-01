@@ -481,6 +481,7 @@ namespace RaidRift
                 UpdateEntrance();
                 if (!Entering) return; // landed this frame: normal update from the next one
                 if (_hopT < 0f) Play("Walking_A");
+                else if (_hopT >= 2f) Play("Idle"); // hop done but not placed yet (no NavMesh there): stand, don't freeze mid-jump
                 _groundY = transform.position.y;
                 ApplySquash();
                 UpdateShadow(_hopLift);
