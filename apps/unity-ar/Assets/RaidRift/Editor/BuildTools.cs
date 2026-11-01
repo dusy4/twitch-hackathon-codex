@@ -24,8 +24,8 @@ namespace RaidRift.EditorTools
         const string Resources = Root + "/Resources";
         const string ScenePath = Root + "/Scenes/Main.unity";
         const string ChunkPrefab = Root + "/Prefabs/RoomMeshChunk.prefab";
-        public const string Version = "0.21.39";
-        public const int VersionCode = 56;
+        public const string Version = "0.21.40";
+        public const int VersionCode = 57;
 
         [MenuItem("RaidRift/Set up project")]
         public static void SetupMenu() => Setup();

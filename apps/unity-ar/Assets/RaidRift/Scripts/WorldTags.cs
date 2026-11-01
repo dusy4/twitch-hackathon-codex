@@ -12,6 +12,8 @@ namespace RaidRift
     {
         class Tag { public Transform root, backing; public TextMesh text; public string last; public float popAt = -10f; public long serial; }
         static readonly Dictionary<string, Tag> _tags = new Dictionary<string, Tag>();
+        static readonly List<Hero> _ranked = new List<Hero>();
+        static readonly HashSet<string> _prominent = new HashSet<string>();
         static Font _font;
         static Material _back, _tagBack, _tagText;
 
@@ -40,12 +42,21 @@ namespace RaidRift
         public static void Update(Camera cam, IEnumerable<Hero> heroes, bool selfie = false) // SELFIE: default preserves world callers.
         {
             var seen = new HashSet<string>();
+            // VFX plan: 4-6 prominent labels. A big party keeps full tags (name + last command) for the 6 most recently
+            // active viewers; everyone else shows just a smaller name. Up to 6 heroes nothing changes.
+            _ranked.Clear();
+            foreach (var h in heroes) if (h != null && h.Spawned) _ranked.Add(h);
+            bool crowded = _ranked.Count > 6;
+            if (crowded) _ranked.Sort((a, c) => c.LastCommand.CompareTo(a.LastCommand));
+            _prominent.Clear();
+            for (int i = 0; i < _ranked.Count && i < 6; i++) _prominent.Add(_ranked[i].Id);
             foreach (var hero in heroes)
             {
                 if (hero == null || !hero.Spawned) continue;
                 seen.Add(hero.Id);
+                bool prominent = !crowded || _prominent.Contains(hero.Id);
                 if (!_tags.TryGetValue(hero.Id, out var tag) || tag.root == null) { tag = Create(hero.Id); _tags[hero.Id] = tag; }
-                var msg = string.IsNullOrEmpty(hero.Message) ? "" : "\n<size=42><color=#92ffe0>" + Clean(Truncate(hero.Message, 26)) + "</color></size>";
+                var msg = !prominent || string.IsNullOrEmpty(hero.Message) ? "" : "\n<size=42><color=#92ffe0>" + Clean(Truncate(hero.Message, 26)) + "</color></size>";
                 string content = Clean(hero.DisplayName ?? "") + msg;
                 if (content != tag.last)
                 {
@@ -67,7 +78,7 @@ namespace RaidRift
                 var to = top - cam.transform.position;
                 tag.root.rotation = Quaternion.LookRotation(to, cam.transform.up); // screen-aligned: no tilt with phone roll
                 // Constant apparent size: scale with distance, clamped so far tags don't become billboards.
-                float s = Mathf.Clamp(to.magnitude, 0.25f, 4f) * 0.06f;
+                float s = Mathf.Clamp(to.magnitude, 0.25f, 4f) * 0.06f * (prominent ? 1f : 0.7f);
                 float pop = Time.time - tag.popAt;
                 if (pop < 0.3f) s *= 1f + 0.3f * Mathf.Sin(pop / 0.3f * Mathf.PI); // quick bounce, back to normal at 0.3 s
                 tag.root.localScale = Vector3.one * s;
