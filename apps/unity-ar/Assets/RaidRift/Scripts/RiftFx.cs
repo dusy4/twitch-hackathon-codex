@@ -27,13 +27,42 @@ namespace RaidRift
             if (prefab == null) return null;
             var rot = face.HasValue && face.Value.sqrMagnitude > 1e-4f ? Quaternion.LookRotation(face.Value) : Quaternion.identity;
             var go = Instantiate(prefab, pos, rot);
-            foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true)) { var m = ps.main; m.scalingMode = ParticleSystemScalingMode.Hierarchy; }
+            foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true)) { var m = ps.main; m.scalingMode = ParticleSystemScalingMode.Hierarchy; FrameRateFreeDamping(ps); }
             // Tints only the root system (e.g. the poof's cloud), so coloured children like its stars keep their colours.
             if (rootTint.HasValue && go.TryGetComponent<ParticleSystem>(out var root)) { var m = root.main; m.startColor = new ParticleSystem.MinMaxGradient(rootTint.Value); }
             go.transform.localScale = Vector3.one * scale;
             NoCameraShake(go);
             Destroy(go, 5f); // CFXR clears itself too; this is the backstop
             return go;
+        }
+
+        /// <summary>CFXR bursts (firework: 20 m/s rays) brake with Limit Velocity "dampen", a fraction removed per FRAME:
+        /// rays that stop at 0.3 m in a fast editor preview fly ~1.5 m at 60 fps and ~3 m at a hot phone's 30 fps,
+        /// i.e. through the lens as screen-long streaks (FxPreview fx-900). Same braking as at 60 fps, but in time.</summary>
+        static void FrameRateFreeDamping(ParticleSystem ps)
+        {
+            var lv = ps.limitVelocityOverLifetime;
+            if (!lv.enabled || lv.dampen <= 0f || lv.separateAxes) return;
+            if (lv.limit.mode != ParticleSystemCurveMode.Constant || lv.limit.constant * lv.limitMultiplier > 0.05f) return; // only "brake everything" setups
+            float drag = -Mathf.Log(1f - Mathf.Min(lv.dampen, 0.95f)) * 60f;
+            lv.dampen = 0f;
+            lv.drag = new ParticleSystem.MinMaxCurve(drag);
+            lv.multiplyDragByParticleSize = false;
+            lv.multiplyDragByParticleVelocity = false;
+        }
+
+        /// <summary>Firework rays launch at 20 m/s and brake 20% per frame down to a 1 m/s drift for 1.7 s: at a hot
+        /// phone's 30 fps they reach ~3 m, through the lens as a screen-long beam (FxPreview fx-900, which steps at
+        /// 1/30 s). Slower launch + slower drift keeps the burst ~1 m around the rift.</summary>
+        static void TameBurst(GameObject go)
+        {
+            if (go == null) return;
+            foreach (var ps in go.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                var m = ps.main; m.startSpeedMultiplier *= 0.35f;
+                var lv = ps.limitVelocityOverLifetime;
+                if (lv.enabled) lv.limitMultiplier *= 0.3f;
+            }
         }
 
         /// <summary>CFXR's own shake moves the tracked AR camera (breaks registration). Turn it off on every spawn,
@@ -244,7 +273,7 @@ namespace RaidRift
             Spawn(_i.groundHit, floor + Vector3.up * 0.01f, 1.2f * scale);
             if (raid)
             {
-                Spawn(_i.firework, center + Vector3.up * 0.9f * scale, 1.0f * scale);
+                TameBurst(Spawn(_i.firework, center + Vector3.up * 0.9f * scale, 1.0f * scale));
                 var cam = Camera.main;
                 Spawn(_i.comicWow, center + Vector3.up * 0.75f * scale, 0.55f * scale, cam != null ? cam.transform.position - center : (Vector3?)null);
             }
@@ -339,7 +368,7 @@ namespace RaidRift
             switch (action)
             {
                 case "cheer":
-                    Spawn(_i.firework, head + Vector3.up * 0.15f, 0.4f);
+                    TameBurst(Spawn(_i.firework, head + Vector3.up * 0.15f, 0.4f));
                     break;
                 case "dance":
                     Spawn(_i.fallingStars, head + Vector3.up * 0.2f, 0.5f);
