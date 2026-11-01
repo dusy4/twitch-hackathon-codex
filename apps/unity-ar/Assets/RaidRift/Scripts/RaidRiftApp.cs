@@ -211,7 +211,7 @@ namespace RaidRift
                 case "end-live":
                     if (!_liveMode) break;
                     // Walking with the phone: one stray tap must not end the broadcast. Second tap within 3 s does.
-                    if (Time.unscaledTime - _endArmedAt > 3f) { _endArmedAt = Time.unscaledTime; hud.Toast("Tap End again to stop the stream", 3f); break; }
+                    if (Time.unscaledTime - _endArmedAt > 3f) { _endArmedAt = Time.unscaledTime; hud.Toast("Tap End again to stop the stream", 3f); hud.KeepSheetOpen(); break; }
                     _endArmedAt = -10f;
                     EndLive();
                     break;
@@ -241,12 +241,13 @@ namespace RaidRift
                     // Broadcasting: going offline drops Twitch chat while the stream keeps running. Confirm.
                     _offlineArmedAt = Time.unscaledTime;
                     hud.Toast("Still live · tap again to disconnect chat (stream keeps running)", 3f);
+                    hud.KeepSheetOpen();
                     break;
                 case "offline": _offlineArmedAt = -10f; _live = false; server.Stop(); ClearHeroes(); hud.Toast("Offline test room"); break;
                 case "server-raid": if (_live) server.DebugRaid((ok, text) => hud.Toast(ok ? "Server test raid sent" : "Raid failed · " + text)); else hud.Toast("Pair with the server first"); break;
                 case "reset-room":
                     // Destructive mid-stream (rift + heroes go): a landed room needs a second tap within 3 s.
-                    if (_landed && Time.unscaledTime - _resetArmedAt > 3f) { _resetArmedAt = Time.unscaledTime; hud.Toast("Tap again to rescan the room (the party re-lands)", 3f); break; }
+                    if (_landed && Time.unscaledTime - _resetArmedAt > 3f) { _resetArmedAt = Time.unscaledTime; hud.Toast("Tap again to rescan the room (the party re-lands)", 3f); hud.KeepSheetOpen(); break; }
                     _resetArmedAt = -10f;
                     ResetRoom();
                     break;
@@ -335,6 +336,7 @@ namespace RaidRift
             bool tracking = ARSession.state == ARSessionState.SessionTracking;
             if (!_landed) UpdateLanding(tracking);
             else { AutoFollow(); RelocateRift(tracking); }
+            TrackStreamerPace();
             RiftFx.FloorY = room.FloorY;
             RiftFx.SetAmbient(_rift != null ? _rift.transform : null);
             if (moths != null)
@@ -592,15 +594,25 @@ namespace RaidRift
                 bool run;
                 bool commanded = Time.time - hero.LastCommand < 8f;
                 bool following = _follow || trail.Current == RiftTrail.Phase.Fragments || trail.Current == RiftTrail.Phase.Shrine;
+                hero.Pace = following ? Mathf.Min(_streamerPace * 1.25f, 2.2f) : 0f;
                 if (_tapGoal.HasValue && Time.time < _tapGoalUntil) { goal = Slot(_tapGoal.Value, index); run = (hero.transform.position - goal).magnitude > 1.2f; }
-                else if (commanded) { goal = following ? FollowSlot(index) : StagePoint(state); run = state.Animation == "run"; }
+                else if (commanded)
+                {
+                    goal = following ? FollowSlot(index) : StagePoint(state);
+                    run = state.Animation == "run";
+                    // Following a walking streamer: a recent chat command must not slow the hero to a 0.35 m/s stroll
+                    // (on a busy stream someone always just typed, and the party trailed off the frame).
+                    if (following && (_streamerPace > 0.45f || (hero.transform.position - goal).magnitude > 1.0f)) run = true;
+                }
                 else if (following)
                 {
                     goal = FollowSlot(index);
                     float far = (hero.transform.position - goal).magnitude;
-                    // Close to the streamer: free to roam around them; too far: hurry back.
-                    if (far < 1.2f && room.FloorUnderCamera(out var near)) { Roam(hero, near, 1.6f); index++; continue; }
-                    run = far > 1.0f;
+                    // Close to their slot: free to roam, but in front of the lens (roaming around the floor under the
+                    // phone put half the party behind the streamer or filling the frame, PlaySmoke play-walk).
+                    bool walking = _streamerPace > 0.45f; // streamer on the move: keep formation, don't wander off
+                    if (!walking && far < 1.2f && FollowCenter(out var near)) { Roam(hero, near, 0.8f); index++; continue; }
+                    run = far > 1.0f || walking;
                 }
                 else { Roam(hero, RoamAnchor(), 2.6f); index++; continue; }
                 if (room.Sample(goal, 0.5f, out var onMesh)) hero.SetDestination(onMesh, run);
@@ -720,7 +732,7 @@ namespace RaidRift
                 st.resting = true;
                 st.until = Time.time + Random.Range(1.5f, 4.5f);
                 var cam = arCamera.transform.position;
-                bool close = (new Vector2(cam.x - pos.x, cam.z - pos.z)).magnitude < 1.4f;
+                bool close = (new Vector2(cam.x - pos.x, cam.z - pos.z)).magnitude < 1.9f; // the follow party waits ~1.5 m ahead: turn and wave
                 if (st.toSeat && arrived)
                 {
                     hero.FaceTowards(cam);
@@ -776,9 +788,7 @@ namespace RaidRift
             if (flat.sqrMagnitude < 1e-4f) return;
             flat.Normalize();
             if (!room.Sample(floor + flat * 1.6f, 0.5f, out var spot) || Mathf.Abs(spot.y - floor.y) > 0.12f || room.Clearance(spot) < 0.35f) return;
-            var old = _rift.transform.position;
-            Fx.Sparkle(old + Vector3.up * 0.9f, new Color(0.7f, 0.45f, 1f), 24, 0.9f);
-            Destroy(_rift.gameObject);
+            _rift.Collapse(); // squeezes shut on stream (~0.3 s, own sparkle) while the new one tears open ahead
             _origin = spot;
             _away = flat;
             _right = Vector3.Cross(Vector3.up, _away);
@@ -791,16 +801,39 @@ namespace RaidRift
             _nextRelocate = Time.time + 12f;
         }
 
+        // Smoothed walking speed of the phone over the floor (m/s). A following party runs at least this fast (x1.25)
+        // so it stays ahead of the lens on a street walk instead of trailing behind at 0.9 m/s.
+        float _streamerPace;
+        Vector3 _lastCamFlat;
+        bool _hasLastCam;
+
+        void TrackStreamerPace()
+        {
+            var p = arCamera.transform.position;
+            var flat = new Vector3(p.x, 0f, p.z);
+            float dt = Time.deltaTime;
+            if (_hasLastCam && dt > 1e-4f)
+            {
+                float v = Mathf.Min((flat - _lastCamFlat).magnitude / dt, 3f); // ignore tracking jumps
+                _streamerPace = Mathf.Lerp(_streamerPace, v, 1f - Mathf.Exp(-dt / 0.6f));
+            }
+            _lastCamFlat = flat;
+            _hasLastCam = true;
+        }
+
         /// <summary>City walking: a hero left far behind (or stuck while following) rift-hops to the streamer.</summary>
         void CatchUp(Hero hero)
         {
             if (!hero.Placed || !room.FloorUnderCamera(out var floor)) return;
             float dist = (hero.transform.position - floor).magnitude;
             bool following = _follow || trail.Current == RiftTrail.Phase.Fragments || trail.Current == RiftTrail.Phase.Shrine;
-            if (dist < 6f && !(following && hero.Stuck && dist > 2.5f)) return;
             var flat = Vector3.ProjectOnPlane(arCamera.transform.forward, Vector3.up).normalized;
+            // Street walk: heroes run 0.9 m/s, a streamer walks ~1.3 m/s, so the party drifts behind the lens and
+            // vanished from the stream until 6 m. While following, one that is 3.5 m+ behind the phone hops ahead.
+            bool behind = following && dist > 3.5f && Vector3.Dot(hero.transform.position - floor, flat) < 0f;
+            if (dist < 6f && !behind && !(following && hero.Stuck && dist > 2.5f)) return;
             var c = Random.insideUnitCircle * 0.4f;
-            if (room.Sample(floor + flat * 1.0f + new Vector3(c.x, 0f, c.y), 0.6f, out var to)) hero.RiftHop(to);
+            if (room.Sample(floor + flat * (following ? 1.5f : 1.0f) + new Vector3(c.x, 0f, c.y), 0.6f, out var to)) hero.RiftHop(to);
         }
 
         Vector3 StagePoint(HeroState s) => _origin + _right * ((s.X - 0.5f) * 1.4f) + _away * ((0.5f - s.Y) * 1.0f);
@@ -820,13 +853,25 @@ namespace RaidRift
         {
             var cam = arCamera.transform;
             if (trail.PartyGoal(out var site) && (site - cam.position).magnitude < 3.5f) return Slot(site, i);
+            FollowCenter(out var center);
+            return Slot(center, i);
+        }
+
+        /// <summary>Where the following party walks: 1.5 m ahead of the phone on the floor, so on a portrait stream
+        /// the heroes stay in frame (~150 px tall at 720p) instead of crowding the lens at 0.9 m.</summary>
+        bool FollowCenter(out Vector3 center)
+        {
+            var cam = arCamera.transform;
             var flat = Vector3.ProjectOnPlane(cam.forward, Vector3.up);
             flat = flat.sqrMagnitude > 1e-4f ? flat.normalized : _away;
             float floorY = room.FloorY ?? cam.position.y - 1.3f;
-            var ahead = cam.position + flat * 0.9f;
+            var ahead = cam.position + flat * 1.5f;
             ahead.y = floorY;
-            if (!room.Sample(ahead, 0.8f, out var center)) room.Sample(new Vector3(cam.position.x, floorY, cam.position.z), 1.2f, out center);
-            return Slot(center, i);
+            if (room.Sample(ahead, 0.8f, out center)) return true;
+            var nearer = cam.position + flat * 0.9f;
+            nearer.y = floorY;
+            if (room.Sample(nearer, 0.8f, out center)) return true;
+            return room.Sample(new Vector3(cam.position.x, floorY, cam.position.z), 1.2f, out center);
         }
 
         void ClearHeroes()

@@ -124,9 +124,54 @@ namespace RaidRift
             }
         }
 
+        // ---------------- close (VFX-PLAN: 0.18 s inward pull + 0.10 s snap + ember tail) ----------------
+        float _closeAt = -1f;
+        Vector3 _closeScale;
+        public bool Closing => _closeAt >= 0f;
+
+        /// <summary>Collapse the window on screen instead of vanishing: it squeezes to a vertical slit (seam
+        /// sparks pulled inward), snaps shut with a small pop, then embers drift off. Destroys itself (~0.3 s).
+        /// Another rift may already be open; this one stops driving the shared room-paint globals.</summary>
+        public void Collapse()
+        {
+            if (Closing) return;
+            _closeAt = Time.time;
+            _closeScale = _window != null ? _window.localScale : new Vector3(WindowWidth, WindowHeight, 1f);
+            var mid = transform.position + Vector3.up * WindowHeight * 0.5f;
+            RiftFx.Charge(mid, transform.forward, 0.5f);
+            Sfx.PlayAt("teleport_out", mid, 0.7f);
+            CameraFeel.Shake(0.2f);
+        }
+
+        bool UpdateClose()
+        {
+            if (!Closing) return false;
+            float k = Time.time - _closeAt;
+            var full = _closeScale;
+            if (k < 0.18f)
+            {
+                float u = Mathf.SmoothStep(0f, 1f, k / 0.18f);
+                _window.localScale = new Vector3(Mathf.Lerp(full.x, 0.04f, u), full.y * Mathf.Lerp(1f, 1.04f, u), 1f);
+            }
+            else if (k < 0.28f)
+            {
+                float u = (k - 0.18f) / 0.10f;
+                _window.localScale = new Vector3(0.04f * (1f - u) + 0.005f, Mathf.Lerp(full.y * 1.04f, 0.01f, u * u), 1f);
+            }
+            else
+            {
+                var mid = transform.position + Vector3.up * WindowHeight * 0.5f;
+                Fx.Sparkle(mid, new Color(0.7f, 0.45f, 1f), 26, 0.9f);
+                Fx.Sparkle(mid, new Color(0.35f, 0.95f, 0.85f), 10, 0.6f);
+                Destroy(gameObject);
+            }
+            return true;
+        }
+
         void Update()
         {
             _age += Time.deltaTime;
+            if (UpdateClose()) return;
             // Window opens with a little overshoot; the paint then spreads across the real room.
             float t = Mathf.Clamp01(_age / 1.1f);
             float s = 1f + 2.2f * Mathf.Pow(t - 1f, 3f) + 1.2f * Mathf.Pow(t - 1f, 2f);
@@ -146,7 +191,7 @@ namespace RaidRift
 
         void OnDestroy()
         {
-            Shader.SetGlobalFloat(RadiusId, 0f);
+            if (!Closing) Shader.SetGlobalFloat(RadiusId, 0f); // a collapsing rift was replaced: the new one owns the paint
             if (_riftCamera != null) Destroy(_riftCamera.gameObject);
             if (_view != null) { _view.Release(); Destroy(_view); }
             if (_windowMat != null) Destroy(_windowMat);

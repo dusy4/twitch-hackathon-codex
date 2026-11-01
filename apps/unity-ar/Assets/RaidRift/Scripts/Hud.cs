@@ -149,6 +149,7 @@ namespace RaidRift
         {
             _toast.text = text;
             _toastPill.SetActive(!string.IsNullOrEmpty(text));
+            _toastPill.transform.SetAsLastSibling(); // above the settings sheet ("Tap End again" is shown there too)
             _toastUntil = Time.time + seconds;
         }
 
@@ -158,7 +159,42 @@ namespace RaidRift
             if (_chatRow.activeSelf) _chatInput.ActivateInputField();
         }
 
-        public void ToggleSetup(string server) { _serverInput.text = server; _setup.SetActive(!_setup.activeSelf); }
+        // The settings sheet is translucent glass: the account chip, orb and hint pill showed through it with their
+        // labels colliding with the sheet's title and last row (hud-portrait-setup preview). Hide them while it is open
+        // (alpha + no raycast, so SetMode keeps owning their active state).
+        CanvasGroup[] _underSheet;
+        bool _sheetCovered;
+
+        void CoverUnderSheet()
+        {
+            if (_setup == null) return;
+            bool open = _setup.activeSelf;
+            if (open == _sheetCovered) return;
+            _sheetCovered = open;
+            if (_underSheet == null)
+            {
+                var gos = new[] { _account, _primary, _hintPill, _scanChip };
+                _underSheet = new CanvasGroup[gos.Length];
+                for (int i = 0; i < gos.Length; i++)
+                {
+                    if (gos[i] == null) continue;
+                    var g = gos[i].GetComponent<CanvasGroup>(); // not ?? : Unity's fake null
+                    _underSheet[i] = g != null ? g : gos[i].AddComponent<CanvasGroup>();
+                }
+            }
+            foreach (var g in _underSheet)
+            {
+                if (g == null) continue;
+                g.alpha = open ? 0f : 1f;
+                g.blocksRaycasts = !open;
+            }
+        }
+
+        bool _keepSheet;
+        /// <summary>Called by the app when a settings tap only armed a two-tap confirmation: keep the sheet open.</summary>
+        public void KeepSheetOpen() { _keepSheet = true; }
+
+        public void ToggleSetup(string server) { _serverInput.text = server; _setup.SetActive(!_setup.activeSelf); CoverUnderSheet(); }
 
         /// <summary>Name tags are drawn in the scene now (WorldTags) so they reach the stream; kept for API compatibility.</summary>
         public void UpdateTags(Camera cam, IEnumerable<Hero> heroes) { }
@@ -207,6 +243,7 @@ namespace RaidRift
         void Update()
         {
             if (_toastPill != null && _toastPill.activeSelf && Time.time > _toastUntil) _toastPill.SetActive(false);
+            CoverUnderSheet();
             if (_flash != null)
             {
                 _flashAmount = Mathf.MoveTowards(_flashAmount, 0f, Time.deltaTime * 1.8f);
@@ -522,9 +559,11 @@ namespace RaidRift
             b.onClick.AddListener(() =>
             {
                 if (action == "pair") { OnServer?.Invoke(_serverInput.text, _tokenInput.text.Trim()); _tokenInput.text = ""; }
+                _keepSheet = false;
                 OnButton?.Invoke(action);
-                // Toggles stay open so the new value is visible; actions close the sheet.
-                if (value == null) _setup.SetActive(false);
+                // Toggles stay open so the new value is visible; actions close the sheet, except a first tap that
+                // only armed a two-tap confirm (End / Reset / Offline while live): the second tap must land on the row.
+                if (value == null && !_keepSheet) _setup.SetActive(false);
             });
             return val;
         }
@@ -638,8 +677,9 @@ namespace RaidRift
                 b.onClick.AddListener(() =>
                 {
                     if (action == "pair") { OnServer?.Invoke(_serverInput.text, _tokenInput.text.Trim()); _tokenInput.text = ""; }
+                    _keepSheet = false;
                     OnButton?.Invoke(action);
-                    if (action != "quality") _setup.SetActive(false);
+                    if (action != "quality" && !_keepSheet) _setup.SetActive(false);
                 });
             return b;
         }

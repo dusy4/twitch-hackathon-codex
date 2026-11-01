@@ -305,11 +305,14 @@ namespace RaidRift
             }
         }
 
+        /// <summary>Run speed floor set by the director while the party follows a walking streamer (m/s; 0 = off).</summary>
+        public float Pace;
+
         public void SetDestination(Vector3 point, bool run)
         {
             if (!Placed) return;
             if (Holding) return;
-            Agent.speed = run ? RunSpeed : WalkSpeed;
+            Agent.speed = run ? Mathf.Max(RunSpeed, Pace) : WalkSpeed;
             if (_destination.HasValue && (point - _destination.Value).sqrMagnitude < 0.01f && Time.time < _nextRepath) return;
             _destination = point;
             _nextRepath = Time.time + 1f;

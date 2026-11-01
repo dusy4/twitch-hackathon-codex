@@ -206,6 +206,10 @@ namespace RaidRift.EditorTools
         // ---------------- phase 2: offline test raid on a synthetic floor ----------------
         static float _gameplayStart, _raidAt;
         static bool _raided, _followed, _framed, _walkChecked;
+        static int _walkSamples, _walkInFrame;
+        static float _walkLogAt;
+        static bool _collapseShot;
+        static float _collapseAt;
         static Vector3? _riftStart;
         static int _maxHeroes;
         static readonly HashSet<float> _shots = new HashSet<float>();
@@ -299,12 +303,58 @@ namespace RaidRift.EditorTools
                     _riftStart = r0 != null ? r0.transform.position : Vector3.zero;
                 }
             }
+            // The relocating rift collapses (behind the streamer): it must finish and destroy itself.
+            if (_followed && !_collapseShot)
+                foreach (var rw in Object.FindObjectsByType<RiftWorld>(FindObjectsSortMode.None))
+                    if (rw.Closing) { _collapseShot = true; _collapseAt = t; break; }
+            if (_collapseShot && _collapseAt > 0f && t - _collapseAt > 1.5f)
+            {
+                _collapseAt = -1f;
+                int closing = 0;
+                foreach (var rw in Object.FindObjectsByType<RiftWorld>(FindObjectsSortMode.None)) if (rw.Closing) closing++;
+                Debug.Log("[RaidRift] playsmoke gameplay: rift collapse finished, closing rifts left " + closing);
+                if (closing > 0) Problems.Add("gameplay: a collapsing rift never destroyed itself");
+            }
+            // While walking and after: how often each following hero is actually on the 9:16 frame (stream view).
+            if (_followed && t - _raidAt > 14f && t - _raidAt < 21.5f && t - _walkLogAt > 1f)
+            {
+                _walkLogAt = t;
+                var sb = new System.Text.StringBuilder("[RaidRift] playsmoke walk t=" + (t - _raidAt).ToString("0.0") + " cam z " + app.arCamera.transform.position.z.ToString("0.0") + " heroes:");
+                foreach (var h in heroes.Values)
+                {
+                    var hero = h as Hero;
+                    if (hero == null) continue;
+                    sb.Append(" z " + hero.transform.position.z.ToString("0.0") + " v " + (hero.Agent != null && hero.Agent.enabled ? hero.Agent.velocity.magnitude.ToString("0.0") + "/" + hero.Agent.speed.ToString("0.0") : "-") + (hero.Stuck ? " stuck" : "") + ";");
+                }
+                Debug.Log(sb.ToString());
+            }
+            if (_followed && t - _raidAt > 14f && t - _raidAt < 21.5f)
+                foreach (var h in heroes.Values)
+                {
+                    var hc = h as Component;
+                    if (hc == null) continue;
+                    var vp = app.arCamera.WorldToViewportPoint(hc.transform.position + Vector3.up * 0.15f);
+                    _walkSamples++;
+                    if (vp.z > 0.3f && vp.x > 0f && vp.x < 1f && vp.y > 0.02f && vp.y < 1f) _walkInFrame++;
+                }
             if (_followed && t - _raidAt >= 21.5f && !_walkChecked)
             {
                 _walkChecked = true;
+                Debug.Log("[RaidRift] playsmoke gameplay: following heroes on screen " + (_walkSamples > 0 ? 100f * _walkInFrame / _walkSamples : 0f).ToString("0") + "% of the walk (" + _walkSamples + " samples)");
                 var r1 = typeof(RaidRiftApp).GetField("_rift", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(app) as Component;
                 float moved = r1 != null && _riftStart.HasValue ? (r1.transform.position - _riftStart.Value).magnitude : 0f;
                 Debug.Log("[RaidRift] playsmoke gameplay: after a 10 m walk the rift moved " + moved.ToString("0.0") + " m, heroes " + heroes.Count);
+                // How far ahead of the lens the following party walks (too close = giant heroes / out of frame).
+                var camT = app.arCamera.transform;
+                var dists = new List<string>();
+                foreach (var h in heroes.Values)
+                {
+                    var hc = h as Component;
+                    if (hc == null) continue;
+                    var d = hc.transform.position - camT.position;
+                    dists.Add(new Vector2(d.x, d.z).magnitude.ToString("0.00") + (Vector3.Dot(d, camT.forward) > 0f ? "" : " (behind)"));
+                }
+                Debug.Log("[RaidRift] playsmoke gameplay: party distance from the phone (m): " + string.Join(", ", dists));
                 if (moved < 3f) Problems.Add("gameplay: rift did not follow a 10 m walk (moved " + moved.ToString("0.0") + " m)");
                 Snapshot(app.arCamera, "play-walk");
             }

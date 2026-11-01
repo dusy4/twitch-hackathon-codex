@@ -120,8 +120,8 @@ namespace RaidRift
             var go = new GameObject("Banner");
             var text = go.AddComponent<TextMesh>();
             text.font = Resources.Load<Font>("Fonts/SpaceGrotesk-Bold") ?? _font;
-            // Own queue: after the rift window (else it draws over the plate) and after the plate.
-            var textMat = FontCopy(text.font, 3110, "Banner text");
+            // Own queue: after the rift window (else it draws over the plate), after the plate and after the name tags.
+            var textMat = FontCopy(text.font, 3130, "Banner text"); // after name tags (3100/3110): a tag never cuts through RAID
             Material plateMat = null;
             go.GetComponent<MeshRenderer>().sharedMaterial = textMat;
             text.fontSize = 96;
@@ -142,7 +142,7 @@ namespace RaidRift
             if (_back != null)
             {
                 var pr = plate.GetComponent<Renderer>();
-                pr.sharedMaterial = plateMat = new Material(_back) { renderQueue = 3100 };
+                pr.sharedMaterial = plateMat = new Material(_back) { renderQueue = 3120 };
                 var block = new MaterialPropertyBlock();
                 block.SetFloat("_Strength", 0.85f);
                 pr.SetPropertyBlock(block);
@@ -166,10 +166,13 @@ namespace RaidRift
                 // Portrait phone ~1.5 m from the rift: 2 m up is above the frame. Keep the banner on screen
                 // (upper part of the stream's 9:16 crop), at the same depth so it still sits in the scene.
                 var vp = _cam.WorldToViewportPoint(p);
+                // Streamer walked past it (title card anchored where Go live happened): dismiss instead of letting
+                // it swell through the lens once it is too close for the depth clamp below.
+                if (vp.z <= 0.2f) { Destroy(gameObject); return; }
                 if (vp.z > 0.2f)
                 {
                     vp.x = Mathf.Clamp(vp.x, 0.2f, 0.8f);
-                    vp.y = Mathf.Clamp(vp.y, 0.2f, 0.74f);
+                    vp.y = Mathf.Clamp(vp.y, 0.2f, 0.68f); // below the on-stream "!join" caption
                     // Phone tilted down: the point above the rift is only ~0.6 m deep and the banner filled the
                     // frame (PlaySmoke play-9). Keep it at least 1.4 m out.
                     vp.z = Mathf.Max(vp.z, 1.4f);
