@@ -286,6 +286,7 @@ namespace RaidRift
                     _squash = -0.14f; // stretch on launch
                     PlayRestart("Jump_Full_Short");
                     Sfx.PlayAt("hop", transform.position, 0.45f);
+                    if (_layer != RiftWorld.Layer) Fx.Dust(transform.position, 0.45f); // takeoff puff (only on the room side of the window)
                 }
                 float t = Mathf.Clamp01((_hopT - HopCrouch) / HopAir);
                 var p = Vector3.Lerp(_hopFrom, new Vector3(_exit.x, _hopFrom.y, _exit.z), t);
