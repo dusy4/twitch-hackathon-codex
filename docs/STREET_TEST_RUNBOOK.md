@@ -46,4 +46,4 @@
 
 **Record afterward:** APK version/hash, phone/OS/network, received recording; pass/fail/skipped for scan, two viewers, raid source, mic/SFX, selfie and walking. Keep secrets out. Skipped means **untested**.
 
-**Test-label caveat:** a debug raid during Live can show an ordinary RAID banner. Say “test raid” aloud and caption the recording; it is still synthetic.
+**Test label:** a Server test raid shows a **TEST RAID** banner, also during Live (server fix Nov 1). Still say “test raid” aloud and caption the recording; it is synthetic.

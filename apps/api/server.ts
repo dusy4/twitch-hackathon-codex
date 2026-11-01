@@ -1722,6 +1722,8 @@ export async function createApp(
                 event.from_broadcaster_user_id,
                 event.from_broadcaster_user_name,
                 event.viewers,
+                // Owner debug raids stay labelled TEST even after Live is selected.
+                row.id.startsWith("debug-"),
               );
           } else if (row.type === "channel.chat.message") {
             const event = body(

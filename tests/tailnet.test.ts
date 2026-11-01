@@ -251,6 +251,31 @@ test("debug raid travels the real inbox drain; raiders !join; duplicates are ide
   }
 });
 
+test("a debug raid after Live is selected is still marked test", async () => {
+  const { server, post } = await setup();
+  try {
+    const w = await server.world(TAILNET_ROOM);
+    w.state.mode = "LIVE TWITCH"; // as after POST /v1/live/channel
+    const raid = await post("/v1/native/debug/event", {
+      type: "raid",
+      from: "CozyRaider",
+      viewers: 12,
+      chatters: 0,
+    });
+    assert.equal(raid.statusCode, 200, raid.body);
+    await server.drain();
+    assert.equal(w.state.raid?.from, "CozyRaider");
+    assert.equal(w.state.raid?.test, true);
+    const row = await server.db.query(
+      "SELECT test FROM raids WHERE destination_id=$1",
+      [TAILNET_ROOM],
+    );
+    assert.equal(row.rows[0].test, true);
+  } finally {
+    await server.app.close();
+  }
+});
+
 test("native endpoints require a capture token and debug tools are off by default", async () => {
   const s = await createApp({
     db: Database.memory(),
