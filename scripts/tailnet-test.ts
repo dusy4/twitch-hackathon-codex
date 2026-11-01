@@ -29,7 +29,7 @@ if (envFile && !process.env.OPENCODE_GO_API_KEY)
 if (envFile && !process.env.GROQ_API_KEY)
   process.env.GROQ_API_KEY = readEnvValue(envFile, "GROQ_API_KEY");
 if (envFile)
-  for (const key of ["EXT_CLIENT_ID", "EXT_SECRET", "EXT_OWNER_ID", "APK_DIR"]) {
+  for (const key of ["EXT_CLIENT_ID", "EXT_SECRET", "EXT_OWNER_ID", "APK_DIR", "SITE_DIR"]) {
     if (!process.env[key]) process.env[key] = readEnvValue(envFile, key);
   }
 relayUrl ??= `rtmp://${new URL(origin).hostname}:1935/live/raidrift`;

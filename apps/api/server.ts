@@ -2712,6 +2712,10 @@ export async function createApp(
       prefix: "/apk/",
       decorateReply: false,
     });
+  // Public product site (SITE_DIR = apps/site) at "/" when the old web client is not built.
+  const siteRoot = process.env.SITE_DIR ? resolve(process.env.SITE_DIR) : "";
+  if (siteRoot && existsSync(resolve(siteRoot, "index.html")) && !existsSync(resolve(webRoot, "index.html")))
+    await app.register(staticFiles, { root: siteRoot, prefix: "/", decorateReply: false });
   if (existsSync(resolve(webRoot, "index.html"))) {
     const htmlTemplate = await readFile(resolve(webRoot, "index.html"), "utf8");
     for (const path of ["/receiver", "/relay-receiver"])
