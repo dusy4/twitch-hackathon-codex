@@ -110,18 +110,47 @@ namespace RaidRift
             _view.Create();
             _riftCamera.targetTexture = _view;
             _windowMat.SetTexture("_RiftTex", _view);
+            // Rendered on demand by the window (WindowHook), never on its own schedule: see RenderFor.
+            _riftCamera.enabled = false;
+            quad.AddComponent<WindowHook>().owner = this;
             _age = 0f;
             Sfx.Play("rift_open", 0.95f); // layered riser + sub-boom impact + crystal tail
             Sfx.Loop("rift_ambience", _window, 0.35f, 5f);
         }
 
-        void LateUpdate()
+        // The window samples _RiftTex in screen space, so the rift view must be rendered with the exact pose and
+        // projection of the camera that is drawing the window right now. Copying the AR camera's projection in
+        // LateUpdate broke whenever the AR camera rendered with another target/aspect (stream View, previews): the
+        // window then showed the rift sky's pale side as a white slab (PlaySmoke play-washout). Classic portal
+        // pattern instead: render from the window's OnWillRenderObject; skipped entirely while the window is
+        // off-screen. One render per camera per frame unless that camera's lens or pose changed.
+        bool _rendering;
+        int _renderedFrame = -1;
+        Camera _renderedFor;
+        Matrix4x4 _renderedProj, _renderedPose;
+
+        void RenderFor(Camera cam)
         {
-            if (_riftCamera != null && _arCamera != null)
+            if (_rendering || cam == null || cam == _riftCamera || _riftCamera == null) return;
+            var pose = cam.transform.localToWorldMatrix;
+            var proj = cam.projectionMatrix;
+            if (Application.isPlaying && _renderedFrame == Time.frameCount && _renderedFor == cam && _renderedProj == proj && _renderedPose == pose) return;
+            _rendering = true;
+            try
             {
-                _riftCamera.projectionMatrix = _arCamera.projectionMatrix;
-                _riftCamera.fieldOfView = _arCamera.fieldOfView;
+                _riftCamera.transform.SetPositionAndRotation(cam.transform.position, cam.transform.rotation);
+                _riftCamera.projectionMatrix = proj;
+                _riftCamera.Render();
+                _renderedFrame = Time.frameCount; _renderedFor = cam; _renderedProj = proj; _renderedPose = pose;
             }
+            finally { _rendering = false; }
+        }
+
+        [ExecuteAlways] // editor previews (FxPreview, HudPreview) render outside play mode
+        class WindowHook : MonoBehaviour
+        {
+            public RiftWorld owner;
+            void OnWillRenderObject() { if (owner != null) owner.RenderFor(Camera.current); }
         }
 
         // ---------------- close (VFX-PLAN: 0.18 s inward pull + 0.10 s snap + ember tail) ----------------

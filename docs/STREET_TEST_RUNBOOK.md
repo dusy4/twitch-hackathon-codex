@@ -37,6 +37,7 @@
 
 | Problem | Do this |
 |---|---|
+| Rift window black/frozen | 0.21.29 changed how the rift window is rendered (per drawing camera, fixes a pale slab). Check the open rift at home first; if its window is black or frozen, install 0.21.28 instead. |
 | No mesh/landing | Sweep textured floor, wait several bakes, try floor tap; read diagnostics. Reset only if scan is wrong (**Reset room needs two taps** once landed). |
 | Tracking lost/drift | Stop; reframe scanned area slowly. End/rescan if alignment stays wrong. |
 | Stream error/drops/heat | Short signal loss: keep going; if the stream is stuck reconnecting for 30 s the app rebuilds the session itself (diagnostics: "rebuilt Nx"). Otherwise check mic permission, uplink/key privately; End, cool, restart with **Weak signal**. Confirm actual Twitch receipt. |

@@ -64,6 +64,7 @@ namespace RaidRift.EditorTools
                     if (d < 0.55f && !_mothNear) { _mothNear = true; Problems.Add($"moth {d:0.00} m from the lens"); }
                     _mothMin = Mathf.Min(_mothMin, d);
                 }
+            if (_frame % 15 == 0 && app.arCamera != null) Washout(app.arCamera);
             var button = typeof(RaidRiftApp).GetMethod("Button", BindingFlags.Instance | BindingFlags.NonPublic);
             int step = (_frame - 60) / 8; // one press every 8 frames after warm-up
             if (_frame >= 60 && (_frame - 60) % 8 == 0 && step < Buttons.Length)
@@ -224,6 +225,58 @@ namespace RaidRift.EditorTools
         static readonly HashSet<float> _shots = new HashSet<float>();
         static bool _mothNear;
         static float _mothMin = 99f;
+
+        static float _washMax;
+        static int _washFrame;
+        static RenderTexture _washRt;
+        static Texture2D _washTex;
+
+        /// <summary>Share of near-white pixels in a small render of the stream view. A slab/flood (moth trail at the lens,
+        /// a light washing the rift) shows up as a spike; the worst frame is saved as play-washout.png.</summary>
+        static void Washout(Camera cam)
+        {
+            try
+            {
+                if (_washRt == null) { _washRt = new RenderTexture(144, 256, 24); _washTex = new Texture2D(144, 256, TextureFormat.RGB24, false); }
+                var old = cam.targetTexture;
+                cam.targetTexture = _washRt;
+                cam.Render();
+                cam.targetTexture = old;
+                var prev = RenderTexture.active;
+                RenderTexture.active = _washRt;
+                _washTex.ReadPixels(new Rect(0, 0, 144, 256), 0, 0);
+                _washTex.Apply();
+                RenderTexture.active = prev;
+                var px = _washTex.GetPixels32();
+                int white = 0;
+                foreach (var c in px) if (c.r > 215 && c.g > 215 && c.b > 215) white++;
+                float share = white / (float)px.Length;
+                if (share > _washMax)
+                {
+                    _washMax = share; _washFrame = _frame;
+                    var dir = System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "..", "Builds", "preview"));
+                    System.IO.File.WriteAllBytes(System.IO.Path.Combine(dir, "play-washout.png"), _washTex.EncodeToPNG());
+                    if (share > 0.08f) ExplainWashout(cam, share);
+                }
+            }
+            catch (System.Exception e) { Debug.LogWarning("[RaidRift] playsmoke washout probe failed: " + e.Message); }
+        }
+
+        static void ExplainWashout(Camera cam, float share)
+        {
+            Snapshot(cam, "play-washout-hi");
+            var eye = cam.transform.position;
+            var rift = Object.FindFirstObjectByType<RiftWorld>();
+            string local = rift != null ? rift.transform.InverseTransformPoint(eye).ToString("0.00") : "-";
+            Debug.Log($"[RaidRift] washout {share:P1} frame {_frame}: camera in rift-local {local}, forward {cam.transform.forward:0.00}");
+            foreach (var r in Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None))
+            {
+                if (!r.enabled || !r.gameObject.activeInHierarchy) continue;
+                float d = Vector3.Distance(eye, r.bounds.ClosestPoint(eye));
+                if (d < 0.5f && r.bounds.size.magnitude < 5f)
+                    Debug.Log($"[RaidRift] washout near-lens {r.name} ({r.GetType().Name}) parent={(r.transform.parent ? r.transform.parent.name : "-")} layer={r.gameObject.layer} dist={d:0.00} size={r.bounds.size.magnitude:0.00} mat={(r.sharedMaterial ? r.sharedMaterial.name : "-")}");
+            }
+        }
 
         /// <summary>What the stream would get: the AR camera (rift, heroes, tags, VFX, CameraFeel) at 720x1280.</summary>
         static void Snapshot(Camera cam, string name)
@@ -386,6 +439,7 @@ namespace RaidRift.EditorTools
             if (fatal != null) Problems.Add(fatal);
             foreach (var p in Problems) Debug.Log("[RaidRift] playsmoke PROBLEM " + p);
             Debug.Log($"[RaidRift] playsmoke closest moth to the lens: {_mothMin:0.00} m");
+            Debug.Log($"[RaidRift] playsmoke worst washout: {_washMax:P1} near-white at frame {_washFrame} (play-washout.png)");
             Debug.Log(Problems.Count == 0 ? "[RaidRift] playsmoke PASS (" + _frame + " frames)" : "[RaidRift] playsmoke FAIL " + Problems.Count);
             EditorApplication.isPlaying = false;
             if (Application.isBatchMode) EditorApplication.Exit(Problems.Count == 0 ? 0 : 1);
