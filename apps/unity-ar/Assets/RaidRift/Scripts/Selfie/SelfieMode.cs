@@ -315,6 +315,7 @@ namespace RaidRift
 
         void UpdateFaceVisuals()
         {
+            HideVisuals(); return; // owner 2026-11-01: no rift halo on the streamer's face
             if (_face == null) { HideVisuals(); return; }
             if (_glow == null)
             {

@@ -42,14 +42,7 @@ namespace RaidRift
                 }
                 yield return null;
             }
-            var cam = arCamera.transform;
-            float moved = (cam.localPosition - selfie.SavedCameraPosition).magnitude;
-            float yaw = Mathf.Abs(Mathf.DeltaAngle(cam.localEulerAngles.y, selfie.SavedCameraRotation.eulerAngles.y));
-            if (moved > 1.5f || yaw > 90f)
-            {
-                ResetRoom();
-                hud.Toast("Room realigned after selfie · point at the floor to land again", 4f);
-            }
+            // Owner 2026-11-01: switching the camera must not move or reset anything. Heroes and the room stay put.
         }
 
         void SelfieNotice(string message) { if (hud != null) hud.Toast(message, 3f); }
@@ -84,12 +77,7 @@ namespace RaidRift
                     _selfiePaused = false;
                     foreach (var pair in _selfieHidden) if (pair.Key != null) pair.Key.SetActive(pair.Value);
                     _selfieHidden.Clear();
-                    foreach (var hero in _heroes.Values)
-                    {
-                        if (!hero.SelfiePerched) continue;
-                        hero.LeaveSelfie();
-                        _selfieReturn.Add(hero.Id);
-                    }
+                    // Heroes were never moved during selfie: nothing to re-place.
                     _roam.Clear();
                     _steer.Clear();
                     _tapGoal = null;
@@ -114,23 +102,37 @@ namespace RaidRift
 
             if (!UseServer) _playground.Tick(NowMs, selfie.IsSelfie && !selfie.IsSwitching);
             var world = CurrentWorld();
-            if (selfie.IsSelfie && !selfie.IsSwitching)
-            {
-                _heroRoot.gameObject.SetActive(true);
-                SyncSelfieHeroes(world);
-                WorldTags.Update(arCamera, _heroes.Values, true);
-            }
-            else
-            {
-                _heroRoot.gameObject.SetActive(false);
-                WorldTags.Clear();
-            }
+            // Owner 2026-11-01: "I'm just switching the camera — remember where they persist." The front camera has no
+            // room tracking, so the party is not drawn here; every hero stays exactly where it stood (paused, hidden)
+            // and is shown again in place when the room camera returns. Joins/leaves are still tracked.
+            _heroRoot.gameObject.SetActive(false);
+            WorldTags.Clear();
+            if (selfie.IsSelfie && !selfie.IsSwitching) KeepSelfieRoster(world);
             hud.SetStatus($"Selfie party · {_heroes.Count} heroes", "Room scan and navigation paused",
-                selfie.IsSwitching ? "Switching cameras…" : !selfie.IsSelfie ? "Point at the room · tap selfie to retry" : selfie.HasFace ? "Chat can jump, dance, wave or sit" : "Look into the camera · party waits below");
+                selfie.IsSwitching ? "Switching cameras…" : !selfie.IsSelfie ? "Point at the room · tap selfie to retry" : "Party is waiting in the room · flip back to see them");
             hud.SetScan(1f, "");
             hud.SetFeed(UseServer ? _serverLines : _playground.Messages);
             LiveTick(world); // Publisher retains the same Camera.targetTexture.
             return true;
+        }
+
+        /// <summary>Selfie: keep the hero list in step with chat (new viewers get a hero that lands when the room camera
+        /// returns; leavers are removed) without touching anyone's position.</summary>
+        void KeepSelfieRoster(WorldState world)
+        {
+            var alive = new HashSet<string>();
+            foreach (var state in world.Heroes)
+            {
+                alive.Add(state.Id);
+                if (!_heroes.ContainsKey(state.Id))
+                    _heroes[state.Id] = Hero.Create(state.Id, HeroModels.For(state.Id), room.AgentTypeId, _heroRoot);
+            }
+            foreach (var id in _heroes.Keys.Where(k => !alive.Contains(k)).ToList())
+            {
+                Destroy(_heroes[id].gameObject);
+                _heroes.Remove(id);
+                _selfieReturn.Remove(id);
+            }
         }
 
         void SyncSelfieHeroes(WorldState world)
