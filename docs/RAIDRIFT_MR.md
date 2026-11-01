@@ -165,7 +165,7 @@ Settings are one scrollable column:
 |---|---|
 | Go live: Twitch channel (chat + raids) | Channel login, without a URL; `#` is stripped, lowercased. Chooses IRC input, not Twitch authentication. |
 | Stream key · stays on this phone | Twitch Creator Dashboard → Settings → Stream key. App saves it in **PlayerPrefs**, not encrypted secure storage. Blank uses the saved key. Never send it to the RaidRift server. |
-| "!join" hint on stream | While live, draws "Type !join in chat to drop in a hero" (then the command menu once heroes are in) into the broadcast itself. On by default, remembered (0.21.6+). |
+| "!join" hint on stream | While live, draws "Type !join in chat to drop in a hero" (then the command menu once heroes are in; from 0.21.45 its "go to" example names the lowest numbered spot actually on screen, or is left out when none show) into the broadcast itself. On by default, remembered (0.21.6+). |
 | Quality | Cycles profiles below. Saved locally; a change takes effect on the **next** go-live. |
 | Go live | Stops active WebRTC, starts/pairs server input and asks publisher to connect to `rtmps://live.twitch.tv:443/app`. Always requests microphone. A stream can connect even if chat setup fails. Tapping Go live while already live restarts the session cleanly (e.g. to apply a new quality). |
 | End stream · back to demo | Stops publisher and requests IRC reader stop. Does not clear the saved key or necessarily unpair the server. |
