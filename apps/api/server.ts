@@ -1864,6 +1864,7 @@ export async function createApp(
     return p.room;
   }
   const NATIVE_HERO_LIMIT = 12;
+  const nativeShown = new Map<string, string[]>();
   const liveReaders = new Map<string, TwitchIrc>();
   const idleLive = () => ({
     channel: null,
@@ -2007,12 +2008,42 @@ export async function createApp(
   app.get("/v1/native/world", async (req, reply) => {
     reply.header("Cache-Control", "private, no-store");
     const state = (await world(await captureRoom(req))).state;
-    // The phone renders only the first 12 heroes. When practice/test-raid heroes
-    // pile up, list the most recently active first so real chatters stay visible.
-    if (state.avatars.length <= NATIVE_HERO_LIMIT) return state;
+    // The phone renders only the first 12 heroes. Keep a sticky visible set per
+    // room: shown heroes stay shown (no popping in and out); a hidden hero takes
+    // the stalest slot only when it acted at least 10 s more recently, so real
+    // chatters are never stuck behind idle practice/test-raid heroes.
+    if (state.avatars.length <= NATIVE_HERO_LIMIT) {
+      nativeShown.delete(state.roomId);
+      return state;
+    }
+    const byId = new Map(state.avatars.map((a) => [a.id, a]));
+    const shown = (nativeShown.get(state.roomId) ?? []).filter((id) =>
+      byId.has(id),
+    );
+    const hidden = state.avatars
+      .filter((a) => !shown.includes(a.id))
+      .sort((a, b) => b.lastActive - a.lastActive);
+    for (const candidate of hidden) {
+      if (shown.length < NATIVE_HERO_LIMIT) {
+        shown.push(candidate.id);
+        continue;
+      }
+      let stalest = 0;
+      for (let i = 1; i < shown.length; i++)
+        if (byId.get(shown[i])!.lastActive < byId.get(shown[stalest])!.lastActive)
+          stalest = i;
+      if (candidate.lastActive - byId.get(shown[stalest])!.lastActive < 10000)
+        break;
+      shown[stalest] = candidate.id;
+    }
+    nativeShown.set(state.roomId, shown);
+    const visible = new Set(shown);
     return {
       ...state,
-      avatars: [...state.avatars].sort((a, b) => b.lastActive - a.lastActive),
+      avatars: [
+        ...state.avatars.filter((a) => visible.has(a.id)),
+        ...state.avatars.filter((a) => !visible.has(a.id)),
+      ],
     };
   });
   /** Stable Twitch-style numeric id for a simulated chatter name. */

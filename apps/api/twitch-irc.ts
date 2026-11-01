@@ -231,7 +231,10 @@ export class TwitchIrc {
       const text = (m.params[1] || "").slice(0, 500);
       // Ordinary conversation must not use up the per-user cooldown: "hi" then
       // "!join" 100 ms later should still join.
-      if (this.options.actionable && !this.options.actionable(text)) return;
+      if (this.options.actionable && !this.options.actionable(text)) {
+        this.handlers.changed?.();
+        return;
+      }
       const now = Date.now(),
         last = this.rate.get(userId);
       if (last !== undefined && now - last < 500) return;
