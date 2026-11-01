@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace RaidRift
@@ -33,6 +34,23 @@ namespace RaidRift
             go.transform.localScale = Vector3.one * scale;
             NoCameraShake(go);
             Destroy(go, 5f); // CFXR clears itself too; this is the backstop
+            return go;
+        }
+
+        // Chat-driven effects (emotes, command lights, arrivals, landings): a busy chat must not stack dozens of 5 s
+        // CFX objects, each with several particle systems and often a real point light (an extra forward pass on every
+        // hero). Budget of live ones; over it, only the cheap pooled sparks/rings play. Raid/tear effects are exempt.
+        static readonly List<GameObject> _minor = new List<GameObject>();
+        const int MinorBudget = 14;
+
+        static GameObject SpawnMinor(GameObject prefab, Vector3 pos, float scale, Vector3? face = null, Color? rootTint = null)
+        {
+            _minor.RemoveAll(g => g == null);
+            if (prefab == null || _minor.Count >= MinorBudget) return null;
+            var go = Spawn(prefab, pos, scale, face, rootTint);
+            if (go == null) return null;
+            foreach (var l in go.GetComponentsInChildren<Light>(true)) l.cullingMask = 0; // lights nothing: no extra passes
+            _minor.Add(go);
             return go;
         }
 
@@ -336,7 +354,7 @@ namespace RaidRift
             if (_i == null) return;
             if (first) CameraFeel.Shake(0.25f);
             // PlaySmoke play-60: three in a row filled the frame; the stock grey-white cloud read as dirty smoke: rift lavender.
-            TameBurst(Spawn(_i.magicPoof, pos + Vector3.up * 0.1f, first ? 0.45f : 0.32f, null, new Color(0.8f, 0.62f, 1f, 0.75f)), 0.6f, 0.5f); // its rays reached the frame edges at 30 fps
+            TameBurst(SpawnMinor(_i.magicPoof, pos + Vector3.up * 0.1f, first ? 0.45f : 0.32f, null, new Color(0.8f, 0.62f, 1f, 0.75f)), 0.6f, 0.5f); // its rays reached the frame edges at 30 fps
             for (int n = 0; n < 12; n++)
                 Emit(_i._sparks, pos + Vector3.up * 0.06f, (outward * 0.6f + Random.insideUnitSphere * 0.6f + Vector3.up * 0.3f), Random.Range(0.012f, 0.025f), Random.Range(0.25f, 0.45f), Pick());
             for (int n = 0; n < 2; n++)
@@ -347,7 +365,7 @@ namespace RaidRift
         public static void Land(Vector3 pos, bool heavy)
         {
             if (_i == null) return;
-            if (heavy) { CameraFeel.Shake(0.35f); Spawn(_i.groundHit, pos + Vector3.up * 0.005f, 0.4f); }
+            if (heavy) { CameraFeel.Shake(0.35f); SpawnMinor(_i.groundHit, pos + Vector3.up * 0.005f, 0.4f); }
             Emit(_i._rings, pos + Vector3.up * 0.006f, Vector3.zero, 0.05f, 0.22f, new Color(Crack.r, Crack.g, Crack.b, 0.5f));
             for (int n = 0; n < 8; n++)
             {
@@ -370,19 +388,19 @@ namespace RaidRift
             switch (action)
             {
                 case "cheer":
-                    TameBurst(Spawn(_i.firework, head + Vector3.up * 0.15f, 0.4f * k));
+                    TameBurst(SpawnMinor(_i.firework, head + Vector3.up * 0.15f, 0.4f * k));
                     break;
                 case "dance":
-                    Spawn(_i.fallingStars, head + Vector3.up * 0.2f, 0.5f * k);
+                    SpawnMinor(_i.fallingStars, head + Vector3.up * 0.2f, 0.5f * k);
                     for (int n = 0; n < 18; n++) Emit(_i._sparks, head, Random.insideUnitSphere * 0.5f + Vector3.up * 0.4f, 0.045f, 0.9f, Bright(pop));
                     break;
                 case "jump":
                     for (int n = 0; n < 18; n++) Emit(_i._streaks, pos + Vector3.up * 0.02f, new Vector3(Random.Range(-0.4f, 0.4f), Random.Range(0.6f, 1.2f), Random.Range(-0.4f, 0.4f)), 0.04f, 0.55f, Bright(pop));
-                    Spawn(_i.groundHit, pos + Vector3.up * 0.005f, 0.3f * k);
+                    SpawnMinor(_i.groundHit, pos + Vector3.up * 0.005f, 0.3f * k);
                     break;
                 case "spell":
                     // 0.6 was a near-full-screen white burst + screen-wide streak per !spell (PlaySmoke play-washout).
-                    TameBurst(Spawn(_i.impactGlow, head, 0.3f * k), 0.6f, 0.5f);
+                    TameBurst(SpawnMinor(_i.impactGlow, head, 0.3f * k), 0.6f, 0.5f);
                     for (int n = 0; n < 16; n++)
                     {
                         float a = n * Mathf.PI / 8f;
@@ -392,7 +410,7 @@ namespace RaidRift
                     break;
                 case "wave":
                 case "greet":
-                    TameBurst(Spawn(_i.hitLight, head, 0.3f * k), 0.6f, 0.5f); // Command() already flashes one: PlaySmoke play-wave was a big white halo
+                    TameBurst(SpawnMinor(_i.hitLight, head, 0.3f * k), 0.6f, 0.5f); // Command() already flashes one: PlaySmoke play-wave was a big white halo
                     for (int n = 0; n < 8; n++) Emit(_i._sparks, head, Random.insideUnitSphere * 0.35f + Vector3.up * 0.3f, 0.035f, 0.7f, Bright(pop));
                     break;
                 default:
@@ -413,7 +431,7 @@ namespace RaidRift
         {
             if (_i == null) return;
             var c = accepted ? Hex(0x59F1C8) : Hex(0xFF6A83);
-            if (accepted) TameBurst(Spawn(_i.hitLight, pos + Vector3.up * 0.15f, 0.35f * NearLens(pos)), 0.6f, 0.5f);
+            if (accepted) TameBurst(SpawnMinor(_i.hitLight, pos + Vector3.up * 0.15f, 0.35f * NearLens(pos)), 0.6f, 0.5f);
             Emit(_i._rings, pos + Vector3.up * 0.007f, Vector3.zero, 0.04f, 0.18f, new Color(c.r, c.g, c.b, 0.7f));
             for (int n = 0; n < 4; n++)
                 Emit(_i._sparks, pos + Vector3.up * 0.12f, Random.insideUnitSphere * 0.35f + Vector3.up * 0.3f, 0.014f, 0.3f, c);
