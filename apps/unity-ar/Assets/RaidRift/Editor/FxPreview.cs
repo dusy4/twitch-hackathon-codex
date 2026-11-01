@@ -124,10 +124,12 @@ namespace RaidRift.EditorTools
                         caption.Tick(true, 0);
                         caption.GetComponent<CanvasGroup>().alpha = 1f;
                         caption.GetComponent<Canvas>().enabled = true;
+                        var hearts = StreamHearts.Create(preview.camera); // concept-style hearts up the right edge
+                        hearts.PreviewNow(6);
                         Canvas.ForceUpdateCanvases();
                         var frame = preview.Capture();
                         try { preview.Save(frame, "fx-caption.png"); }
-                        finally { Object.DestroyImmediate(frame); Object.DestroyImmediate(caption.gameObject); }
+                        finally { Object.DestroyImmediate(frame); Object.DestroyImmediate(caption.gameObject); Object.DestroyImmediate(hearts.gameObject); }
                     });
                     // Numbered "!rift go to N" spots near and far (SceneTracks.Marker + its billboard), as viewers see them.
                     Stage("fx-spots.png", () =>

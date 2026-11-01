@@ -145,7 +145,7 @@ namespace RaidRift
 
         void LiveTick(WorldState world)
         {
-            if (_caption == null && arCamera != null) _caption = StreamCaption.Create(arCamera);
+            if (_caption == null && arCamera != null) { _caption = StreamCaption.Create(arCamera); StreamHearts.Create(arCamera); }
             if (_caption != null) _caption.Tick(_liveMode && StreamCaptionOn, _heroes.Count); // in the broadcast, not the HUD
             string quality = Qualities[_quality].name;
             if (!_liveMode || publisher == null)
@@ -527,6 +527,7 @@ namespace RaidRift
             WorldTags.Banner(_rift.transform.position + Vector3.up * 2.15f, arCamera, world.Raid.Test ? "TEST RAID" : "RAID",
                 world.Raid.Test ? "the rift is opening" : $"{world.Raid.From} · {world.Raid.Count} viewers", 2.4f); // charge 0.6 s → tear (camera hit) → shockwave, sparks, chips
             if (!world.Raid.Test) Sfx.Play("raid_stinger", 0.8f); // real raids get the trailer hit
+            StreamHearts.Pop(world.Raid.Test ? 5 : 12);
             if (moths != null) moths.Burst(_rift.transform.position + Vector3.up * 1.0f, -_rift.Forward, 12);
             // The rift paints the room now: switch the scan grid to the invisible occluder + paint.
             SetScanMode(2);
@@ -573,11 +574,12 @@ namespace RaidRift
                     if (!hero.Place(spawn, face)) { index++; continue; }
                     // No rift open (a viewer !joins before any raid): still a visible arrival on stream, not a pop-in.
                     RiftFx.Arrival(spawn, face * Vector3.forward, true);
+                    StreamHearts.Pop(2);
                     Fx.Sparkle(spawn + Vector3.up * 0.12f, new Color(0.35f, 0.95f, 0.78f), 18, 0.7f);
                     Sfx.PlayAt("teleport_in", spawn, 0.55f);
                 }
                 bool newAction = state.Serial != hero.ActionSerial;
-                if (newAction && hero.ActionSerial != 0 && state.Animation != "idle") { RiftFx.Command(hero.transform.position, true); RiftFx.Emote(hero.transform.position, state.Animation); } // chat command landed
+                if (newAction && hero.ActionSerial != 0 && state.Animation != "idle") { RiftFx.Command(hero.transform.position, true); RiftFx.Emote(hero.transform.position, state.Animation); StreamHearts.Pop(); } // chat command landed
                 // Planner steps with a room target ("there", the chair, the bed top) walk there, then pose.
                 Vector3 targetPos = default;
                 bool targeted = state.Target != null && sceneTracks != null && sceneTracks.TryWorld(state.Target, out targetPos);

@@ -277,6 +277,7 @@ namespace RaidRift
                     RiftFx.Arrival(_exit, Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized, Time.time - _lastArrival > 2f);
                     _lastArrival = Time.time;
                     Sfx.PlayAt("teleport_in", _exit, 0.5f);
+                    StreamHearts.Pop(2);
                 }
                 return;
             }
