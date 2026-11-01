@@ -190,7 +190,7 @@ Settings are one scrollable column:
 
 ### Demo versus Live
 
-Offline Demo uses Alice/Mage, Bob/Rogue and Charlie/Barbarian as clearly scripted test viewers. Their messages drive the same basic actions; they are not live Twitch users. A paired Demo uses the server harness and can show its separate fixtures. Selecting Live retains existing server heroes; do not identify those fixtures as real participants.
+Offline Demo uses Alice/Mage, Bob/Rogue and Charlie/Barbarian as clearly scripted test viewers. Their messages drive the same basic actions; they are not live Twitch users. A paired Demo uses the server harness and can show its separate fixtures. Selecting Live retains existing server heroes; do not identify those fixtures as real participants. The harness seeds two demo heroes (Mossling, Emberfox) at launch; a debug `reset` event clears them. From 0.21.37, if no rift is open, the first joining hero after landing tears the rift open with a non-raid "THE RIFT OPENS" banner and later joiners hop out of it (a raid still replaces it with the full raid opening; beyond 6 m from the landing spot the old poof arrival is used). With seeded heroes present, they open the rift right after landing.
 
 **Test-raid labeling:** the private debug endpoint remains callable during Live. It injects an EventSub-shaped fixture whose inbox ID starts with `debug-`; since November 1 (03:23 Kyiv server restart) the inbox consumer passes `test=true` for those IDs, so a debug raid shows the **TEST RAID** banner (no raid stinger) even after Live selection (`tests/tailnet.test.ts`). Real IRC raids are recorded with `test=false`. Still announce test raids aloud and keep a TEST RAID caption in any recording; the banner is short-lived.
 

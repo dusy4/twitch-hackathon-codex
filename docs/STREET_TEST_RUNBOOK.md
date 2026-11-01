@@ -26,7 +26,7 @@
 
 | Time | Show / ask viewers |
 |---|---|
-| 0:00–0:35 | Rift and arrivals: arranged **real raid**, or **Setup → Server & testing → Server test raid** on the private harness. Label fixtures **TEST RAID**; their names are simulated. |
+| 0:00–0:35 | Rift and arrivals: arranged **real raid**, or **Setup → Server & testing → Server test raid** on the private harness. Label fixtures **TEST RAID**; their names are simulated. Or skip the raid here: from 0.21.37 the first `!join` after landing tears the rift open itself ("THE RIFT OPENS / name drops in", no RAID text) and joiners hop out. A freshly launched harness seeds two demo heroes (Mossling, Emberfox) that would open it right after landing; the overnight restart helper (`E:\Unity\tmp\restart-server.ps1`, also used by the health watchdog) clears them with a debug `reset`, so the room starts empty. |
 | 0:35–1:10 | The stream itself shows "Type !join in chat to drop in a hero", then the command menu (0.21.6+, Setup → Go live → `"!join" hint on stream`). Both viewers `!join`; one `!wave`, other `!jump`. Leave ≥0.5 s between messages and allow Twitch delay. Show separate named heroes. |
 | 1:10–1:40 | `!w`, then `!d` separately; `!rift go to 3 and dance` using a **current visible number**. No numbers? Use `!dance`. Try `!rift sit on the chair` only with a measured labelled top. |
 | 1:40–2:05 | Stand still. Flip **Selfie** (camera-flip icon on the right rail), then return rear; wait for room tracking. If the toast says the room moved, point at the floor to land again (heroes return with arrival bursts). Unsupported? Show a rear-camera wave instead. |
