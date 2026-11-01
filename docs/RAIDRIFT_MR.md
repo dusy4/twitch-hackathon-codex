@@ -144,7 +144,7 @@ See [sidecar setup and recorded PC benchmarks](../services/ov-detector/README.md
 
 ## HUD and every settings row
 
-The phone HUD stays outside direct-publisher video. Hero name tags, speech bubbles, numbered spots and world banners are scene content and reach the broadcast. Setup inputs are password-masked where appropriate. A separate phone screen recording can still capture setup; never record key entry.
+The phone HUD stays outside direct-publisher video. Hero name tags, speech bubbles, numbered spots and world banners are scene content and reach the broadcast. So do the stream hearts (0.21.27+, `StreamHearts.cs`): hearts float up the lower-right edge when chat acts (1 per landed command, 2 per arriving viewer, 5 on a test raid, 12 on a real raid; at most 10 on screen, lower-left in selfie). Setup inputs are password-masked where appropriate. A separate phone screen recording can still capture setup; never record key entry.
 
 | Visible control | Behavior |
 |---|---|
