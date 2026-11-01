@@ -139,9 +139,10 @@ export class TwitchIrc {
       ])
         ws.send(command);
       // Twitch only PINGs about every 5 minutes, so a quiet channel would trip the
-      // watchdog. Ask for a PONG ourselves whenever the wire has been idle.
-      const idleMs = this.options.idleMs ?? 45000;
-      const timeoutMs = this.options.timeoutMs ?? 90000;
+      // watchdog. Ask for a PONG ourselves whenever the wire has been idle; a dead
+      // link (PC network drop) is then noticed within ~60 s, not half a short stream.
+      const idleMs = this.options.idleMs ?? 30000;
+      const timeoutMs = this.options.timeoutMs ?? 60000;
       this.watchdog = setInterval(
         () => {
           const idle = Date.now() - this.lastWire;
@@ -174,8 +175,8 @@ export class TwitchIrc {
       this.status.error ||= "Twitch IRC disconnected; retrying";
       this.handlers.changed?.();
       const delay = Math.min(
-        30000,
-        (this.options.retryMs ?? 1000) * 2 ** Math.min(this.attempt++, 5),
+        15000,
+        (this.options.retryMs ?? 1000) * 2 ** Math.min(this.attempt++, 4),
       );
       this.retry = setTimeout(() => this.connect(), delay);
       this.retry.unref();
