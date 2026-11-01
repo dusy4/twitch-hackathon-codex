@@ -342,7 +342,7 @@ namespace RaidRift
             if (moths != null)
             {
                 moths.FloorY = room.FloorY;
-                moths.Anchor = _follow && room.FloorUnderCamera(out var me) ? me : _rift != null ? _rift.transform.position : _origin;
+                moths.Anchor = _follow && FollowCenter(out var party) ? party : _rift != null ? _rift.transform.position : _origin; // following: around the party in shot, not around the phone
             }
             if (!UseServer) _playground.Tick(NowMs, tracking && _landed);
             var world = CurrentWorld();
@@ -762,16 +762,16 @@ namespace RaidRift
 
         /// <summary>VFX-PLAN portal timeline: 0–0.6 s anticipation pull-in, 0.6 s tear with the camera hit, floor
         /// shockwave, outward sparks, heavy obsidian chips and low smoke; RiftWorld's own open/boom runs underneath.</summary>
-        System.Collections.IEnumerator TearSequence(RiftWorld rift, float scale, bool raid)
+        System.Collections.IEnumerator TearSequence(RiftWorld rift, float scale, bool raid, float feel = 1f)
         {
             if (rift == null) yield break;
             var foot = rift.transform.position;
             var center = foot + Vector3.up * 0.95f * scale;
             RiftFx.Charge(center, rift.Forward, scale);
             // Rising rumble while it charges, then the tear hits.
-            for (float t0 = 0f; t0 < 0.6f; t0 += Time.deltaTime) { CameraFeel.Shake(0.15f + 0.45f * (t0 / 0.6f)); yield return null; }
+            for (float t0 = 0f; t0 < 0.6f; t0 += Time.deltaTime) { CameraFeel.Shake((0.15f + 0.45f * (t0 / 0.6f)) * feel); yield return null; }
             if (rift == null || (selfie != null && selfie.WorldPaused)) yield break; // SELFIE: no delayed floor burst.
-            RiftFx.Tear(center, rift.Forward, foot, scale, raid);
+            RiftFx.Tear(center, rift.Forward, foot, scale, raid, feel);
         }
 
         float _nextRelocate;
@@ -798,7 +798,8 @@ namespace RaidRift
             _raidOpened = Time.time;
             if (moths != null) moths.Burst(_rift.transform.position + Vector3.up * 1.0f, -_rift.Forward, 8);
             Sfx.Play("rift_open", 0.7f);
-            StartCoroutine(TearSequence(_rift, 0.8f, false));
+            // Every ~12 s on a street walk: same visuals, but a light camera feel (full rumble + hit are for raids).
+            StartCoroutine(TearSequence(_rift, 0.8f, false, 0.4f));
             hud.Toast("The rift followed you", 2f);
             _nextRelocate = Time.time + 12f;
         }

@@ -279,10 +279,10 @@ namespace RaidRift
         }
 
         /// <summary>The tear: one camera hit, floor shockwave, sparks, chips, smoke. scale 1 = 1.3 m world rift.</summary>
-        public static void Tear(Vector3 center, Vector3 facing, Vector3 floor, float scale = 1f, bool raid = false)
+        public static void Tear(Vector3 center, Vector3 facing, Vector3 floor, float scale = 1f, bool raid = false, float feel = 1f)
         {
             if (_i == null) return;
-            CameraFeel.Impact(raid ? 1f : 0.72f);
+            CameraFeel.Impact((raid ? 1f : 0.72f) * feel);
             Emit(_i._flares, center - facing.normalized * 0.25f * scale, Vector3.zero, 1.2f * scale, 0.18f, Crack);
             // Shockwave: thin ring 0.08 → 0.8 m over 0.36 s (+ delayed echo for raids).
             Emit(_i._rings, floor + Vector3.up * 0.008f, Vector3.zero, 0.16f * scale, 0.36f, new Color(Seam.r, Seam.g, Seam.b, 0.65f));
