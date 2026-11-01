@@ -1865,6 +1865,28 @@ export async function createApp(
       throw new GameError("REVOKED", "Pairing revoked", 401);
     return p.room;
   }
+  /** Labelled test raid straight on a world: the rift opens, then simulated raiders type !join like real raiders. */
+  async function testRaid(w: World, from: string, chatters: number, viewers?: number) {
+    await w.raid(`debug-${randomUUID()}`, simulatedId(`raid:${from}`), from, viewers ?? Math.max(chatters, 12), true);
+    const first = ["Pixel", "Mossy", "Ember", "Luna", "Sprout", "Nova", "Pebble", "Rune"];
+    const second = ["Fox", "Wisp", "Knight", "Bean", "Moth", "Spark", "Toad", "Owl"];
+    const used = new Set<string>();
+    const count = Math.min(Math.max(chatters, 1), 8);
+    for (let i = 0; i < count; i++) {
+      let name = "";
+      do
+        name = `${first[Math.floor(Math.random() * first.length)]}${second[Math.floor(Math.random() * second.length)]}${Math.floor(Math.random() * 90 + 10)}`;
+      while (used.has(name));
+      used.add(name);
+      setTimeout(() => {
+        void (async () => {
+          const who = await account(db, simulatedId(name), name, true);
+          await chatCommand(w, who, "!join", `debug-${randomUUID()}`);
+        })().catch(() => metrics.failures++);
+      }, (i + 1) * 600);
+    }
+    return count;
+  }
   const NATIVE_HERO_LIMIT = 12;
   const nativeShown = new Map<string, string[]>();
   const liveReaders = new Map<string, TwitchIrc>();
@@ -1910,6 +1932,15 @@ export async function createApp(
           }
         },
         chat: async (m) => {
+          // The broadcaster (only) can fire a labelled test raid from chat: a demo needs a raid without a second live channel.
+          if (
+            liveReaders.get(room) === reader &&
+            /^!testraid\s*$/i.test(m.text) &&
+            m.name.toLowerCase() === normalizeChannel(channel)
+          ) {
+            await testRaid(w, "CozyRaider", 3);
+            return;
+          }
           if (
             liveReaders.get(room) !== reader ||
             (!CHAT_COMMAND.test(m.text) && chatIntent(m.text) === null)
@@ -2386,29 +2417,8 @@ export async function createApp(
       // Self-paired phone rooms (phone-<hash>) have no Twitch-style id for simulated EventSub: run the labelled test
       // raid straight on the world, then let the simulated raiders type !join like real raiders would.
       if (d.type === "raid" && room.startsWith("phone-")) {
-        const from = d.from || "CozyRaider";
-        await w.raid(
-          `debug-${randomUUID()}`,
-          simulatedId(`raid:${from}`),
-          from,
-          d.viewers ?? Math.max(d.chatters ?? 0, 12),
-          true,
-        );
-        const used = new Set<string>();
-        const stagger = options.debugChatStaggerMs ?? 400;
-        const count = Math.min(d.chatters ?? 3, 8);
-        for (let i = 0; i < count; i++) {
-          let name = "";
-          do
-            name = `${RAIDER_A[Math.floor(Math.random() * RAIDER_A.length)]}${RAIDER_B[Math.floor(Math.random() * RAIDER_B.length)]}${Math.floor(Math.random() * 90 + 10)}`;
-          while (used.has(name));
-          used.add(name);
-          await later((i + 1) * stagger, async () => {
-            const who = await account(db, simulatedId(name), name, true);
-            await chatCommand(w, who, "!join", `debug-${randomUUID()}`).catch(() => undefined);
-          });
-        }
-        return { ok: true, queued: count };
+        const queued = await testRaid(w, d.from || "CozyRaider", d.chatters ?? 3, d.viewers);
+        return { ok: true, queued };
       }
       if (
         ["raid", "chat", "duplicate_raid", "revoke"].includes(d.type) &&
