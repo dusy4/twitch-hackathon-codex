@@ -689,6 +689,16 @@ namespace RaidRift
         static readonly string[] RestEmotes = { "cheer", "jump", "pickup", "spell", "wave", "jump" };
 
         /// <summary>Between the landing spot and the streamer, so the party explores the room you are in.</summary>
+        /// <summary>Open-floor roam goals at the phone's feet or behind it put a hero into the lens (PlaySmoke
+        /// play-crowd) or off the stream.</summary>
+        bool NearOrBehindLens(Vector3 p)
+        {
+            var cam = arCamera.transform;
+            var d = Vector3.ProjectOnPlane(p - cam.position, Vector3.up);
+            var fwd = Vector3.ProjectOnPlane(cam.forward, Vector3.up);
+            return d.magnitude < 0.9f || (fwd.sqrMagnitude > 1e-4f && Vector3.Dot(d, fwd.normalized) < 0f);
+        }
+
         Vector3 RoamAnchor()
         {
             if (room.FloorUnderCamera(out var floor)) return Vector3.Lerp(_origin, floor, 0.5f);
@@ -739,7 +749,7 @@ namespace RaidRift
                 {
                     var c = Random.insideUnitCircle * radius;
                     if (!room.Sample(anchor + new Vector3(c.x, 0f, c.y), 0.4f, out var p)) continue;
-                    if ((p - pos).magnitude < 0.4f || !room.Reachable(pos, p, _roamPath)) continue;
+                    if ((p - pos).magnitude < 0.4f || NearOrBehindLens(p) || !room.Reachable(pos, p, _roamPath)) continue;
                     st.goal = p;
                     picked = true;
                 }

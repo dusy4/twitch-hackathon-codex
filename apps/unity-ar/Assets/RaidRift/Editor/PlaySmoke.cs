@@ -61,7 +61,8 @@ namespace RaidRift.EditorTools
                 foreach (Transform moth in mothRoot.transform)
                 {
                     float d = Vector3.Distance(moth.position, app.arCamera.transform.position);
-                    if (d < 0.55f && !_mothNear) { _mothNear = true; Problems.Add($"moth {d:0.00} m from the lens"); }
+                    // Clamp is 0.6 m; the camera moves between the moth update and this check, hence 0.45.
+                    if (d < 0.45f && !_mothNear) { _mothNear = true; Problems.Add($"moth {d:0.00} m from the lens"); }
                     _mothMin = Mathf.Min(_mothMin, d);
                 }
             if (_frame % 15 == 0 && app.arCamera != null) Washout(app.arCamera);
@@ -204,6 +205,30 @@ namespace RaidRift.EditorTools
                     if (rift == null) Problems.Add("real raid: no rift opened");
                     if (heroes.Count != 3) Problems.Add("real raid: expected 3 heroes, got " + heroes.Count);
                     Snapshot(app.arCamera, "play-realraid-after");
+                    // Crowd: 10 more viewers join (13 heroes), then everyone fires a command in the same tick.
+                    for (int i = 0; i < 10; i++)
+                        app.server.World.Heroes.Add(new HeroState { Id = "c-" + i, Name = "crowd_" + i, X = 0.2f + 0.06f * i, Y = 0.5f, Serial = 1, Message = "!join" });
+                    _serverStep = 8; _serverAt = t;
+                    break;
+                case 8:
+                    if (t - _serverAt < 5f) break;
+                    var crowdActs = new[] { "wave", "jump", "dance", "cheer", "spell" };
+                    int ci = 0;
+                    foreach (var hs in app.server.World.Heroes) { hs.Animation = crowdActs[ci % crowdActs.Length]; hs.Serial += 100; hs.Message = "!" + hs.Animation; ci++; }
+                    _serverStep = 9; _serverAt = t;
+                    break;
+                case 9:
+                    if (t - _serverAt < 0.6f) break;
+                    if (heroes.Count != 13) Problems.Add("crowd: expected 13 heroes, got " + heroes.Count);
+                    var minor = typeof(RiftFx).GetField("_minor", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null) as System.Collections.IList;
+                    int liveFx = 0; if (minor != null) foreach (var o in minor) if ((Object)o != null) liveFx++;
+                    if (liveFx > 14) Problems.Add("crowd: chat FX budget exceeded (" + liveFx + ")");
+                    int full = 0, tagsN = 0;
+                    var tags = typeof(WorldTags).GetField("_tags", BindingFlags.Static | BindingFlags.NonPublic).GetValue(null) as System.Collections.IDictionary;
+                    foreach (var tg in tags.Values) { tagsN++; var last = tg.GetType().GetField("last").GetValue(tg) as string; if (last != null && last.Contains("\n")) full++; }
+                    if (full > 6) Problems.Add("crowd: " + full + " full tags (max 6)");
+                    Debug.Log($"[RaidRift] playsmoke crowd: heroes {heroes.Count}, tags {tagsN} ({full} with command), live chat FX {liveFx}");
+                    Snapshot(app.arCamera, "play-crowd");
                     Debug.Log("[RaidRift] playsmoke server phase: done, heroes " + heroes.Count);
                     typeof(ServerConnection).GetProperty("World").GetSetMethod(true).Invoke(app.server, new object[] { null });
                     typeof(ServerConnection).GetProperty("Connected").GetSetMethod(true).Invoke(app.server, new object[] { false });
