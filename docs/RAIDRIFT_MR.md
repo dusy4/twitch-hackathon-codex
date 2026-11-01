@@ -44,7 +44,7 @@ The PC handles accounts, input ownership, bounded plans, world snapshots and det
 | Route | Use |
 |---|---|
 | `GET /v1/debug/pair` | Private debug harness only: obtains a capture token. Production uses a Creator Studio mobile token. |
-| `GET /v1/native/world` | Bearer-authenticated snapshot; the client waits about 150 ms after a successful reply before polling again. At most 12 heroes are imported; when the room has more, the server lists the most recently active first so real chatters are not hidden behind idle practice heroes. |
+| `GET /v1/native/world` | Bearer-authenticated snapshot; the client waits about 150 ms after a successful reply before polling again. At most 12 heroes are imported; when the room has more, the server keeps a stable visible 12 and swaps in a hidden hero only when it acted at least 10 s more recently than the stalest visible one, so real chatters are not hidden behind idle practice heroes and nobody flickers. |
 | `POST /v1/native/tracks` | Up to 50 phone targets, about every 0.4 s; server timestamps receipt. |
 | `POST /v1/native/frame` | One downscaled displayed-camera JPEG about every 1.5 s (every 3 s while broadcasting, from 0.21.4) while paired, landed and tracking; vision consent is checked on the server. |
 | `POST /v1/live/channel`, `GET /v1/live/status`, `DELETE /v1/live/channel` | Select, inspect and stop the real Twitch IRC reader for the paired room. |
