@@ -1,54 +1,67 @@
-# RaidRift Devpost video: 2:45 edit
+# RaidRift Devpost video: 2:45 shot list (record November 1, 2026)
 
-Target **165 seconds**, below the under-three-minute requirement. Submission deadline: **November 2, 2026, 2:00 PM Pacific**. The [official overview](https://twitchcon-codex.devpost.com/) asks for a working Twitch experience and evidence of Codex's contribution; [rules §6](https://twitchcon-codex.devpost.com/rules) names four equally weighted judging criteria. See [research §1](research/2026-10-31-codex-research-hackathon-irl-perception-planner.md#1-devpost-requirements-judging-eligibility-and-presentation).
+Target **2:45**, under the 3:00 limit. Deadline **November 2, 2026, 2:00 PM Pacific**. Devpost asks for the project **working on Twitch** and **how Codex contributed** ([overview](https://twitchcon-codex.devpost.com/), [rules](https://twitchcon-codex.devpost.com/rules)).
 
-This is a **recording plan**, not a report of captured footage or a claim that device tests have passed. Record the [street rehearsal](STREET_TEST_RUNBOOK.md) first. Use only capabilities demonstrated by the exact submitted APK; replace failed shots with the truthful alternatives below.
+This is a recording plan, not captured footage. Show only what the 0.23.3 APK actually does on camera. If a shot fails, use its fallback; never fake it.
 
-## Shot list and narration
+## Capture setup (two recordings, synced later)
 
-| Time | Picture / action | On-screen caption | Voice-over |
-|---|---|---|---|
-| **0:00–0:12** | Cold open on received Twitch video: original purple voxel rift, hero entrance, camera parallax. Keep a small Twitch channel/chat frame visible. | **RaidRift — your Twitch community, in your world**. Add **TEST RAID** if synthetic. | “RaidRift turns a Twitch stream into a shared adventure. Tiny viewer heroes step through a rift into the streamer's camera view.” |
-| **0:12–0:32** | Two real viewer accounts send `!join`. With no rift open yet (0.21.37+), the first `!join` tears the rift open ("THE RIFT OPENS / name drops in") and both heroes hop out; keep the landing spot in view within ~4 m. Show each name above a different hero; one waves; hearts float up the right edge. Retain the complete command-to-result sequence. | **Real Twitch chat → each viewer's own hero** | “Each participating viewer controls their own character. These two real viewers join from chat, and their heroes appear separately in the same scene.” |
-| **0:32–0:57** | Continuous shot: one viewer sends `!jump`; the other sends `!rift go to 3 and dance` using a current visible marker. Hold long enough to see both commands reach the received video. | **Chat commands · numbered destinations · natural language**. Show exact messages and honest delivery delay. The on-stream menu names only a spot number that is actually visible (0.21.45+). | “Chat can jump, wave, or choose a numbered destination. A request becomes bounded virtual actions for that viewer, with a predictable command path and a planner for more flexible language.” |
-| **0:57–1:20** | Brief phone inset shows Mesh/Floor view, then clean Twitch view. Pan around a measured bench/chair; show approach or hop to a genuinely reachable top, if rehearsed. | **Scanned room mesh → live NavMesh → reachable paths** | “The phone measures surfaces, builds a navigation map and finds paths for the party. Object labels connect words such as ‘chair’ to a measured location. If a target is missing, the system can refuse the request.” |
-| **1:20–1:40** | Arranged real raid with source/count visible, or clearly labelled owner test raid captured before Live selection. Use a real chat interaction immediately afterward. | **Incoming Twitch raid** or **TEST RAID — simulated owner input** | Real: “An incoming raid opens the rift. Twitch supplies the source and viewer count; named heroes come from viewers who participate.” Test: “This labelled test raid rehearses the entrance. Real chat still controls the individual heroes you see here.” |
-| **1:40–1:58** | Stationary selfie flip and return, then normal-pace safe walking with Follow me (0.21.23+ keeps the party ~1.5 m ahead in frame; it turns and waves when the streamer stops). If either fails rehearsal, replace with rear-camera hero close-up and Reduced motion control. | **A party that travels with the streamer**; label any viewport selfie fallback. | Passed selfie: “The party can join a selfie, then return to the room. Following keeps the community near the streamer as the scene changes.” Fallback: “The streamer keeps control of the experience, including following, sound and reduced motion.” |
-| **1:58–2:12** | Phone LIVE/bitrate chip inset alongside actual received Twitch A/V; one audible cue and mic line. Optional 3-second Extension fixture shot only if clearly labelled. | **Phone → Twitch: composed video + mic + game audio**. Optional: **Extension — local test; public setup pending**. | “The phone publishes the finished image and audio to Twitch. A separate connection brings chat back from the PC. The optional Extension adds a viewer controller; public installation still needs owner setup and Twitch review.” |
-| **2:12–2:35** | Three fast evidence cuts: actual Codex development/research transcript; relevant code/test; branch history and resulting scene. Show readable paths and commit IDs, not decorative terminal scrolling. | **Built with Codex** → **bounded planner + research** → **IRC / Extension tests** → **publisher / detector checks** | “Codex contributed research and implementation work across the bounded planner, Twitch input and Extension backend, and the Android publisher and detector. Here are the actual source files and validation records. We separate local software checks from phone and live-service testing.” |
-| **2:35–2:45** | Return to the real received stream: two heroes wave, owner ends. End card with repo, install-guide link and exact demonstrated build version. | **RaidRift — bring chat through the rift**. **Source + setup + known limits in README** | “RaidRift gives viewers a place inside an IRL adventure. Source, setup instructions and honest test status are included with the project.” |
-
-Keep narration conversational; leave action shots breathing room. Do not speed up the continuous chat-to-result proof to imply lower latency. Use game audio at a level that leaves speech clear. Total timeline is exactly **2:45**; credits/links must fit inside it.
-
-## Concrete Codex evidence to capture
-
-Use actual build-thread screenshots/session evidence to support attribution. A commit's title or author alone does not establish which tool wrote every line. The branch commits below prove the feature chronology; pair them with the corresponding Codex session or docs rather than attributing all integration work automatically.
-
-| Evidence | Relevant branch history / source | Show |
+| Source | What | Settings |
 |---|---|---|
-| Planner, target words and research | `ae02838b25fb` planner synonyms/tailnet; `840000642159` research/docs. `apps/api/compiler.ts`, `world.ts`, `targets.ts`; research report linked above. | One bounded typed plan or missing-target case, plus the recorded research discussion. The October 31 progress entry records a 536 ms server planner example; that is not a phone round-trip latency claim. |
-| IRC and Extension | `45a13ae53f0c`; `apps/api/twitch-irc.ts`, `extension.ts`, `apps/twitch-extension`. [ADR-011](ADR-011-live-extension.md). | The real Codex work record and [verification receipt](../artifacts/extension-verification.json): 91 Node passes / one skip, fixture-based browser tests, read-only IRC smoke. |
-| Direct publisher | `676b94b82a8c`; live Unity `Scripts/Live/*`, Android plugin; `Tools/live-plugin/VERIFICATION.md`. | NV12/audio architecture and actual standalone checks. Do not label a smoke APK as the tested RaidRift app. |
-| Room map and detector | `8f6028bbdbf9`; live Unity `RoomNavigation.cs`, `Perception/ObjectDetector.cs`, `SurfaceLabels.cs`, `Editor/DetectorSelfTest.cs`. | Codex discussion/review evidence, real-image annotation or measured-room result from the exact build. Synthetic annotations must be labelled. |
-| Iteration and design | `efb167f619b6` effects/Extension art; `e1c6405d59e0` camera-first HUD/scanning fixes. | Before/after from actual recordings, with version labels; no fixture preview passed off as live AR. |
+| **A: phone screen recording** | The RaidRift app while live (Android screen recorder, *no* mic, so you don't double the audio). Shows the HUD: LIVE timer, bitrate, chat state. | Start it before Go live. Mask the stream-key entry (enter the key before you start recording). |
+| **B: PC screen recording** | `https://www.twitch.tv/dusyaaaaaaaa_` in a browser, **logged in as the second viewer account**, with the theatre/chat layout and the RaidRift Extension panel visible. This is the "working on Twitch" proof: received video + real chat + Extension. | OBS window capture or Xbox Game Bar, 1080p, desktop audio on (it carries the received stream audio). |
+| C: PC screen recording (separate, any time) | Codex evidence: transcripts/session ids, code, commits. | Readable zoom, no secrets, no env files. |
 
-Record the principal Codex build session ID for the submission form using the owner's actual session. Do not invent an ID or use a research-only session as the entire build history.
+Prep: install `RaidRift-latest.apk` (v0.23.3), grant camera + mic, land in a well-lit room with a **chair or bench** in view, set channel `dusyaaaaaaaa_` + key, Go live. Second account: on the Extension Testing Account Allowlist, Extension activated as **Panel**, and "Use my Twitch identity" pressed once so the hero gets the real name. Raid: the second account (or a third) goes live briefly to send `/raid dusyaaaaaaaa_`. **The public server refuses "Server test raid" for phone rooms**, so plan a real raid or use the cold-open fallback.
+
+## Shot list
+
+| Time | Picture (source) | On-screen caption | Voice-over |
+|---|---|---|---|
+| **0:00–0:15** Cold open: portal raid | B full frame: Twitch channel page, the phone's stream shows the floor; chat shows the raid notice. Cut to A as the voxel portal tears open on the floor with `RAID · <name> · <n>`; the first raider's hero walks out. | **RaidRift: your Twitch raid, in the streamer's real world** | "This is a live Twitch stream from my phone. When a raid comes in, a portal tears open on my actual floor." |
+| *fallback* | No raid available: open on a hero poofing in after `!join`. No portal claim. | **Viewer joins from Twitch chat** | "When a viewer joins, their hero drops into my actual room." |
+| **0:15–0:40** Viewer `!join` + names | Split: B (chat: second account types `!join`; you also have one more viewer type `!join` if possible) \| A (heroes appear, name tags match the chat names). The stream caption "Type !join in chat…" is visible in the broadcast. | **Real Twitch chat → each viewer gets their own named hero** | "Every viewer who types !join gets their own hero, named after their Twitch account. They walk on the surfaces the phone scanned." |
+| **0:40–1:15** Commands + natural language + object target | Continuous, uncut: B chat `!jump` → A hero jumps. `!rift go to 3 and dance` (a number visible on screen) → walks to spot 3, dances. Then natural language with an object: `!rift go to the chair and sit` (or `walk to the bench`) → the hero walks to the detected chair. Optional: a Ukrainian phrase `танцюй`. | **Keywords: instant · Natural language: LLM → bounded, typed plan · Targets: on-device YOLOX-S detections + numbered spots** | "Simple commands are instant. Free-form requests go to a small language model that can only output a short, validated plan: walk, sit, emote, on targets the phone has actually detected. Here it finds the chair." |
+| *fallback* | The chair isn't detected (no `sees: chair` in diagnostics): use `!rift go over there and wave` or a second spot number. | **Measured destinations** | Don't narrate object recognition. |
+| **1:15–1:35** Extension d-pad | B: the second account opens the RaidRift **panel** under the video → hero card shows their name → **holds the d-pad arrows** → the hero walks on stream (A inset) → taps **dance**. | **Twitch Extension (Local Test): hold-to-walk controls** | "Viewers can also drive their hero from a Twitch Extension: hold to walk, tap to emote. It runs in Twitch's Local Test today; public install needs Twitch review." |
+| **1:35–1:55** Selfie gyro | A: streamer stands still, taps **Selfie**, turns slowly; the party is drawn where it stands in the front camera; flip back and the heroes are where they were. | **Selfie flip: heroes stay in place** *(label "test footage" if not live)* | "Flip to selfie and they're still there. The phone's gyro keeps them where they stand in the room." |
+| *fallback* | Selfie misbehaves: rear-camera close-up of the party waving at the lens. | — | Skip the selfie claim. |
+| **1:55–2:10** Live HUD | A: the HUD close-up: `● LIVE 02:01`, bitrate/fps, `#dusyaaaaaaaa_ chat connected`, mic on. B small inset: the same moment received on Twitch with sound. | **Phone → Twitch RTMPS: AR video + mic + game audio. No OBS.** | "There's no PC in the video path. The phone composites the AR, mixes my mic with the game sound and streams straight to Twitch." |
+| **2:10–2:35** Codex evidence | C: three quick cuts with readable text: (1) a Codex session transcript (research or extension build) with its session id; (2) `apps/api/compiler.ts` / `world.ts` planner validation or `twitch-irc.ts`; (3) `git log` on `fix/android-ar-recovery` + the matching scene. | **Built with Codex: research · planner · Twitch IRC + Extension · Android publisher · detector** | "Codex did the research and most of the implementation: the bounded planner, the Twitch chat reader and Extension backend, the Android streaming bridge and the object detector, plus code reviews along the way." |
+| **2:35–2:45** End card | B: two heroes wave on stream; streamer double-taps End. Card: repo link, `raidrift.12industries.com/apk/RaidRift-latest.apk`, "v0.23.3". | **RaidRift: bring chat through the rift** | "RaidRift. Source, install link and honest limits are in the README." |
+
+Rules for the edit: don't speed up the chat → hero sequence (Twitch delay is real). Keep game audio below the voice. No Follow-me or auto-follow shots: Follow is a manual extra, not part of this story. If a raid was a test fixture, it must say **TEST RAID** on screen (not possible on the public server today anyway).
+
+## Codex evidence
+
+Codex CLI session ids recorded in the run logs (`E:\Unity\tmp\codex-*.log`, first line `session id:`). Pick 1–2 to show on screen:
+
+| Work | Codex session id |
+|---|---|
+| Hackathon/IRL perception/planner research | `01a19151-0d6f-7703-8dfd-f6251bc18725` |
+| Twitch Extension + EBS build | `01a1929a-43d3-7052-ad5b-d3d56cf05460` |
+| Extension design pass | `01a192d1-3598-72a1-8bf0-538de85d805b` |
+| Direct RTMPS live publisher | `01a1928d-6c87-7371-a012-ccd9c12fa904` |
+| YOLOX detector integration | `01a191e6-837e-70b3-82e4-1738a39515b6` |
+| Effects (VFX) pass | `01a1928d-dfa0-7293-b7d0-66a5fbd1a8fd` |
+| Selfie mode | `01a1938b-00e0-7661-99cc-d8d8083629b0` |
+| API / live / diff reviews | `01a193c8-fc71-7101-bf3c-b4d4df6859d8`, `01a193c5-2dc8-7e71-aead-98de509e8535`, `01a19471-c4d5-7261-87f6-de17ae441323` |
+
+The **principal Codex build thread** (the Codex app thread this repo was handed off in) is not in the repo. Get its id with `/status` in that thread and put it on the Devpost form. Don't invent one.
+
+Code to show: `apps/api/compiler.ts` (typed plan validation), `apps/api/world.ts` (LLM-first + budget), `apps/api/chat-intent.ts` (keyword + Ukrainian intents), `apps/api/twitch-irc.ts`, `apps/api/extension.ts`, Unity `Scripts/Live/LivePublisher.cs`, `Scripts/Perception/ObjectDetector.cs`.
 
 ## Judging coverage
 
-| Published criterion | Planned proof |
+| Criterion | Where |
 |---|---|
-| **Innovation/Idea** | 0:00–0:12 and 1:20–1:40: raids become a portal into measured physical space. |
-| **Potential Impact** | 0:12–0:57: two independent viewers cause visible, entertaining actions without taking over the streamer's phone. |
-| **Technological implementation** | 0:57–1:20, 1:58–2:35: navigation, received Twitch A/V, bounded control and concrete Codex/testing evidence. |
-| **Design** | Throughout: readable actions/names, restrained HUD, coherent portal/audio, accessible streamer controls. |
+| Innovation | 0:00–0:15 raid → portal in physical space; 0:40–1:15 chat words grounded to real objects. |
+| Impact | 0:15–1:35: several viewers act at once from chat and the Extension without taking over the phone. |
+| Technical | 0:40–1:15 bounded planner + on-device detection; 1:55–2:10 phone-native RTMPS; 2:10–2:35 Codex evidence. |
+| Design | Name tags, caption, portal, hearts, readable HUD throughout. |
 
-## Truthful recording and submission gates
+## Submission gates
 
-- **Must capture:** a real Twitch receiving page, real viewers, one continuous chat → correct hero → received-video result, and concrete Codex contribution evidence. The existing test receipts alone are insufficient video proof.
-- **Raid fallback:** if no real raid is available, retain a visible **TEST RAID** caption throughout that shot. The private harness permits debug raid fixtures during Live; use Setup → Server & testing → Server test raid, and keep their synthetic origin explicit. Since November 1 the server marks these fixtures as test raids even in Live mode, so the phone shows a TEST RAID banner; the banner is brief, so add the caption yourself as well. Never call seeded heroes real raiders.
-- **Perception fallback:** if chair recognition/navigation fails, demonstrate a verified numbered floor target and say “measured destinations”; do not narrate successful chair contact. If selfie is unsupported, use rear-camera action. If received A/V fails, fix/re-record before claiming the phone-to-Twitch loop.
-- **Extension fallback:** omit it or show a labelled local-test inset. Console registration is done for private Local Test (installed on the owner's channel, activation pending; see [TWITCH_EXTENSION.md](TWITCH_EXTENSION.md#current-status-november-1-2026)); a public HTTPS EBS, the real iframe identity flow on Twitch and review are still open. Do not promise a public install button. No Channel Points integration claim.
-- **Economy:** omit a phone Shards/quest reward shot unless a separate authoritative server test has actually been captured. Local Rift Trail completion pays no Shards.
-- **Privacy/rights:** mask stream keys, bearer tokens, env files and private account details. Use consenting participants and original/licensed art/audio; retain required notices. Avoid reference-game footage.
-- **Final package:** exact demonstrated APK/source revision, English setup, repository access for judges, source/assets/licenses, known limits, video link and Codex session ID. Upload to YouTube as allowed by the rules/FAQ; verify playback and final duration below 3:00. Check Devpost shows **Submitted**, not just draft, well before **2:00 PM Pacific November 2**. [Official checklist](https://twitchcon-codex.devpost.com/), [FAQ](https://twitchcon-codex.devpost.com/resources).
+- Must capture: real Twitch page (B), real chat from a second account, one continuous chat → hero → received-video result, the Extension on Twitch, and Codex evidence.
+- Mask stream keys, tokens, env files and account emails.
+- Final package: repo access for judges (the repo is **private** right now; make it public or invite them), English README, video link (YouTube, check that it is under 3:00), Codex session id, and the APK version shown (0.23.3). Check that Devpost shows **Submitted** well before 2:00 PM Pacific on November 2.

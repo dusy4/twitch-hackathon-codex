@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en" class="no-js">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RaidRift: your Twitch raid walks into your room</title>
+<meta name="description" content="RaidRift is an Android AR app for IRL Twitch streamers. Viewers raid or type !join, a portal tears open in your real room, and each viewer's tiny named hero steps out and takes orders from chat.">
+<meta name="theme-color" content="#08060d">
+<meta property="og:title" content="RaidRift: your Twitch raid walks into your room">
+<meta property="og:description" content="Android AR for IRL streamers. Chat spawns tiny heroes in your real room and tells them what to do.">
+<meta property="og:image" content="assets/img/og.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/space-grotesk-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/inter-latin-400.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
+<script>document.documentElement.className="js"</script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="nav" id="top">
+  <div class="wrap nav__in">
+    <a class="brand" href="#top" aria-label="RaidRift home">
+      <img src="assets/favicon.svg" width="28" height="28" alt="">
+      <span>RaidRift</span>
+    </a>
+    <nav class="nav__links" aria-label="Sections">
+      <a href="#how">How it works</a>
+      <a href="#viewers">Viewers</a>
+      <a href="#tech">Tech</a>
+      <a href="#status">Status</a>
+    </nav>
+    <a class="btn btn--sm btn--primary" href="https://raidrift.12industries.com/apk/RaidRift-latest.apk" download>Get the APK</a>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero__glow" aria-hidden="true"></div>
+  <div class="wrap hero__grid">
+    <div class="hero__copy">
+      <p class="eyebrow"><span class="dot dot--live"></span>Android AR for IRL Twitch streamers</p><!-- taste-skill-ignore: the category line is the 5-second answer to "what is it" -->
+      <h1>Your raid walks <br class="br-d">into your room.</h1>
+      <p class="lede">Viewers raid or type <span class="cmd">!join</span>. A portal tears open on your real floor and every viewer's tiny named hero steps out. Then chat tells them what to do.</p>
+      <div class="cta">
+        <a class="btn btn--primary btn--lg" href="https://raidrift.12industries.com/apk/RaidRift-latest.apk" download>
+          <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v9.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.4L11 13.6V4a1 1 0 0 1 1-1Zm-7 15a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z"/></svg>
+          Download APK
+        </a>
+        <a class="btn btn--ghost btn--lg" href="#demo">
+          <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5.5v13a1 1 0 0 0 1.5.9l10.5-6.5a1 1 0 0 0 0-1.8L9.5 4.6A1 1 0 0 0 8 5.5Z"/></svg>
+          Watch demo
+        </a>
+      </div>
+      <ul class="facts" aria-label="Quick facts">
+        <li>Free</li><li>No account: pairs on first open</li><li>ARCore Android phones</li>
+      </ul>
+    </div>
+
+    <figure class="hero__stage">
+      <div class="stage">
+      <div class="phone phone--back"><img src="assets/img/raid.webp" width="720" height="1280" alt="RaidRift raid cinematic: a violet voxel portal opens with the banner RAID, BigStreamer, 42 viewers, and two heroes named mothmage and pixelknight walking out." fetchpriority="high"></div>
+      <div class="phone phone--front"><img src="assets/img/ar-room.webp" width="720" height="1560" alt="Real phone capture of RaidRift: a tiny wizard hero named Alice stands on a carpet in a real room, on a violet and mint scanned floor, with chat lines in English and Ukrainian at the bottom." fetchpriority="high"></div>
+      </div>
+      <figcaption>Real captures, build 0.23. Right: Alice on a real carpet after chat typed <span lang="uk">«сядь»</span> (sit).</figcaption>
+    </figure>
+  </div>
+
+  <div class="ticker" aria-label="Things chat can type">
+    <div class="ticker__track">
+      <span>!join</span><span>!jump</span><span>!dance</span><span>!wave</span><span>go sit on the chair then wave</span><span lang="uk">помахай рукою</span><span>!rift go to 3 and dance</span><span>!w</span><span>!a</span><span>!s</span><span>!d</span><span>!rift come back to me</span><span lang="uk">танцюй</span><span>!rift walk to the bench</span>
+      <span aria-hidden="true">!join</span><span aria-hidden="true">!jump</span><span aria-hidden="true">!dance</span><span aria-hidden="true">!wave</span><span aria-hidden="true">go sit on the chair then wave</span><span aria-hidden="true" lang="uk">помахай рукою</span><span aria-hidden="true">!rift go to 3 and dance</span><span aria-hidden="true">!w</span><span aria-hidden="true">!a</span><span aria-hidden="true">!s</span><span aria-hidden="true">!d</span><span aria-hidden="true">!rift come back to me</span><span aria-hidden="true" lang="uk">танцюй</span><span aria-hidden="true">!rift walk to the bench</span>
+    </div>
+  </div>
+</section>
+
+<!-- WHY -->
+<section class="why wrap" aria-labelledby="why-h">
+  <h2 id="why-h" class="why__h">IRL streams get watched. <span class="grad">Now they get played.</span></h2>
+  <div class="why__grid">
+    <p><b>For streamers:</b> a raid stops being a thank-you message. It becomes a crowd of heroes arriving in your space, on camera, that you can walk around with.</p>
+    <p><b>For viewers:</b> you get a body in the stream. Your name over your own hero, standing on the streamer's real chair because you told it to.</p>
+    <p><b>For the setup:</b> one Android phone. No OBS, no PC capture rig, no headset. The phone renders the AR and streams to Twitch itself.</p>
+  </div>
+</section>
+
+<!-- HOW -->
+<section class="sec" id="how" aria-labelledby="how-h">
+  <div class="wrap">
+    <h2 id="how-h" class="sec__h">Three steps from phone to party.</h2>
+    <ol class="steps">
+      <li class="step">
+        <div class="step__shot"><img src="assets/img/scan.webp" width="720" height="1024" loading="lazy" alt="RaidRift scanning screen: Scanning 42 percent, with the hint Sweep the phone over the floor and furniture, over a room tinted by the live mesh."></div>
+        <div class="step__body">
+          <span class="step__n">1</span>
+          <h3>Scan your floor</h3>
+          <p>Install the APK and open it. It pairs by itself. Sweep the phone across the floor and furniture: the room becomes a mesh, then a walkable map for heroes.</p>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step__shot step__shot--panel"><img src="assets/img/go-live.webp" width="720" height="512" loading="lazy" alt="RaidRift settings, Stream to Twitch: channel name, stream key that stays on the phone, quality HD 4.5 Mbps, and a large Go live button."></div>
+        <div class="step__body">
+          <span class="step__n">2</span>
+          <h3>Go live from the app</h3>
+          <p>Settings, Live: type your channel and stream key, tap <b>Go live</b>. The phone sends the AR view, your mic and the game sound straight to Twitch.</p>
+        </div>
+      </li>
+      <li class="step">
+        <div class="step__shot"><img src="assets/img/rift.webp" width="720" height="1280" loading="lazy" alt="A torn violet voxel portal standing on a scanned floor, with a wizard hero stepping out and another hero visible inside the portal."></div>
+        <div class="step__body">
+          <span class="step__n">3</span>
+          <h3>Chat steps through</h3>
+          <p>A raid or a <span class="cmd">!join</span> tears the rift open. Each viewer gets a named hero that walks out onto your floor and listens only to them.</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- VIEWERS -->
+<section class="sec sec--alt" id="viewers" aria-labelledby="viewers-h">
+  <div class="wrap viewers">
+    <div class="viewers__copy">
+      <h2 id="viewers-h" class="sec__h">Chat is the controller.</h2>
+      <p class="sec__lede">Short commands for speed, plain sentences for everything else. Each viewer only moves their own hero, never the streamer or anyone in the room.</p>
+
+      <div class="chat" role="group" aria-label="Example Twitch chat">
+        <div class="chat__top"><span class="dot dot--live"></span>Stream chat</div>
+        <ul class="chat__log">
+          <li><b class="u1">mothmage</b> !join</li>
+          <li><b class="u2">pixelknight</b> !jump</li>
+          <li><b class="u3">lunarfox</b> go sit on the chair then wave</li>
+          <li><b class="u4">Charlie</b> <span lang="uk">помахай рукою</span></li>
+          <li><b class="u1">mothmage</b> !rift go to 3 and dance</li>
+          <li class="sys"><b>RaidRift → lunarfox</b> chair · sit · wave</li>
+        </ul>
+      </div>
+
+      <dl class="cmds">
+        <div><dt><span class="cmd">!join</span></dt><dd>Spawn your hero</dd></div>
+        <div><dt><span class="cmd">!jump</span> <span class="cmd">!dance</span> <span class="cmd">!wave</span> <span class="cmd">!sit</span></dt><dd>Instant moves</dd></div>
+        <div><dt><span class="cmd">!w</span> <span class="cmd">!a</span> <span class="cmd">!s</span> <span class="cmd">!d</span></dt><dd>Steer, one pulse per message</dd></div>
+        <div><dt><span class="cmd">!rift go to the bench</span></dt><dd>Walk to a recognised object</dd></div>
+        <div><dt><span class="cmd" lang="uk">сядь</span> <span class="cmd" lang="uk">стрибни</span></dt><dd>Ukrainian phrases work too</dd></div>
+      </dl>
+    </div>
+
+    <figure class="ext">
+      <div class="ext__frame"><img src="assets/img/extension.webp" width="390" height="850" loading="lazy" alt="RaidRift Twitch Extension panel: hero card for viewer-0011, a direction pad to move the hero, buttons for Jump, Dance, Wave, Sit and Cheer, a numbered target 3 sofa, and a prompt box reading Go to 3 and dance with a Send button."></div>
+      <figcaption>
+        <b>Twitch Extension panel.</b> Hold a direction to walk, tap a move, or type an idea. Targets the phone sees (here <span class="cmd">3 sofa</span>) show up as buttons. <span class="tag tag--amber">Local test</span>
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- TECH -->
+<section class="sec" id="tech" aria-labelledby="tech-h">
+  <div class="wrap">
+    <h2 id="tech-h" class="sec__h">The room is the level.</h2>
+    <p class="sec__lede">Everything spatial runs on the phone. A small server reads Twitch chat and turns words into safe, bounded plans.</p>
+
+    <div class="flow" role="img" aria-label="Data flow: Twitch chat goes to the RaidRift server, which plans and sends to the phone. The phone runs AR, NavMesh and object detection and streams over RTMPS back to Twitch.">
+      <div class="flow__node"><small>Viewers</small>Twitch chat<br><span>+ Extension</span></div>
+      <div class="flow__arrow" aria-hidden="true"></div>
+      <div class="flow__node"><small>Server</small>Planner<br><span>bounded plans</span></div>
+      <div class="flow__arrow" aria-hidden="true"></div>
+      <div class="flow__node flow__node--hot"><small>Phone</small>AR · NavMesh · YOLOX<br><span>renders the heroes</span></div>
+      <div class="flow__arrow" aria-hidden="true"></div>
+      <div class="flow__node"><small>RTMPS</small>Twitch live<br><span>video + mic + game</span></div>
+    </div>
+
+    <div class="bento">
+      <article class="card card--mesh">
+        <div class="card__media"><img src="assets/img/ar-room-2.webp" width="720" height="1560" loading="lazy" alt="Real phone capture: the scanned carpet shown as violet and mint floor tiles, with the hero Alice standing on it."></div>
+        <div class="card__body">
+          <h3>Room mesh → live NavMesh</h3>
+          <p>The phone meshes the room through ARCore and rebakes a doll-sized navigation map every 0.8 s. Heroes path around furniture and jump onto surfaces 15 cm to 1 m high.</p>
+          <ul class="spec"><li>30 cm heroes</li><li>4 cm voxels</li><li>Hides behind scanned furniture</li></ul>
+        </div>
+      </article>
+
+      <article class="card card--yolo">
+        <div class="card__media"><img src="assets/img/spots.webp" width="720" height="1280" loading="lazy" alt="Scanned floor in front of a portal with numbered target spots 1 and 2, the second labelled chair."></div>
+        <div class="card__body">
+          <h3>On-device object recognition</h3>
+          <p>YOLOX-S runs on the phone (COCO-80) and pins labels to real surfaces: chair, couch, bench, bed, plant, dog. Chat can say "go to the bench" or "jump on 2".</p>
+          <ul class="spec"><li>Runs on the phone GPU</li><li>Numbered spots</li><li>Synonyms: sofa = couch</li></ul>
+        </div>
+      </article>
+
+      <article class="card card--plan">
+        <div class="card__body">
+          <h3>LLM planner, on a leash</h3>
+          <p>Free text becomes a typed plan, checked against the action catalog, live targets, ownership and moderation. No generated code runs. If the model is slow or over budget, a keyword compiler takes over.</p>
+        </div>
+        <div class="planner" data-planner>
+          <div class="planner__tabs" role="tablist" aria-label="Example chat prompts">
+            <button role="tab" aria-selected="true" aria-controls="plan-out" data-p="0">go sit on the chair then wave</button>
+            <button role="tab" aria-selected="false" aria-controls="plan-out" data-p="1">!rift go to 3 and dance</button>
+            <button role="tab" aria-selected="false" aria-controls="plan-out" data-p="2" lang="uk">помахай рукою</button>
+          </div>
+          <ol class="planner__out" id="plan-out" role="tabpanel" aria-live="polite">
+            <li><code>navigate</code> to <em>chair</em> <small>nearest reachable label</small></li>
+            <li><code>sit</code> <small>hold until replaced</small></li>
+            <li><code>emote</code> wave</li>
+          </ol>
+          <p class="planner__note">Illustrative plan shapes. Limits: 8 steps, 15 s per plan, newer commands replace older ones.</p>
+        </div>
+      </article>
+
+      <article class="card card--live">
+        <div class="card__media card__media--strip"><img src="assets/img/hud-top.webp" width="720" height="174" loading="lazy" alt="RaidRift live HUD: LIVE 24:17, 5 viewers, 4.2 Mbps bitrate graph at 30 fps, mic and stop buttons, battery 82 percent, phone temperature 38 degrees."></div>
+        <div class="card__body">
+          <h3>Direct RTMPS to Twitch</h3>
+          <p>The app encodes H.264 + AAC on the phone and publishes to Twitch ingest itself. You see an IRL-Pro-style HUD with bitrate, fps, battery and heat. Viewers see the clean AR view, name tags and hearts, never your buttons.</p>
+          <ul class="spec"><li>720×1280 or 1280×720</li><li>Mic + game sound</li><li>Selfie flip keeps heroes in place</li></ul>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section class="sec sec--alt" id="demo" aria-labelledby="demo-h">
+  <div class="wrap demo">
+    <div class="demo__copy">
+      <h2 id="demo-h" class="sec__h">See a raid land.</h2>
+      <p class="sec__lede">The demo film (under 3 minutes) goes here with the hackathon submission: scan, go live, raid, and chat steering heroes around a real room.</p>
+      <p class="muted">Until then: install the APK and use the built-in <b>Test raid</b> button. It replays a raid and chat offline.</p>
+    </div>
+    <div class="demo__frame">
+      <img src="assets/img/crowd.webp" width="720" height="1280" loading="lazy" alt="A crowd of named heroes after a test raid: knights, mages and bears with name tags and command labels like !wave and !dance.">
+      <span class="demo__badge">Video coming soon</span>
+    </div>
+  </div>
+</section>
+
+<!-- CODEX -->
+<section class="sec" id="codex" aria-labelledby="codex-h">
+  <div class="wrap codex">
+    <div>
+      <h2 id="codex-h" class="sec__h">Codex wrote most of the code.</h2>
+      <p class="sec__lede">Codex built the Unity AR app, the Node server and planner, the Twitch chat reader, the Extension and the test harness. Each overnight build had to pass automated checks before it shipped to the phone.</p>
+    </div>
+    <ul class="stats">
+      <li><b>0.20 → 0.23.3</b><span>overnight build train, Oct 31 to Nov 1</span></li>
+      <li><b>Smoke-tested</b><span>a Play Mode test presses every HUD button and runs a raid on each build</span></li>
+      <li><b>90 s</b><span>chat soak plus a 10 m walk with the party in frame</span></li>
+      <li><b>91</b><span>passing server and Extension tests</span></li>
+    </ul>
+    <p class="codex__note">Codex is the development tool. In a live stream the planner calls a small, configurable model on the server.</p>
+  </div>
+</section>
+
+<!-- STATUS -->
+<section class="sec sec--alt" id="status" aria-labelledby="status-h">
+  <div class="wrap">
+    <h2 id="status-h" class="sec__h">What works, and what doesn't yet.</h2>
+    <div class="status">
+      <div class="status__col">
+        <h3><span class="pill pill--ok">Works</span></h3>
+        <ul>
+          <li>APK install, automatic pairing, no account</li>
+          <li>Room scan, live NavMesh, heroes landing and walking</li>
+          <li>Chat commands, natural language and Ukrainian phrases</li>
+          <li>Go live to Twitch from the phone with mic and game sound</li>
+        </ul>
+      </div>
+      <div class="status__col">
+        <h3><span class="pill pill--amber">In testing</span></h3>
+        <ul>
+          <li>Twitch Extension: runs in Twitch local test, not public yet</li>
+          <li>Newest features (selfie flip, on-device detector) are still being device-tested</li>
+        </ul>
+      </div>
+      <div class="status__col">
+        <h3><span class="pill pill--muted">Limits</span></h3>
+        <ul>
+          <li>Android only (ARCore phones). No iPhone.</li>
+          <li>The server keeps rooms in memory: a restart resets heroes</li>
+          <li>Twitch raids give a count, not names. Named heroes come from viewers who type <span class="cmd">!join</span></li>
+          <li>Stream delay means viewer moves land a few seconds later</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRY -->
+<section class="sec try" id="try" aria-labelledby="try-h">
+  <div class="wrap try__in">
+    <h2 id="try-h" class="sec__h">Try it in five minutes.</h2>
+    <ol class="try__steps">
+      <li><b>Install</b> the APK on an ARCore Android phone.</li>
+      <li><b>Open</b> it. It pairs automatically, no sign-up.</li>
+      <li><b>Scan</b> the floor until the rift appears.</li>
+      <li><b>Settings → Live:</b> channel + stream key, then <b>Go live</b>.</li>
+      <li><b>Tell chat:</b> type <span class="cmd">!join</span>.</li>
+    </ol>
+    <a class="btn btn--primary btn--lg" href="https://raidrift.12industries.com/apk/RaidRift-latest.apk" download>
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v9.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 1 1 1.4-1.4L11 13.6V4a1 1 0 0 1 1-1Zm-7 15a1 1 0 0 1 1 1v1h12v-1a1 1 0 1 1 2 0v2a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z"/></svg>
+      Download RaidRift APK
+    </a>
+    <p class="muted try__fine">Android may ask you to allow installs from your browser. No Twitch stream handy? Tap <b>Test raid</b> in the app.</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__in">
+    <div class="brand"><img src="assets/favicon.svg" width="24" height="24" alt=""><span>RaidRift</span></div>
+    <p>Built for the Twitch × Codex hackathon, 2026. Source available to judges (private GitHub repository).</p>
+    <p class="muted">Heroes: KayKit Adventurers. Fonts: Inter and Space Grotesk (SIL OFL, <a href="assets/fonts/Inter-LICENSE.txt">Inter</a>, <a href="assets/fonts/SpaceGrotesk-LICENSE.txt">Space Grotesk</a>). Twitch is a trademark of Twitch Interactive; RaidRift is not affiliated with Twitch.</p>
+  </div>
+</footer>
+
+<script src="assets/main.js" defer></script>
+</body>
+</html>

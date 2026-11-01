@@ -1965,7 +1965,7 @@ export async function createApp(
       await db.query("SELECT connected FROM channels WHERE id=$1", [room])
     ).rows[0];
     w.state.mode =
-      w.channel.demo || room.startsWith("demo")
+      w.channel.demo || room.startsWith("demo") || room.startsWith("phone-")
         ? "SIMULATOR"
         : c?.connected
           ? "LIVE TWITCH"
@@ -2383,6 +2383,33 @@ export async function createApp(
         )
       ).rows[0];
       const roomName = owner?.name || "RiftStreamer";
+      // Self-paired phone rooms (phone-<hash>) have no Twitch-style id for simulated EventSub: run the labelled test
+      // raid straight on the world, then let the simulated raiders type !join like real raiders would.
+      if (d.type === "raid" && room.startsWith("phone-")) {
+        const from = d.from || "CozyRaider";
+        await w.raid(
+          `debug-${randomUUID()}`,
+          simulatedId(`raid:${from}`),
+          from,
+          d.viewers ?? Math.max(d.chatters ?? 0, 12),
+          true,
+        );
+        const used = new Set<string>();
+        const stagger = options.debugChatStaggerMs ?? 400;
+        const count = Math.min(d.chatters ?? 3, 8);
+        for (let i = 0; i < count; i++) {
+          let name = "";
+          do
+            name = `${RAIDER_A[Math.floor(Math.random() * RAIDER_A.length)]}${RAIDER_B[Math.floor(Math.random() * RAIDER_B.length)]}${Math.floor(Math.random() * 90 + 10)}`;
+          while (used.has(name));
+          used.add(name);
+          await later((i + 1) * stagger, async () => {
+            const who = await account(db, simulatedId(name), name, true);
+            await chatCommand(w, who, "!join", `debug-${randomUUID()}`).catch(() => undefined);
+          });
+        }
+        return { ok: true, queued: count };
+      }
       if (
         ["raid", "chat", "duplicate_raid", "revoke"].includes(d.type) &&
         !/^\d+$/.test(room)

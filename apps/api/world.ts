@@ -139,7 +139,8 @@ export class World extends EventEmitter {
     this.state = {
       roomId: channel.id,
       mode:
-        channel.demo === true || channel.id.startsWith("demo")
+        // Self-paired phone rooms rehearse in SIMULATOR until the phone selects a Twitch channel (Live).
+        channel.demo === true || channel.id.startsWith("demo") || channel.id.startsWith("phone-")
           ? "SIMULATOR"
           : channel.connected
             ? "LIVE TWITCH"

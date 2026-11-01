@@ -1,50 +1,48 @@
-# Three-minute street stream: owner checklist
+# Three-minute stream: owner checklist (app 0.23.3)
 
-**November 1, 2026, noon local time.** Setup first, then time the stream. This is a test, not an existing device pass. Details: [MR guide](RAIDRIFT_MR.md). Print or keep on a second device.
+Updated **November 1, 2026**, for the public server `https://raidrift.12industries.com`. No Tailscale and no PC process to start. Keep this on a second device. Details: [MR guide](RAIDRIFT_MR.md). Anything marked *unverified* has not been seen working on the phone yet.
 
-## Before leaving
+## Before you start
 
-- [ ] PC plugged in, awake, online. From the repo root, keep this server running; do not launch a duplicate:
+- [ ] Server up: open `https://raidrift.12industries.com/health` on the phone → `{"status":"ok"…}`. Don't restart it during the stream: rooms are in memory, so a restart drops every hero (the app re-pairs by itself).
+- [ ] Install **[RaidRift-latest.apk](https://raidrift.12industries.com/apk/RaidRift-latest.apk)** (~128 MB, use Wi-Fi). Setup diagnostics must show **v0.23.3**.
+- [ ] Grant **camera and microphone** in Android settings *before* Go live. A denied mic currently fails the whole stream.
+- [ ] Charge the battery, clean the lens, turn on Do Not Disturb, keep the phone shaded. Quality: **Mobile data · 2.5 Mbps** outdoors, **HD** on good Wi-Fi.
+- [ ] Safe, well-lit, textured ground. No traffic, private screens or unwilling bystanders. Stop walking before you touch controls.
+- [ ] Line up a **second Twitch account** for chat (and the Extension, if you show it) and an observer watching `https://www.twitch.tv/dusyaaaaaaaa_` for received video and audio.
+- [ ] **Nobody else** may select `dusyaaaaaaaa_` as their channel in their own RaidRift app. The last phone to claim a channel takes over its Extension viewers.
+- [ ] Raid plan (pick one, see below): a **real raid** from a second live channel, or skip the portal.
 
-  ```powershell
-  node node_modules/tsx/dist/cli.mjs scripts/tailnet-test.ts --origin https://raidrift-pc.tail7252b4.ts.net --port 3412 --env-file E:/Hermes/.env
-  ```
+## In the app, standing still
 
-- [ ] Existing Tailscale Serve forwards HTTPS to **127.0.0.1:3412**. If dependencies/assets need setup: `npm ci`, `npm run build` first. Restart loses private test data; phones on 0.20.1+ re-pair and re-select the channel by themselves. A freshly launched harness seeds two demo heroes (Mossling, Emberfox), which would open the rift right after landing and look like viewers; restart with `E:\Unity\tmp\restart-server.ps1` instead (also used by the health watchdog), which clears them with a debug `reset` so the room starts empty.
-- [ ] Phone **Tailscale on** in the authorized tailnet. At home on **Wi-Fi** (the APK is ~122 MB), open the [APK share](https://raidrift-pc.tail7252b4.ts.net/apk/); afterwards switch to **mobile data** and open [health](https://raidrift-pc.tail7252b4.ts.net/health). Install the newest `RaidRift-MR-<version>.apk` there (0.23.3 was published Nov 1 14:21; check the [overnight summary](https://dashboard.12industries.com/previews/raidrift-ui/) for a later known-good build); confirm the version in Setup diagnostics. No build has a device pass yet; this test is that pass.
-- [ ] Charge battery, clean lens, free recording space, Do Not Disturb. Shade phone; avoid charging while hot. Start **Mobile data · 2.5 Mbps**; allow roughly 60 MB for three minutes plus overhead/setup. Headset reduces echo.
-- [ ] Safe textured pedestrian ground, good light; no traffic, private screens or unwilling bystanders. Stop before using controls. Arrange **two real viewers** and an observer checking received Twitch video/audio. Share `https://www.twitch.tv/dusyaaaaaaaa_/chat` (or the chat of whichever account the stream key belongs to). Extension is optional.
-
-## In the app, while stationary
-
-- [ ] Rear camera: sweep floor/furniture slowly → wait for landing or tap measured open floor. Setup diagnostics: NavMesh ready, sensible floor distance.
-- [ ] **Setup → Server & testing → Pair with server** at default URL. Re-pair if rejected; blank token does not erase a saved token.
-- [ ] Setup → **Twitch channel login** (`dusyaaaaaaaa_`, with the underscore; same account as the stream key; it is also the Extension owner) **+ stream key** privately → Quality → **Go live** → allow mic. Do not record key entry; it is saved locally. Leave **Stream to PC off**.
-- [ ] When Twitch first receives video, a 3.5 s RAIDRIFT title card appears in the scene. Check **LIVE timer + nonzero bitrate**, **chat connected**, and observer-confirmed Twitch picture, voice and game sound. These are separate checks.
+1. Sweep the rear camera slowly over floor and furniture → wait for the landing rune (or tap scanned floor). Diagnostics: `nav ready`, a sensible floor distance.
+2. **Setup → Twitch channel** `dusyaaaaaaaa_` (with the underscore; the same account as the stream key and the Extension owner) **+ stream key** (privately, not on camera) → Quality → **Go live**.
+3. Go live pairs the app with the public server by itself (`Paired with room phone-…`). Check, as separate items: the **LIVE timer + nonzero bitrate**, `#dusyaaaaaaaa_ chat connected` in Setup, and observer-confirmed picture, voice and game sound on Twitch.
+4. When Twitch first receives video, a 3.5 s **RAIDRIFT · type !join** title card appears in the scene.
 
 ## Three-minute order
 
-| Time | Show / ask viewers |
+| Time | Do / ask viewers |
 |---|---|
-| 0:00–0:35 | Rift and arrivals: arranged **real raid**, or **Setup → Server & testing → Server test raid** on the private harness. Label fixtures **TEST RAID**; their names are simulated. Or skip the raid here: from 0.21.37 the first `!join` after landing tears the rift open itself ("THE RIFT OPENS / name drops in", no RAID text) and joiners hop out, if the landing spot is in view within ~4 m (otherwise they poof in near you). |
-| 0:35–1:10 | The stream itself shows "Type !join in chat to drop in a hero", then the command menu (Setup → Go live → `"!join" hint on stream`, on by default). From 0.21.45 the menu's "go to" example uses a spot number that is actually on screen, or is left out when none show. Both viewers `!join`; one `!wave`, other `!jump`. Leave ≥0.5 s between messages and allow Twitch delay. Show separate named heroes. |
-| 1:10–1:40 | `!w`, then `!d` separately; `!rift go to 3 and dance` using a **current visible number**. No numbers? Use `!dance`. Try `!rift sit on the chair` only with a measured labelled top. |
-| 1:40–2:05 | Stand still. Flip **Selfie** (camera-flip icon on the right rail), then return rear; wait for room tracking. If the toast says the room moved, point at the floor to land again (heroes return with arrival bursts). Unsupported? Show a rear-camera wave instead. |
-| 2:05–2:45 | **Follow me** (party icon on the rail); walk at a normal pace on scanned safe ground. The party runs about 1.5 m ahead of the phone at your walking speed (0.21.23+); a hero left 3.5 m+ behind rift-hops back in front. When you stop, they turn and wave. Rift relocation needs over **8 m** and valid floor ahead; do not force it or promise it within this test. |
-| 2:45–3:00 | Stop, goodbye, red **End — tap twice** within 3 s (one tap only shows "Tap End again"). Observer confirms stream ends. Then **Offline test room** stops polling/frame uploads. |
+| 0:00–0:30 | **Raid.** Real raid: the second account goes live for a minute (Twitch app → Go Live) and types `/raid dusyaaaaaaaa_`. The portal tears open on the landing spot with `RAID · <name> · <count>`. **The second account types `!join` right away**: the portal collapses ~6 s after the tear unless someone is walking out. No raid available? Skip the portal and start at `!join`; joiners poof in with an arrival burst. *The Setup "Server test raid" does not work on the public server (per-phone rooms are refused); don't plan on it.* |
+| 0:30–1:05 | The stream caption says "Type !join in chat to drop in a hero", then shows the command menu. Viewers `!join`; one `!wave`, the other `!jump`. Leave ≥0.5 s between messages and allow for Twitch delay. Show the separate name tags. |
+| 1:05–1:45 | `!w`, then `!d` (separate messages). `!rift go to 3 and dance` with a number **visible right now**. Natural language: `!rift walk to the chair and sit` / `go to the bench`, but only once Setup diagnostics shows `sees: chair` (or bench). Plain sentences without `!` only work for the keyword list (join, jump, dance, wave, sit, turn, walk left/right, stop; Ukrainian too). |
+| 1:45–2:05 | Extension (optional): the second account opens the RaidRift panel → **Join the raid** → hold the d-pad arrows → tap an emote. The deployed build has the touch d-pad, not keyboard WASD. |
+| 2:05–2:30 | Stand still. Tap **Selfie** (camera-flip icon). Turn slowly towards where the party stands: the gyro view draws them in the selfie (*unverified on device*). Flip back within ~10 s. Heroes should be where they were. |
+| 2:30–2:50 | Optional **Follow me** (party icon): the party walks along ~0.9 m ahead. Walk slowly; it does not run ahead and the portal does not follow. Tap again to leave them. |
+| 2:50–3:00 | Goodbye. Red **End**, tapped twice within 3 s. The observer confirms the stream ended. |
 
 ## Quick recovery
 
 | Problem | Do this |
 |---|---|
-| Rift window black/frozen | 0.21.29 changed how the rift window is rendered (per drawing camera, fixes a pale slab). From 0.21.34 the app reverts to the old always-on rift render by itself if the new one stalls for 30 frames. Still check the open rift at home; if its window is black or frozen, install 0.21.28 instead. |
-| No mesh/landing | Sweep textured floor, wait several bakes, try floor tap; read diagnostics. Reset only if scan is wrong (**Reset room needs two taps** once landed). |
-| Tracking lost/drift | Stop; reframe scanned area slowly. End/rescan if alignment stays wrong. |
-| Stream error/drops/heat | Short signal loss: keep going; if the stream is stuck reconnecting for 30 s the app rebuilds the session itself (diagnostics: "rebuilt Nx"). Otherwise check mic permission, uplink/key privately; End, cool, restart with **Weak signal**. Confirm actual Twitch receipt. |
-| LIVE, no chat response | Check Tailscale/health, PC/Serve **3412**, login and pairing; viewer `!join` then `!wave`. Phone chat is simulator-only. Switching Wi-Fi ↔ mobile data is fine: the chat reader runs on the PC and keeps going; the phone resumes polling when the tailnet is back. |
-| Missing number/object | Reframe/rescan; use current number or `!dance`, not an old Twitch frame. |
-| Selfie stalls | Stay still, point at the room. It recovers by itself within ~12 s; if the camera pose jumped or tracking does not return, the room resets (rescan, point at the floor). Tapping Selfie again also works. |
+| No mesh / no landing | Sweep textured floor, wait a few bakes, try a floor tap. **Reset room** needs two taps once landed. |
+| Tracking lost / drift | Stop, reframe the scanned area slowly. Reset and rescan if alignment stays wrong. |
+| Stream error / drops / heat | Short signal loss: keep going. The app rebuilds a session stuck reconnecting for 30 s ("rebuilt Nx"). Otherwise check mic permission and the key, End, cool down, restart with **Weak signal**. |
+| LIVE but no chat response | Setup must show `#… chat connected`. Check `/health`. Viewer sends `!join`, then `!wave`. The phone's own chat box is refused while paired (it can't impersonate viewers). |
+| "Raid failed · Simulated EventSub needs a numeric…" | Expected on the public server: test raids are refused for phone rooms. Use a real raid or skip it. |
+| "Server restarted · pairing again" | The app re-pairs to the same room by itself and re-selects the channel. Viewers must `!join` again. |
+| Object target refused | Reframe so the object is detected (`sees:` line), or use a visible spot number / `!dance`. |
+| Selfie: "Room tracking restarted" | The 20 s safety reset fired (dim light / no tracking): point at the floor to land again; the server's heroes poof back in once the room has landed. |
 
-**Record afterward:** APK version/hash, phone/OS/network, received recording; pass/fail/skipped for scan, two viewers, raid source, mic/SFX, selfie and walking. Keep secrets out. Skipped means **untested**.
-
-**Test label:** a Server test raid shows a **TEST RAID** banner, also during Live (server fix Nov 1). Still say “test raid” aloud and caption the recording; it is synthetic.
+**Record afterwards:** APK version/hash, phone/OS/network, the received recording; pass/fail/skipped for scan, two viewers, raid source, natural-language target, Extension, mic/SFX, selfie and walking. Keep secrets out. Skipped means **untested**.

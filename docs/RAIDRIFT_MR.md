@@ -1,8 +1,10 @@
 # RaidRift MR: phone-to-Twitch guide
 
-Source review: **October 31, 2026**, branch `fix/android-ar-recovery`. The live Unity project is **`E:\RaidRift-MR`**; `apps/unity-ar` is a repository copy and can lag behind it. This guide describes the live source, not the older Kotlin Android client or the original product brief.
+Source review: **November 1, 2026, app 0.23.3**, branch `fix/android-ar-recovery`. The live Unity project is **`E:\RaidRift-MR`**; `apps/unity-ar` is a repository copy (byte-identical on November 1). This guide describes the live source, not the older Kotlin Android client or the original product brief.
 
-RaidRift puts a small fantasy party into the streamer's camera view. The phone scans real surfaces, opens a voxel rift and animates individual viewer heroes. Viewers join and direct their own hero through Twitch chat; an optional Twitch Extension adds buttons, target selection and held movement. The phone can broadcast the camera, heroes, effects, microphone and game audio directly to Twitch.
+**Current deployment (November 1):** public server `https://raidrift.12industries.com` (VPS, Caddy). Public paths: `/ext/*`, `/v1/ext/*`, `/v1/native/*`, `/v1/live/*`, `/apk/*`, `/health`. APK: [`/apk/RaidRift-latest.apk`](https://raidrift.12industries.com/apk/RaidRift-latest.apk). Every installed app pairs itself (`POST /v1/native/pair {device}`) into its own room `phone-<hash>`. No Tailscale and no setup. Rooms are in memory; a server restart means an automatic re-pair and an empty room. Sections below that mention Tailscale, `raidrift-pc…ts.net`, `/v1/debug/pair` or room `900000001` describe the earlier private harness.
+
+RaidRift puts a small fantasy party into the streamer's camera view. The phone scans real surfaces; a Twitch raid opens a voxel rift; individual viewer heroes are animated in the room. Viewers join and direct their own hero through Twitch chat; an optional Twitch Extension adds buttons, target selection and held movement. The phone can broadcast the camera, heroes, effects, microphone and game audio directly to Twitch.
 
 Start with the [three-minute street checklist](STREET_TEST_RUNBOOK.md). For recording, use the [2:45 video script](DEMO_VIDEO_SCRIPT.md). For Extension registration and hosting, use [the owner checklist](TWITCH_EXTENSION.md).
 
@@ -10,7 +12,7 @@ Start with the [three-minute street checklist](STREET_TEST_RUNBOOK.md). For reco
 
 | Area | Evidence and current boundary |
 |---|---|
-| Unity version | `Editor/BuildTools.cs`: **0.23.3** (versionCode 63), package `world.raidrift.mr`. Overnight October 31 → November 1 (Kyiv) every build below was published to the private APK share after Unity self-tests and, from 0.21.16, the Play Mode gameplay smoke test passed: **0.20.x** (22:23–22:37: selfie mode, auto re-pair, selfie recovery); **0.21.0–0.21.8** (by 23:51: readable portal/emote effects, raid banner inside the portrait frame, publisher session rebuild after 30 s stuck reconnecting, ordered chat select/stop, on-stream "!join" caption, daylight-adaptive bloom/flash/sparks); **0.21.9–0.21.21** (by 01:28: 75% game audio in the broadcast, 30 fps when the encoder is throttled, bigger spots and name tags, opening title card, End and Reset need two taps); **0.21.22–0.21.30** (by 04:51: party follows at the streamer's pace ~1.5 m ahead, rift close sequence, hearts on stream, arrival hop, moth lens clearance, per-camera rift rendering, frame-rate-independent effects); **0.21.31–0.21.41** (by 06:20: no stream whiteouts from emotes/arrivals, chat-effect budget, rift render self-fallback, gentler relocation shake, first `!join` opens the rift, compact tags with 7+ heroes, idle heroes stay out of the lens). Latest: 0.23.3 at 14:21 (public server: every phone pairs its own streamer room on raidrift.12industries.com, APK download at /apk/). Full per-build notes: the Unity lead's overnight log; the newest known-good APK is named on the owner's dashboard page. No build has a phone pass yet. |
+| Unity version | `Editor/BuildTools.cs`: **0.23.3** (versionCode 63), package `world.raidrift.mr`. Overnight October 31 → November 1 (Kyiv) every build below was published to the private APK share after Unity self-tests and, from 0.21.16, the Play Mode gameplay smoke test passed: **0.20.x** (22:23–22:37: selfie mode, auto re-pair, selfie recovery); **0.21.0–0.21.8** (by 23:51: readable portal/emote effects, raid banner inside the portrait frame, publisher session rebuild after 30 s stuck reconnecting, ordered chat select/stop, on-stream "!join" caption, daylight-adaptive bloom/flash/sparks); **0.21.9–0.21.21** (by 01:28: 75% game audio in the broadcast, 30 fps when the encoder is throttled, bigger spots and name tags, opening title card, End and Reset need two taps); **0.21.22–0.21.30** (by 04:51: party follows at the streamer's pace ~1.5 m ahead, rift close sequence, hearts on stream, arrival hop, moth lens clearance, per-camera rift rendering, frame-rate-independent effects); **0.21.31–0.21.41** (by 06:20: no stream whiteouts from emotes/arrivals, chat-effect budget, rift render self-fallback, gentler relocation shake, first `!join` opens the rift, compact tags with 7+ heroes, idle heroes stay out of the lens). **0.22.x–0.23.3** (November 1, by 14:21): owner changes reverted several of the items above. The portal opens **only for a raid** (the first-`!join` rift is dead code), collapses once the raiders are out, and never relocates. Auto-follow is off; **Follow me** is a manual button and walks calmly ~0.9 m ahead. Selfie keeps heroes in place, with a gyro view in the front camera. Null `steer` parsing is fixed. Then the public server and self-pairing. Full per-build notes: the Unity lead's overnight log. **No build has a complete phone pass yet.** |
 | 0.20 contents | Selfie mode, three scan views (Mesh / Floor / Hidden), no per-pixel depth occlusion, floor smoothing, stronger CameraFeel, bigger Cartoon FX/emote bursts and world-space name tags, regrouped settings with Phosphor Fill icons. Selfie is untested on the device. |
 | Backend / Extension | Historical receipt: [extension-verification.json](../artifacts/extension-verification.json): 91 Node passes, one conditional PostgreSQL skip; four Extension browser passes per build. Tests use fixture authorization and a local EBS. |
 | Twitch input | Same receipt records an actual anonymous IRC acknowledgement from `#twitch`. It does not prove viewer commands, an incoming raid or a complete phone broadcast. |
@@ -24,8 +26,8 @@ Older status notes in the Unity README, `MOBILE.md`, `CURRENT_STATE.md` and earl
 ```mermaid
 flowchart LR
   V[Viewers] -->|commands| TC[Twitch chat]
-  TC -->|anonymous IRC: PRIVMSG and raid USERNOTICE| PC[RaidRift API / world on PC]
-  PC <-->|HTTPS over Tailscale: pairing, world, tracks, JPEGs| U[Unity Android phone]
+  TC -->|anonymous IRC: PRIVMSG and raid USERNOTICE| PC[RaidRift API / world on VPS]
+  PC <-->|public HTTPS raidrift.12industries.com: pairing, world, tracks, JPEGs| U[Unity Android phone]
   U -->|RTMPS: H.264 + AAC via LivePublisher| T[Twitch ingest / broadcast]
   T --> V
   V --> X[Optional Twitch Extension]
@@ -35,24 +37,24 @@ flowchart LR
   U -.->|alternative video-only WebRTC| RX[PC receiver / OBS]
 ```
 
-The PC handles accounts, input ownership, bounded plans, world snapshots and deterministic accounting. Unity owns local AR geometry, NavMesh paths, animation and final rendering. Local physical positions are not authoritative reward evidence. The private tailnet harness uses an in-memory database: its accounts, scores, pairing and world disappear on restart. Persistent accounts and Shards exist in the normal database-backed API, not as a persistence guarantee for this rehearsal server.
+The PC handles accounts, input ownership, bounded plans, world snapshots and deterministic accounting. Unity owns local AR geometry, NavMesh paths, animation and final rendering. Local physical positions are not authoritative reward evidence. The public server runs the in-memory rehearsal harness: its accounts, scores, pairing and world disappear on restart. Persistent accounts and Shards exist in the normal database-backed API, not on this server. (The optional OmDet sidecar below runs only where it is installed; the VPS doesn't have it unless set up.)
 
-**Two independent connections:** phone → Twitch sends video/audio over the phone's internet connection. Phone ↔ PC over Tailscale carries game state and chat results. A LIVE publisher chip does not prove chat is connected. Twitch video delay also means controls are not instantaneous feedback.
+**Two independent connections:** phone → Twitch sends video/audio over the phone's internet connection. Phone ↔ server over public HTTPS carries game state and chat results. A LIVE publisher chip does not prove chat is connected. Twitch video delay also means controls are not instantaneous feedback.
 
 ### Phone/server contract
 
 | Route | Use |
 |---|---|
-| `GET /v1/debug/pair` | Private debug harness only: obtains a capture token. Production uses a Creator Studio mobile token. |
+| `POST /v1/native/pair` `{device}` | Public self-pairing (0.23.x). `device` is a random install id kept in PlayerPrefs; the server returns room `phone-<sha256(device)[0:16]>` and a capture token. The same install always gets the same room. Rate limit 10/min per IP. The phone pairs on **Go live** or **Setup → Pair**, not at app start. (`GET /v1/debug/pair` is the old private-harness route; it is not public.) |
 | `GET /v1/native/world` | Bearer-authenticated snapshot; the client waits about 150 ms after a successful reply before polling again. At most 12 heroes are imported; when the room has more, the server keeps a stable visible 12 and swaps in a hidden hero only when it acted at least 10 s more recently than the stalest visible one, so real chatters are not hidden behind idle practice heroes and nobody flickers. |
 | `POST /v1/native/tracks` | Up to 50 phone targets, about every 0.4 s; server timestamps receipt. |
 | `POST /v1/native/frame` | One downscaled displayed-camera JPEG about every 1.5 s (every 3 s while broadcasting, from 0.21.4) while paired, landed and tracking; vision consent is checked on the server. |
 | `POST /v1/live/channel`, `GET /v1/live/status`, `DELETE /v1/live/channel` | Select, inspect and stop the real Twitch IRC reader for the paired room. |
-| `POST /v1/native/chat` | Simulator input only. Live returns `VIEWER_CONTROLLER_REQUIRED`; the phone cannot impersonate a live viewer. |
-| `POST /v1/native/debug/event` | Private owner test events, including test raids. |
+| `POST /v1/native/chat` | Simulator input only. Live returns `VIEWER_CONTROLLER_REQUIRED`; the phone cannot impersonate a live viewer. **Phone rooms start in LIVE TWITCH mode**, so the in-app chat box is refused as soon as the app is paired. |
+| `POST /v1/native/debug/event` | Owner test events (debug tools are on in the public process, scoped to the caller's room). **Test raids require a numeric room id**, so on public `phone-*` rooms they fail with `ROOM_NOT_NUMERIC` ("Raid failed · Simulated EventSub needs a numeric…"). Use a real raid. |
 | WS `/v1/media` | Alternative WebRTC signaling, not the direct Twitch publisher. |
 
-`ServerConnection` saves server/token locally. HTTP 401/403 during world polling clears pairing; transport failures retry after 1.2 s and retain the last snapshot. This is not a guaranteed global freeze on network loss. The Twitch chat reader runs on the PC, so a phone network switch (Wi-Fi ↔ mobile data) does not interrupt chat input; the phone simply resumes polling once the tailnet is reachable again. From 0.20.1 the phone also re-pairs automatically after a server restart (debug pairing only) and re-selects the Live channel whenever the world snapshot does not show it; selecting the channel that is already connected is a no-op on the server, so these retries never drop the reader.
+`ServerConnection` saves server/token locally. HTTP 401/403 during world polling clears pairing; transport failures retry after 1.2 s and retain the last snapshot. This is not a guaranteed global freeze on network loss. The Twitch chat reader runs on the server, so a phone network switch (Wi-Fi ↔ mobile data) does not interrupt chat input; the phone simply resumes polling once the server is reachable again. The phone re-pairs automatically after a server restart (same device id → same room id, but an empty in-memory world) and re-selects the Live channel whenever the world snapshot does not show it. From 0.23.x, saved retired private server URLs are migrated to the public default on start; selecting the channel that is already connected is a no-op on the server, so these retries never drop the reader.
 
 The IRC reader is read-only (ordinary conversation is ignored before the 0.5 s per-viewer cooldown, so "hi" followed by `!join` still joins; raids are never dropped under load): `justinfan` login, tags/commands capability negotiation, message-ID deduplication, numeric user IDs, PING/PONG, a client PING after 30 s of silence (Twitch itself only PINGs about every 5 minutes, so quiet channels used to trip the watchdog), a 60 s heartbeat watchdog (a dead PC link is noticed within about a minute) and reconnect backoff of 1/2/4/8/15 s, capped at 15 s. Real raids use `USERNOTICE msg-id=raid`. A raid supplies a count and source, **not the names of all arrivals**. Named heroes come from participants; debug names are fixtures. The separate OAuth/EventSub adapter still exists in `apps/api/twitch.ts`; the private harness clears OAuth credentials. Do not ingest the same channel's raids through both paths.
 
@@ -60,7 +62,7 @@ The IRC reader is read-only (ordinary conversation is ignored before the 0.5 s p
 
 `apps/twitch-extension` supplies overlay, component, panel and mobile HTML surfaces. The EBS in `apps/api/extension.ts` verifies HS256 Twitch JWTs, expiry, role and channel; it exposes server actions, held steering and SSE state. Opaque identities are separate from numeric Twitch identities until sharing/linking. Opaque accounts cannot receive join/quest Shards.
 
-The normal review build disables keyboard shortcuts; focused WASD/arrows are private Local Test only. D-pad buttons remain available. **Registration requires the owner's Twitch Console login, Extension Client ID/Secret/owner ID, allowed testers and activation. Ordinary viewers also need a public HTTPS EBS; a `.ts.net` Serve address is private.** See [TWITCH_EXTENSION.md](TWITCH_EXTENSION.md) for exact settings, build commands, review and hosting steps. Never expose the debug harness wholesale to obtain an EBS.
+The normal review build disables keyboard shortcuts; focused WASD/arrows are private Local Test only. **The bundle deployed on November 1 is the review build: d-pad, no keyboard WASD.** Testing Base URI: `https://raidrift.12industries.com/ext/`. The EBS sends a viewer to whichever phone is live on that Twitch channel. Only allowlisted test accounts can load it until Twitch review. See [TWITCH_EXTENSION.md](TWITCH_EXTENSION.md#current-status-november-1-2026-app-0233).
 
 ## Scan → floor → landing
 
@@ -83,7 +85,9 @@ Raised walkable islands 15 cm–1 m above the floor can receive bidirectional ju
 
 Without recent input, heroes roam reachable floor and furniture tops, sometimes sit on recognized raised seats, rest and wave near the camera. Targeted commands take priority over roaming; a newer command replaces a pending pose. `ActAt` walks toward the local target before posing, checks both horizontal distance and height, and abandons a pending pose after 15 s.
 
-**Follow me** keeps the party in front of the lens: formation slots sit about **1.5 m ahead** of the phone on the floor (0.9 m, then directly below, if that floor is not scanned). The app tracks the phone's smoothed walking speed (0.6 s smoothing, input capped at 3 m/s); while following, heroes run at that pace ×1.25 (max 2.2 m/s) whenever the streamer walks faster than 0.45 m/s or they are over 1 m from their slot, even if a viewer just sent a command (0.21.23+). Idle roaming stops while the streamer walks and otherwise stays in front of the lens. When the streamer stops, the party turns to the phone and waves (0.21.24+). If untouched, follow activates after moving about 4.5 m from the original landing. With follow active, the rift can relocate when the streamer is over 8 m away and suitable scanned floor exists ~1.6 m ahead; it waits for entrances to finish, and the old rift squeezes shut with a short collapse effect instead of vanishing (0.21.24+). Heroes can **rift-hop** to catch up: 3.5 m+ behind the phone while following, any hero over 6 m away, or stuck while following beyond 2.5 m. PlaySmoke measured the party inside the 9:16 frame for ~80% of a synthetic 10 m walk; real ARCore walking is untested. Mesh recovery can also warp to nearby support. Do not describe this as never teleporting or guaranteed seamless city navigation.
+**Arrivals (0.22+):** the portal opens **only for a raid** (`UpdateRaid`). Raid heroes walk out of the rift window onto the floor. Once nobody is still entering, and at least 6 s after the tear, the rift collapses and stays gone (`CloseRiftWhenRaidersOut`); later joiners poof in at a stage point near the landing spot with an arrival burst. An IRC raid carries a viewer count, not heroes, so raiders must `!join` within those few seconds to walk out of the portal. The first-`!join` rift (`OpenRiftForJoin`) and rift relocation are dead code.
+
+**Follow me** is a **manual** button (auto-follow is off since 0.22). While following, formation slots sit about **0.9 m ahead** of the phone on the floor and heroes **walk** (`Pace = 0`; the old streamer-pace sprint was removed after the AR review). Near their slot they roam in front of the lens; when close to the camera they turn and wave. A hero more than 5 m behind the phone while following, or stuck beyond 2.5 m, **rift-hops** ahead. Without Follow, heroes stay and roam where they are; there is no catch-up teleport. Real ARCore walking is unverified on device. Do not describe this as seamless city navigation.
 
 ## Chat and planner reference
 
@@ -150,8 +154,8 @@ The phone HUD stays outside direct-publisher video. Hero name tags, speech bubbl
 |---|---|
 | Account chip / Setup gear | Opens Settings; full diagnostics live at the bottom. |
 | Scan progress + hint | Tracking → mesh → NavMesh → landing; progress is heuristic, not measured scan completeness. |
-| Primary orb / Test raid | Available after landing in Demo. Local fixtures offline; paired mode requests a server test raid. |
-| Follow me (party icon) | Toggle party following. Rail buttons are icon-only. |
+| Primary orb / Test raid | Available after landing in Demo. Local fixtures offline (portal + scripted viewers, phone only). Paired mode requests a server test raid, which the public server refuses for phone rooms. |
+| Follow me (party icon) | Manual toggle; the party walks ~0.9 m ahead. Rail buttons are icon-only. |
 | Scan view (scan-frame icon) | Cycles **Floor → Hidden → Mesh → Floor**. |
 | Chat | Shows local/simulator input. Live impersonation is refused server-side. The fading phone feed is not a complete IRC transcript. |
 | Trail | Demo rail only: local three-crystal → shrine → two-hero cheer activity; **no Shards**. |
@@ -174,11 +178,11 @@ Settings are one scrollable column:
 | Reset room scan | Two taps once the party has landed (0.21.21+). Clears mesh/NavMesh, heroes, rift, trail, markers and perception generations. Re-scan; it is not a server-account deletion. |
 | Sound | Saved game SFX mute, including already-playing loops (0.21.10+). Does not mute mic. |
 | Reduced motion | Saved `CameraFeel` comfort option; see effect limits above. |
-| Server URL | Default `https://raidrift-pc.tail7252b4.ts.net`. Editing is applied when **Pair with server** is tapped. |
-| Pairing token · empty = debug pairing | Optional Creator Studio capture token. Nonempty replaces saved token; blank does not clear an existing token. If there is no saved token, pairing uses `/v1/debug/pair`. |
-| Pair with server | Saves URL/token and starts polling; the HUD remains Demo until direct Go live. |
+| Server URL | Default `https://raidrift.12industries.com` (0.23.x). Saved private URLs (`raidrift-pc…ts.net`, `vibejam2026-2…:8446`) are migrated to it on start. Editing is applied when **Pair with server** is tapped. |
+| Pairing token · empty = self-pairing | Optional Creator Studio capture token. Nonempty replaces the saved token; blank does not clear it. With no saved token, the app pairs itself via `POST /v1/native/pair` with its install id. |
+| Pair with server | Saves URL/token and starts polling; the HUD remains Demo until direct Go live. Go live also pairs automatically. |
 | Offline test room | Stops server polling, clears current heroes and selects local fixtures. It is **not the End stream button**; stop publishing separately. |
-| Server test raid | Debug harness only, requires pairing. Label the resulting event TEST RAID. |
+| Server test raid | Requires pairing and a numeric debug room. **Refused on the public server** (`phone-*` rooms). |
 | Stream to PC (WebRTC) | Alternative **video-only** 720×1280 capture with `/v1/media` signaling. Pair first, open the configured receiver on PC. Refused while the direct publisher is live (0.21.3+). |
 | Diagnostics | Version, server state, map pieces, floor distance, NavMesh readiness, hero count and detector hints. Live info also includes publisher state, kbps, FPS, drops, channel connection and mic state. |
 
@@ -190,17 +194,17 @@ Settings are one scrollable column:
 
 ### Demo versus Live
 
-Offline Demo uses Alice/Mage, Bob/Rogue and Charlie/Barbarian as clearly scripted test viewers. Their messages drive the same basic actions; they are not live Twitch users. A paired Demo uses the server harness and can show its separate fixtures. Selecting Live retains existing server heroes; do not identify those fixtures as real participants. The harness seeds two demo heroes (Mossling, Emberfox) at launch; a debug `reset` event clears them. From 0.21.37, if no rift is open, the first joining hero after landing tears the rift open with a non-raid "THE RIFT OPENS" banner and later joiners hop out of it (a raid still replaces it with the full raid opening and hands over heroes still walking out; from 0.21.42 the join rift opens only when the landing spot is in front of the phone and within 4 m, otherwise heroes poof in near the streamer). With seeded heroes present, they open the rift right after landing.
+Offline Demo (before pairing) uses Alice/Mage, Bob/Rogue and Charlie/Barbarian as clearly scripted test viewers, and the orb runs a **local** test raid (portal included). None of it reaches the server or Twitch. Once the app is paired (Go live or Setup → Pair), the phone shows its own server room `phone-<hash>`. That room starts empty and in LIVE TWITCH mode: the in-app chat box is refused and test raids fail on the public server (non-numeric room). Heroes come only from real Twitch chat (and the Extension). The Mossling/Emberfox seeds exist only in the debug room `900000001`, which no phone uses on the public server.
 
-**Test-raid labeling:** the private debug endpoint remains callable during Live. It injects an EventSub-shaped fixture whose inbox ID starts with `debug-`; since November 1 (03:23 Kyiv server restart) the inbox consumer passes `test=true` for those IDs, so a debug raid shows the **TEST RAID** banner (no raid stinger) even after Live selection (`tests/tailnet.test.ts`). Real IRC raids are recorded with `test=false`. Still announce test raids aloud and keep a TEST RAID caption in any recording; the banner is short-lived.
+**Test-raid labeling:** on a numeric debug room the fixture's inbox ID starts with `debug-` and is shown with a **TEST RAID** banner even in Live. Real IRC raids are recorded with `test=false` and show `RAID · <name> · <count>` with the raid stinger. On the public server, use a real raid (a second live channel types `/raid <your channel>`).
 
-Go live switches the HUD and starts real channel selection plus direct publishing. Watch both publisher health and the separate chat connection. End returns the **HUD** to Demo, but polling can remain active. To stop uploads as well, select Offline test room after ending. For a clean real-viewer rehearsal, reset the private server room before selecting the channel, then have real viewers `!join`.
+Go live switches the HUD and starts real channel selection plus direct publishing. Watch both publisher health and the separate chat connection. End stops the publisher and the IRC reader and returns the **HUD** to Demo, but polling can remain active. To stop uploads as well, select Offline test room after ending.
 
 ### Selfie mode
 
 `SelfieMode` capability-checks the loader for a user-facing camera. Unsupported loaders show a notice and leave the room intact. During both flips it pauses room meshing, planes, NavMesh updates, perception, trail and moths, hides room content, and preserves the same render camera/publisher path. Front mode requests rotation-only tracking and one face. It waits for three usable camera frames; returning normally also waits for positional tracking; after 4 s three rear frames are enough without tracking, and after 12 s forced recovery restores the world and can reset the AR session (rescan needed). A transition times out after 10 s and attempts safe recovery.
 
-When available, face pose/mesh drives a halo, depth mask and miniature hero perches. Shoulders are **face-relative approximations**, not body tracking. Without a tracked face the party uses viewport positions; it is not falsely attached to a face. On return heroes leave perches and are placed back on measured floor. Room tools are blocked while the world is paused. Continuous live flip, mirroring, face loss and restored room alignment are **untested on the target device**; test while stationary before using on stream.
+**0.22+ behaviour (owner decision November 1):** switching the camera never moves or resets the party. Every hero stays exactly where it stood in the room, paused. Joins and leaves are still tracked. At the flip the phone's attitude sensor is aligned to the AR pose (**gyro view**): while the streamer stands still, the front camera is aimed by rotation alone, so turning towards where the party stands shows them in the selfie, in place, with emotes playing. Walking during selfie is not tracked. On return, heroes are shown where they were (no re-placement). Face perches (`SyncSelfieHeroes`) are no longer called. The toast "Selfie party - heroes follow your face" is outdated text (`SelfieMode.cs:199`). Safety resets remain: 12 s without the rear camera facing the world, or 20 s without steady tracking after return, resets the AR session and the room (rescan, land again). Room tools are blocked while selfie is active. Gyro alignment, mirroring and restored room alignment are **unverified on device**; test while stationary in good light.
 
 ## Direct streaming internals
 
@@ -216,7 +220,11 @@ App pause releases capture/audio/encoders; resume can start a fresh foreground s
 
 ## PC setup, build and installation
 
-### Private rehearsal server
+### Public server (current)
+
+The VPS runs the same harness on its Tailscale address (`--host 100.x.y.z --port 3412 --origin https://raidrift.12industries.com --env-file ~/raidrift/.env`). Caddy terminates HTTPS for `raidrift.12industries.com` and proxies only `/ext /ext/* /v1/ext/* /health /apk/* /v1/native/* /v1/live/*`; everything else returns 404. `APK_DIR` in the env file serves `/apk/`. Check `https://raidrift.12industries.com/health`. Restarting clears all rooms.
+
+### Private rehearsal server (historical, October 31)
 
 Use Node **24+** and the repository root. Install dependencies/build web assets once or after source updates:
 
@@ -254,7 +262,7 @@ For the owner's existing private APK share, the build script supports:
 powershell -File E:\RaidRift-MR\build.ps1 -Publish
 ```
 
-It copies a versioned APK to `E:\Hermes\share\raidrift-apk`, a Desktop copy, and writes a SHA-256 sidecar. Browse **[the APK share](https://raidrift-pc.tail7252b4.ts.net/apk/)** with Tailscale on. Select the latest **successfully built and intentionally published** version, not merely the largest filename. Share reachability and installed-version match were not checked in this review. Install the APK using Android's Files/browser installer permission, then revoke that installer permission if desired. Package is `world.raidrift.mr`; the old Kotlin app is a different client. Compare the app diagnostics version and the selected APK's `.sha256` before testing. Uninstalling/clearing app data removes saved setup and requires pairing again.
+It copies a versioned APK to `E:\Hermes\share\raidrift-apk`, a Desktop copy, and writes a SHA-256 sidecar. The public download is **[RaidRift-latest.apk](https://raidrift.12industries.com/apk/RaidRift-latest.apk)** (0.23.3, 127.7 MB, checked November 1; the directory listing itself is not public). Copy each intentionally published build there. Install the APK using Android's Files/browser installer permission, then revoke that installer permission if desired. Package is `world.raidrift.mr`; the old Kotlin app is a different client. Compare the app diagnostics version and the selected APK's `.sha256` before testing. Uninstalling/clearing app data removes saved setup and requires pairing again.
 
 ## Self-tests and evidence
 
@@ -276,7 +284,7 @@ Each entry exits batch mode itself; especially **do not pass `-quit` to Detector
 | `DetectorSelfTest.Run` | Synthetic decode/NMS, letterbox/BGR/orientation probes and real-image annotations under `Builds/detector`. | External AR camera blit synchronization, on-phone FPS or recognition accuracy. |
 | `LiveSelfTest.Run` | Ring overflow/wrap/concurrency, resampling, crop and GPU NV12 colors/orientation; `[LiveSelfTest] PASS`. | MediaCodec hardware, Twitch authentication, received A/V sync or reconnect. |
 | `HudPreview.Render` | Landscape/portrait Demo, Live and Settings images under `Builds/preview`. | A real live stream; values/chat are fixtures. |
-| `PlaySmoke.Run` | Opens the real scene in Play Mode: presses every HUD/settings button; lands on a synthetic room; offline test raid; Follow + 10 m street walk with rift relocation; server-mode `!join`/wave/leave from an injected world; WASD steering; 90 s busy-chat soak; a real-raid event. Fails on any exception from project code, no landing or no arrivals. Never contacts the server or goes live. Frames: `Builds/preview/play-*.png`. | Real AR tracking/meshing, camera exposure, the publisher, the real server. |
+| `PlaySmoke.Run` | Opens the real scene in Play Mode: presses every HUD/settings button; lands on a synthetic room; offline test raid; Follow + 10 m street walk (written when the rift still relocated; that is off since 0.22); server-mode `!join`/wave/leave from an injected world; WASD steering; 90 s busy-chat soak; a real-raid event. Fails on any exception from project code, no landing or no arrivals. Never contacts the server or goes live. Frames: `Builds/preview/play-*.png`. | Real AR tracking/meshing, camera exposure, the publisher, the real server. |
 | `FxPreview.Render` | Portal timeline, emotes, banner, caption, spots and tags at 720×1280 under `Builds/preview/fx-*.png` (`FX_DAYLIGHT=1` for a bright floor). | Real camera exposure and device rendering. |
 
 `Tools/live-plugin/verify-standalone.ps1` covers the isolated Android plugin. `verify-unity.ps1 -Mode All` covers compile/self-test/nonpublishing APK with an atomic lock, but writes outside the repo and requires the owner's normal build environment. Preserve exact APK hash, version, phone/OS, logs and receiving-side recording for every real rehearsal. No documentation-only check replaces [device acceptance](ACCEPTANCE.md).
@@ -290,13 +298,14 @@ Each entry exits batch mode itself; especially **do not pass `-quit` to Detector
 | Floor never ready / heroes do not land | Show open floor below camera, not just a bed/table; scan a connected area, wait for several bakes and hold steady. Try a measured floor tap. Review floor distance/NavMesh readiness; reset only if needed. |
 | Hero stuck / cannot reach furniture | Scan the route and top; small islands/gaps may not support a jump link. Try a visible reachable floor spot, `!stop`, then a simple command. A detected box alone is insufficient support. |
 | Feet clipped / underground / floor flicker | Confirm current build, no stale per-pixel occlusion setup, and plausible floor estimate. Reset/rescan. Record phone model and scan-view footage; do not present a shader workaround as a hardware pass. |
-| LIVE but no viewer response | Check Settings chat status independently. Tailscale, PC awake/process/Serve→3412, correct login, pairing. Viewer sends `!join` then `!wave`; phone local chat cannot impersonate live viewers. |
+| LIVE but no viewer response | Check Settings chat status independently (`#channel chat connected`), `https://raidrift.12industries.com/health`, the correct login and pairing. Viewer sends `!join` then `!wave`; phone local chat cannot impersonate live viewers. |
+| "Raid failed · Simulated EventSub needs a numeric…" | Expected on the public server: test raids need a numeric debug room. Use a real raid. |
 | Stream offline / authentication error | Re-enter the correct Twitch stream key privately; check microphone permission and mobile uplink. Confirm received channel, not only phone chip. End before retrying. |
 | `camera already captured` | Turn off Stream to PC before Go live. Never toggle WebRTC on during direct publishing. |
 | Low bitrate / drops / heat | Use Mobile data or Weak signal on next start, shade/cool phone, stop charging if hot. Check Twitch receipt and network; adaptive bitrate cannot repair no uplink. |
 | Selfie unsupported / return stalls | Use rear mode; wait for three valid frames and tracking. After a timeout point at the room and tap Selfie again. Do not keep walking through a camera transition. |
 | Objects/number disappear | Reframe and rescan. Use a current spot number; check sidecar health/vision/frame freshness for open vocabulary. Multiple same-class objects can be ambiguous. |
-| Pair expired / debug route 404 | Pair again after a harness restart. Production intentionally lacks debug pairing; use Creator Studio token there. Blank token input does not erase saved credentials. |
+| "Server restarted · pairing again" | Automatic: the same install id re-pairs to the same (now empty) room and the channel is re-selected. Viewers `!join` again. Blank token input does not erase saved credentials. |
 | Gradle `Tag mismatch`, TLS `bad record MAC` | Known large-download corruption. Retry, verify Unity tarballs, inspect the exact failed Maven artifact and re-fetch its corrupt cache entry rather than deleting all caches. Preserve TLS verification. Check disk space and Gradle log. |
 | ARCore duplicate namespace build error | Keep existing `android.uniquePackageNames=false` in the project's Gradle properties template. Preserve R8/JNI templates as well. |
 
@@ -305,7 +314,7 @@ Each entry exits batch mode itself; especially **do not pass `-quit` to Detector
 - Broadcast only where safe and permitted; avoid faces, addresses, plates, screens and private conversations. Walk on a clear pedestrian route, stop before reading controls and never step into traffic to follow a virtual object.
 - Room mesh, NavMesh and face geometry remain local on these code paths. Paired mode **does send camera JPEGs** and target metadata to the PC; explicit model planning can send chat/track metadata to its configured provider. Twitch receives the final broadcast and mic. Do not infer anything about SDK telemetry from local geometry handling; Niantic/Unity terms apply separately.
 - Stream key and capture token are locally persisted in **PlayerPrefs**, which is not encrypted secret storage. End does not erase them. Clear Android app storage/uninstall to remove this setup; reset Twitch key if exposed. Do not share tokens, env files, unredacted logs or setup recordings.
-- Debug pairing is unauthenticated by design inside the private harness. Keep the tailnet trusted and do not expose debug routes publicly. Normal API deployment needs durable storage, stable secrets, authorized provisioning and disabled debug tools.
+- Public self-pairing is open by design: anyone with the APK gets a room and can select any Twitch channel to read (read-only IRC). No channel-ownership proof exists, so the last phone to claim a channel also receives that channel's Extension viewers. Debug tools are still on in the public process, scoped per room. A durable deployment needs a database, stable secrets, authorized provisioning and disabled debug tools.
 - Chat, detector labels and model output are untrusted data. No real-person identification, long-term person tracking or physical action instruction is implemented. Scene labels can be wrong; a virtual hero on a target is not proof of real-world contact.
 - Phone Rift Trail is local and pays no Shards. The server ledger owns rewards; renderer geometry or a phone completion cannot mint them. Camera reward verification remains gated.
 

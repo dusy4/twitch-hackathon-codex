@@ -1,40 +1,80 @@
 # RaidRift
 
-RaidRift turns Twitch chat and raids into a mixed-reality adventure: viewer heroes emerge from an original voxel rift, navigate surfaces scanned by an Android phone, and respond to their viewers' commands. The Unity app can send the composed camera view, microphone and game audio directly to Twitch; the PC server handles chat input, plans and world state. An optional Twitch Extension provides viewer controls.
+**Your Twitch chat, as tiny heroes in your real world.** RaidRift is an Android AR app for IRL streamers. The phone scans the space around you. A Twitch raid tears open a voxel portal on your floor, and every viewer who types `!join` gets their own named hero that walks on the real surfaces. Viewers then steer that hero from chat, in plain words or commands, or from a Twitch Extension d-pad. The phone streams the composited AR view, your mic and game audio **straight to Twitch over RTMPS**. No OBS and no PC in the loop.
 
-**Twitch × Codex hackathon deadline: November 2, 2026, 2:00 PM Pacific.** The implementation is under active validation, not a production release. Current source review: October 31, 2026, branch `fix/android-ar-recovery`.
+Built for the **Twitch × Codex hackathon** (deadline November 2, 2026, 2:00 PM Pacific). Current app: **0.23.3** (November 1, 2026). Branch `fix/android-ar-recovery` (mirrored to `main`).
 
-- [RaidRift MR: complete phone, server, Twitch, build and troubleshooting guide](docs/RAIDRIFT_MR.md)
-- [Street test: one-page three-minute stream checklist](docs/STREET_TEST_RUNBOOK.md)
-- [Devpost video: shot-by-shot 2:45 script](docs/DEMO_VIDEO_SCRIPT.md)
+## Try it now
 
-## Current status
+1. On an ARCore-capable Android phone, download and install **[RaidRift-latest.apk](https://raidrift.12industries.com/apk/RaidRift-latest.apk)**. Allow "install unknown apps" for your browser.
+2. Open RaidRift and grant **camera** and **microphone** access. Sweep the rear camera slowly over the floor and furniture until the landing rune locks (or tap scanned floor).
+3. **Setup → Twitch channel** (your login) and **Stream key** (Twitch Creator Dashboard → Settings → Stream). The key stays on the phone. Then tap **Go live**.
+4. Going live pairs the app with the public server automatically. Each install gets its own room; no account, Tailscale or PC setup is needed. Setup shows `#yourchannel chat connected` once chat is being read.
+5. In your Twitch chat, viewers type `!join`. Their heroes appear in your room with their names.
 
-“Done” below means implemented with the stated evidence; it does not imply every release gate passes.
+Before you go live, the app runs an offline demo room with three scripted test viewers and a local **Test raid** orb. That is useful for checking the AR. Nothing from the demo room reaches Twitch.
 
-| Status | Area | Evidence / exact remaining gate |
-|---|---|---|
-| Done in source | Unity room meshing, live NavMesh, landing, KayKit heroes, jump links, roaming/following, numbered targets, HUD and effects | Live project **`E:\RaidRift-MR`**. Overnight builds 0.20.0 → **0.23.3** (Nov 1, 14:21 Kyiv) were published to the private APK share after Unity self-tests and the Play Mode gameplay smoke test (`PlaySmoke`: every HUD button, landing, test and real raid, `!join`/wave, WASD, 90 s chat soak, 10 m street walk with the party in frame) passed. Repo `apps/unity-ar` is a synced copy and may lag. |
-| Done in source; untested on device | Direct Twitch publisher, YOLOX-S labels, selfie mode and current grouped settings | RootEncoder standalone checks exist; current combined AR/detector/selfie/Twitch A/V and thermal tests remain open. The Nov 1 noon street test is the first device pass for 0.21. |
-| Done with local integration evidence | Anonymous Twitch IRC chat/raid adapter, held steering, Extension EBS and four viewer surfaces | [Receipt](artifacts/extension-verification.json): 91 Node passes, one conditional PostgreSQL skip, fixture-authorized browser tests. Actual read-only `#twitch` acknowledgement passed; real two-viewer/raid/phone-broadcast rehearsal remains untested. |
-| Done with earlier local evidence | Website/controller/creator tools, database-backed identity, ledger/leaderboards, bounded planner and optional PC detector | See [setup](docs/SETUP.md), [assets](docs/ASSETS.md) and [progress](docs/PROGRESS.md). The private tailnet harness is in-memory and loses state on restart. Phone Rift Trail grants no Shards. |
-| Blocked: hosting + review | Public Twitch Extension installation | Private **Local Test** is registered (Oct 31): hosting paths, capabilities, `EXT_*` values in the owner's private env, testers, installed on the owner's channel; the owner still activates it. The EBS accepts JWTs signed with the configured secret. A public HTTPS EBS addressing the same world is required; private Tailscale Serve is unreachable to ordinary viewers. Twitch hosted testing/review remains outstanding. [Exact checklist](docs/TWITCH_EXTENSION.md). |
-| Blocked for credentialed path | Production OAuth/EventSub delivery | Requires owner-controlled Twitch application credentials/authorization and a public HTTPS callback. Private harness intentionally clears OAuth credentials. Anonymous IRC is a separate available input path. |
-| Open release gates | Current phone acceptance, public durable deployment and asset distribution review | Exact-APK device evidence, received A/V/reconnect, tracking/recognition corpus, public operations and exact model provenance/notices remain required. [Acceptance](docs/ACCEPTANCE.md), [MR limitations](docs/RAIDRIFT_MR.md#privacy-safety-and-limits). |
+Public server: `https://raidrift.12industries.com`. Only these paths are public: `/ext/*`, `/v1/ext/*`, `/v1/native/*`, `/v1/live/*`, `/apk/*` and `/health`. Rooms live in memory. If the server restarts, the app re-pairs by itself to the same room, but heroes have to `!join` again.
 
-## Run
+## How chat drives the heroes
 
-For the website/API locally (Node 24+):
+| Viewer types | What happens |
+|---|---|
+| `!join` (or plain `join`) | Spawns that viewer's own hero, named from their Twitch account. |
+| `!jump` `!dance` `!wave` `!sit` `!stop` | Instant keyword actions. Plain `jump`, `dance`, `wave at me` and `turn around then dance` also work once you have joined. So do Ukrainian phrases: `стрибни`, `танцюй`, `помахай рукою`, `йди вперед`. |
+| `!w` `!a` `!s` `!d` | A short step away, left, toward or right, relative to the streamer's view. |
+| `!rift go to 3 and dance` | Walks to on-screen **spot 3** (the phone draws numbered markers on reachable floor), then dances. |
+| `!rift go to the chair`, `!rift sit on the bench` | Natural language, planned by a small LLM (Groq `gpt-oss-20b` through an OpenAI-compatible provider) into a **bounded, typed plan**: walk/emote/sit steps on known targets only. Targets come from the phone's on-device **YOLOX-S (COCO-80)** detections lifted onto the scanned mesh, plus numbered spots, "there" (screen centre), "streamer" and "portal". Synonyms (sofa/couch, table, plant…) are in `apps/api/targets.ts`. If the object isn't detected, the request fails honestly. |
+| Twitch Extension | Join button, hold-to-walk d-pad, emotes, tap a visible target, free-text idea box. Local Test only (see limits). |
+| A real **raid** | The portal tears open on your landing spot with the raider's name and viewer count. Raiders who `!join` walk out of it, then the portal collapses and the heroes live in your room. |
+
+Keyword commands never call the LLM. Any other `!` message goes to the planner first and falls back to the keyword compiler when the model is offline or over budget (25 plans/min per room). Model output is validated JSON choreography. No generated code runs.
+
+## What you see on the phone
+
+- The portal opens **only for a raid**. Viewers who join without a raid poof in with an arrival burst. Heroes then roam the scanned room, hop onto furniture tops and wave at the camera.
+- **Follow me** is a manual button: the party walks along in front of you. There is no auto-follow, and the portal doesn't relocate.
+- **Selfie flip** keeps every hero exactly where it stood. While you stand still, a gyro view draws them in the front camera when you turn towards them. Flip back and they are still there.
+- **Live HUD** (IRL-Pro style): LIVE timer, bitrate, fps/drops, chat-connected state, mic mute, and End (two taps). Name tags, numbered spots, hearts and the "Type !join" caption are part of the broadcast. The buttons are not.
+
+## Honest limits
+
+- **Device-tested?** The full combination (AR + detector + selfie + RTMPS A/V on Twitch + walking) on 0.23.3 is **unverified on device** until the November 1 recording. Unity self-tests and a Play Mode smoke test (`PlaySmoke`) pass. Those prove no real tracking, encoding or Twitch receipt.
+- **Test raids need a numeric room.** On the public server the Setup "Server test raid" is refused for per-phone rooms. A portal on Twitch currently needs a **real raid** from another live channel. Before Go live, the offline demo raid works locally.
+- **Twitch Extension** is in **Local Test**: only allowlisted accounts see it, on the owner's channel. Twitch review takes 5–14 days, so judges can't install it. The deployed build has the touch/hold d-pad; keyboard WASD is only in the Local Test keyboard build.
+- **Chat is read anonymously over IRC** (read-only). RaidRift never posts to chat. EventSub/OAuth code exists in `apps/api/twitch.ts` but is not used by the public server. No Bits, Channel Points or subs.
+- **Vertical only:** the stream is 720×1280 portrait (desktop shows side bars). No Dual Format.
+- **State is in memory.** No accounts, scores or Shards persist on the public server.
+- **Object grounding is approximate:** labels can be wrong or missing. A hero on a "chair" is a virtual pose, not proof of contact. Microphone denial currently stops Go live, so grant it first.
+- Android only (ARCore + Niantic Spatial SDK meshing). Not tested on iOS.
+
+## Docs
+
+- [RaidRift MR: phone, server, Twitch, build and troubleshooting guide](docs/RAIDRIFT_MR.md)
+- [Three-minute stream checklist](docs/STREET_TEST_RUNBOOK.md)
+- [Devpost video: 2:45 shot list](docs/DEMO_VIDEO_SCRIPT.md)
+- [Twitch Extension status and owner steps](docs/TWITCH_EXTENSION.md)
+
+## Build and run from source
+
+Server (Node 24+), the same process the public server runs (in-memory rehearsal harness; it binds only 127.0.0.1 or a Tailscale address, so put a reverse proxy such as Caddy in front):
 
 ```powershell
 npm ci
 npm run build
-npm start
+npm run build:extension          # review build; build:extension:local adds keyboard WASD for Local Test
+node node_modules/tsx/dist/cli.mjs scripts/tailnet-test.ts --host 127.0.0.1 --port 3412 --origin https://your.host --env-file <private .env>
 ```
 
-Open **http://127.0.0.1:3400**. This normal local API persists simulator data; `npm start` does not automatically load `.env`. For the owner's private phone rehearsal, use the [street checklist](docs/STREET_TEST_RUNBOOK.md), which specifies port **3412**, Tailscale and the existing env-file launch command. Install the phone APK from the [private APK share](https://raidrift-pc.tail7252b4.ts.net/apk/) with Tailscale connected.
+The env file may provide `GROQ_API_KEY` (planner), `EXT_CLIENT_ID`/`EXT_SECRET`/`EXT_OWNER_ID` (Extension) and `APK_DIR` (APK download folder). Without a planner key, keyword commands still work. For the full website/API with a database: `npm start` on http://127.0.0.1:3400 (see [setup](docs/SETUP.md)).
 
-`npm test` runs backend/domain integration tests; `npm run test:e2e` runs browser checks. These are commands to reproduce validation, not newly claimed test results. No build, device run or live stream was performed during this documentation refresh.
+Phone app: Unity 6000.3.27f1 project mirrored in `apps/unity-ar` (live copy `E:\RaidRift-MR`). Build steps are in the [MR guide](docs/RAIDRIFT_MR.md#unity-build). The app's default server is `https://raidrift.12industries.com` (`ServerConnection.cs`); change it in Setup → Server URL for your own host.
+
+`npm test` runs backend/domain integration tests; `npm run test:e2e` runs browser checks. These are commands to reproduce validation, not newly claimed results. The historical receipt is [artifacts/extension-verification.json](artifacts/extension-verification.json) (91 Node passes, one conditional PostgreSQL skip).
+
+## How Codex contributed
+
+Codex (CLI and app) did the research and implementation passes behind this repo: the bounded planner and target words (`apps/api/compiler.ts`, `world.ts`, `targets.ts`), the anonymous IRC reader and Extension EBS (`twitch-irc.ts`, `extension.ts`, `apps/twitch-extension`), the Android RTMPS publisher (`Scripts/Live/*` + RootEncoder bridge), the YOLOX detector integration (`Scripts/Perception/*`), selfie mode, effects previews, and several code reviews. The session ids and the evidence list are in the [video script](docs/DEMO_VIDEO_SCRIPT.md#codex-evidence).
 
 - [General setup, OBS and operations](docs/SETUP.md)
 - [Implementation chronology and evidence](docs/PROGRESS.md)
