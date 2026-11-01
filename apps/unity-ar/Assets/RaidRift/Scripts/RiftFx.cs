@@ -14,6 +14,15 @@ namespace RaidRift
     {
         static RiftFx _i;
         static float _lastMajor = -100f;
+
+        /// <summary>VFX plan: one major screen cue per 4 s (a raid right after the first !join opened the rift, a
+        /// relocation right after a raid). Call once per opening: 1, or 0.3 inside the cooldown (visuals unchanged).</summary>
+        public static float CueFeel()
+        {
+            if (Time.time - _lastMajor < 4f) return 0.3f;
+            _lastMajor = Time.time;
+            return 1f;
+        }
         ParticleSystem _sparks, _streaks, _chips, _smoke, _rings, _flares;
         Transform _floorPlane;
 
@@ -289,9 +298,6 @@ namespace RaidRift
         public static void Tear(Vector3 center, Vector3 facing, Vector3 floor, float scale = 1f, bool raid = false, float feel = 1f)
         {
             if (_i == null) return;
-            // VFX plan: one major screen cue per 4 s (a raid right after the first !join opened the rift, a relocation
-            // right after a raid): the second one keeps its visuals but only a light camera feel.
-            if (Time.time - _lastMajor < 4f) feel *= 0.3f; else _lastMajor = Time.time;
             CameraFeel.Impact((raid ? 1f : 0.72f) * feel);
             Emit(_i._flares, center - facing.normalized * 0.25f * scale, Vector3.zero, 1.2f * scale, 0.18f, Crack);
             // Shockwave: thin ring 0.08 → 0.8 m over 0.36 s (+ delayed echo for raids).

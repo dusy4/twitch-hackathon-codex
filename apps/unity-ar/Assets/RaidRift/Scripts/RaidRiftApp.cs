@@ -804,6 +804,7 @@ namespace RaidRift
         System.Collections.IEnumerator TearSequence(RiftWorld rift, float scale, bool raid, float feel = 1f)
         {
             if (rift == null) yield break;
+            feel *= RiftFx.CueFeel();
             var foot = rift.transform.position;
             var center = foot + Vector3.up * 0.95f * scale;
             RiftFx.Charge(center, rift.Forward, scale);
