@@ -17,7 +17,7 @@ namespace RaidRift
         public const float WindowWidth = 1.3f, WindowHeight = 1.9f;
 
         public bool Open => _age >= 0f;
-        public Vector3 Foot(int i) => transform.TransformPoint(new Vector3(((i % 4) - 1.5f) * 0.22f, 0f, -0.3f - (i / 4) * 0.25f));
+        public Vector3 Foot(int i) => transform.TransformPoint(new Vector3(((i % 4) - 1.5f) * 0.3f, 0f, -0.3f - (i / 4) * 0.25f)); // 0.22 m put hats on top of each other
         public Vector3 Inside(int i) => transform.TransformPoint(new Vector3(((i % 4) - 1.5f) * 0.2f, 0f, 0.9f + (i / 4) * 0.15f));
         public Vector3 Forward => transform.forward;
 

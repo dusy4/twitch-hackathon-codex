@@ -536,6 +536,26 @@ namespace RaidRift
             hud.Toast(banner + " · the rift is opening", 3f);
         }
 
+        /// <summary>Live streams rarely start with a raid: the first viewer to !join after landing opens the rift
+        /// (normal tear, no RAID banner/stinger), so joining heroes hop out of it on stream instead of popping in at
+        /// a stage point. Not while the streamer is far from the landing spot (walked away; the old pop-in is used).
+        /// A later raid replaces this rift with the full raid opening.</summary>
+        void OpenRiftForJoin(string name)
+        {
+            var d = arCamera.transform.position - _origin;
+            if (new Vector2(d.x, d.z).magnitude > 6f) return;
+            if (_marker != null) Destroy(_marker);
+            _rift = RiftWorld.Create(_origin + _away * 0.45f, arCamera.transform.position, arCamera);
+            _raidOpened = Time.time;
+            StartCoroutine(TearSequence(_rift, 1f, false));
+            WorldTags.Banner(_rift.transform.position + Vector3.up * 2.15f, arCamera, "THE RIFT OPENS",
+                string.IsNullOrEmpty(name) ? "a viewer drops in" : name + " drops in", 2.2f);
+            if (moths != null) moths.Burst(_rift.transform.position + Vector3.up * 1.0f, -_rift.Forward, 8);
+            SetScanMode(2);
+            _nextMaterialPass = 0f;
+            RefreshButtons();
+        }
+
         void SyncHeroes(WorldState world)
         {
             var alive = new HashSet<string>();
@@ -561,6 +581,7 @@ namespace RaidRift
                 if (!hero.Spawned)
                 {
                     if (!_landed || !room.HasNavMesh) { index++; continue; }
+                    if (_rift == null) OpenRiftForJoin(state.Name); // first viewer in: the rift tears open on stream
                     // With a rift open, everyone walks out of the rift world onto the real floor.
                     if (_rift != null && room.Sample(_rift.Foot(index), 0.5f, out var exit))
                     {

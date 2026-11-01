@@ -95,7 +95,7 @@ namespace RaidRift.EditorTools
             if (_frame > after + 150) TickGameplay(app);
         }
 
-        // ---------------- phase 3: street-stream style server world (no rift, viewers !join / wave / leave) ----------------
+        // ---------------- phase 3: street-stream style server world (no raid; the first !join opens the rift, viewers wave / leave) ----------------
         // Injects ServerConnection.World directly; SceneTracks is disabled and no chat is sent, so nothing is posted
         // to the real server.
         static int _serverStep;
@@ -134,7 +134,7 @@ namespace RaidRift.EditorTools
                     world.Heroes.Add(_h1); world.Heroes.Add(_h2);
                     typeof(ServerConnection).GetProperty("World").GetSetMethod(true).Invoke(app.server, new object[] { world });
                     typeof(ServerConnection).GetProperty("Connected").GetSetMethod(true).Invoke(app.server, new object[] { true });
-                    Debug.Log("[RaidRift] playsmoke server phase: two viewers !join (no rift open)");
+                    Debug.Log("[RaidRift] playsmoke server phase: two viewers !join (the first one opens the rift)");
                     _serverStep = 2; _serverAt = t;
                     break;
                 case 2:
