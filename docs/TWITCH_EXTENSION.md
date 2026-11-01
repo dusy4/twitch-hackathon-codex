@@ -22,6 +22,12 @@ IRC `USERNOTICE msg-id=raid` is the selected Live source and records `test:false
 
 The existing `apps/api/twitch.ts` OAuth/EventSub path remains available in the normal API process when `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET` and valid stored user authorization exist. The tailnet harness intentionally clears Twitch OAuth credentials. Do not ingest the same channel through IRC and EventSub simultaneously; their raid IDs differ. Channel Points are not implemented by this slice and need separate scopes, event handling and live validation. No optional EventSub/Channel Points success is claimed.
 
+## Current status (November 1, 2026)
+
+Steps 1–6 below were completed in the owner's console on October 31 (~23:58 Kyiv): version 0.0.1 in **Local Test**, Testing Base URI and the four view paths above (panel height 300; config path `config.html`, which the server also serves), identity link on, connect-src `https://raidrift-pc.tail7252b4.ts.net` and `wss://raidrift-pc.tail7252b4.ts.net`, the three `EXT_*` values in the owner's private env file, the owner account on the testing allowlist, and the Extension **installed but not yet activated** on the owner's channel. A JWT signed with the configured secret is accepted by Twitch Helix and by the local EBS (`/v1/ext/state` → 200, re-checked November 1, 03:30). Remaining owner action: activate it as Panel/Overlay/Component in the Extension Manager. Nothing was submitted for review. A mobile Extension needs a privacy-policy URL before review.
+
+`EXT_OWNER_ID` belongs to the login **`dusyaaaaaaaa_`** (with the trailing underscore). Select that exact login as the app's Live channel; a different channel's IRC ID makes the EBS refuse Extension requests with `EXT_CHANNEL_MISMATCH`.
+
 ## Developer Console: owner actions
 
 1. Create an Extension at the [Twitch Developer Console](https://dev.twitch.tv/console/extensions). Enable video overlay, video component, mobile and panel displays. Set an accurate name/description, original icon and actual screenshots; provide privacy/support information. The owner must confirm the current console supports the requested combination of displays for this Extension version.
