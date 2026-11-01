@@ -13,7 +13,9 @@ namespace RaidRift
     /// 401/403 drop the token (revoked/expired); other errors keep the last world and retry.</summary>
     public class ServerConnection : MonoBehaviour
     {
-        public const string DefaultServer = "https://raidrift-pc.tail7252b4.ts.net";
+        // The public server is the VPS (tailnet HTTPS on :8446; raidrift.12industries.com exposes only /ext + /v1/ext).
+        public const string DefaultServer = "https://vibejam2026-2.tail7252b4.ts.net:8446";
+        const string RetiredServer = "https://raidrift-pc.tail7252b4.ts.net";
         const string PrefServer = "raidrift.server";
         const string PrefToken = "raidrift.token";
 
@@ -30,6 +32,15 @@ namespace RaidRift
         {
             Server = PlayerPrefs.GetString(PrefServer, DefaultServer);
             Token = PlayerPrefs.GetString(PrefToken, "");
+            if (Server == RetiredServer)
+            {
+                // The PC server is retired; its capture token means nothing on the VPS, so pair again.
+                Server = DefaultServer;
+                Token = "";
+                PlayerPrefs.SetString(PrefServer, Server);
+                PlayerPrefs.DeleteKey(PrefToken);
+                PlayerPrefs.Save();
+            }
         }
 
         public bool HasToken => !string.IsNullOrEmpty(Token);

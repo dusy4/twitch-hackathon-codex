@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -24,7 +24,7 @@ namespace RaidRift.EditorTools
         const string Resources = Root + "/Resources";
         const string ScenePath = Root + "/Scenes/Main.unity";
         const string ChunkPrefab = Root + "/Prefabs/RoomMeshChunk.prefab";
-        public const string Version = "0.23.1";
+        public const string Version = "0.23.2";
         public const int VersionCode = 62;
 
         [MenuItem("RaidRift/Set up project")]
@@ -40,7 +40,7 @@ namespace RaidRift.EditorTools
             ConfigurePlayer();
             BuildScene();
             AssetDatabase.SaveAssets();
-            Debug.Log("[RaidRift] Setup complete" + (xr ? "" : " В· XR loader NOT configured"));
+            Debug.Log("[RaidRift] Setup complete" + (xr ? "" : " Р’В· XR loader NOT configured"));
             return xr;
         }
 
@@ -65,7 +65,7 @@ namespace RaidRift.EditorTools
                 target = BuildTarget.Android,
                 options = BuildOptions.None
             });
-            Debug.Log($"[RaidRift] Build {report.summary.result} В· {report.summary.totalErrors} errors В· {output}");
+            Debug.Log($"[RaidRift] Build {report.summary.result} Р’В· {report.summary.totalErrors} errors Р’В· {output}");
             if (Application.isBatchMode) EditorApplication.Exit(report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded ? 0 : 1);
         }
 

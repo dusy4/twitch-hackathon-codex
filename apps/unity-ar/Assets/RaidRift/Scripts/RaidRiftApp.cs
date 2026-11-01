@@ -162,6 +162,7 @@ namespace RaidRift
             string chip = publisher.IsLive ? $"● LIVE {(int)up.TotalMinutes:00}:{up.Seconds:00}" : publisher.State.StartsWith("error") ? "● OFFLINE" : "● " + publisher.State.ToUpperInvariant();
             hud.SetMode(true, chip);
             hud.SetLiveStats(_heroes.Count, publisher.BitrateKbps);
+            hud.SetStreamHealth(publisher.SendFps, publisher.DroppedFrames);
             // First moment Twitch actually receives video: an in-world title card, so early viewers know what to do.
             if (publisher.IsLive && !_announced && !(selfie != null && selfie.WorldPaused))
             {
