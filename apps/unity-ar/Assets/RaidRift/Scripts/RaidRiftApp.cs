@@ -883,6 +883,7 @@ namespace RaidRift
             if (!hero.Placed || !room.FloorUnderCamera(out var floor)) return;
             float dist = (hero.transform.position - floor).magnitude;
             bool following = _follow || trail.Current == RiftTrail.Phase.Fragments || trail.Current == RiftTrail.Phase.Shrine;
+            if (!following) return; // owner 2026-11-01: heroes live where they are; only a following party hops to keep up
             var flat = Vector3.ProjectOnPlane(arCamera.transform.forward, Vector3.up).normalized;
             // Street walk: heroes run 0.9 m/s, a streamer walks ~1.3 m/s, so the party drifts behind the lens and
             // vanished from the stream until 6 m. While following, one that is 3.5 m+ behind the phone hops ahead.

@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -45,6 +45,7 @@ namespace RaidRift.EditorTools
                 _w = 1080; _h = 2340; // portrait, as the owner streams
                 Shot(dir, "hud-portrait-demo", hud => { hud.SetMode(false, "DEMO"); hud.SetStatus("Test raid · 3 heroes", "diag", ""); hud.SetScan(1f, ""); hud.SetFeed(new[] { new ChatLine { Speaker = "pixelknight", Text = "go go go!" }, new ChatLine { Speaker = "mothmage", Text = "!jump on 3" } }); });
                 Shot(dir, "hud-portrait-setup", hud => { hud.SetMode(false, "DEMO"); hud.SetStatus("Offline demo", "v0.20 · 3D map · 21 pieces · floor 1.3 m below", ""); hud.SetScan(1f, ""); hud.ToggleSetup("https://raidrift-pc.tail7252b4.ts.net"); hud.SetLiveInfo("Streams the AR view (no buttons) + mic + game sound to Twitch.", "HD · 4.5 Mbps", "dusyaaaaaaaa"); hud.SetSetting("scan", "Hidden"); hud.SetSetting("sound", "On"); hud.SetSetting("motion", "Off"); });
+                Shot(dir, "hud-portrait-setup-bottom", hud => { hud.SetMode(false, "DEMO"); hud.SetStatus("Offline demo", "v0.20 · 3D map · 21 pieces · floor 1.3 m below", ""); hud.SetScan(1f, ""); hud.ToggleSetup("https://raidrift-pc.tail7252b4.ts.net"); hud.SetSetting("motion", "On"); Canvas.ForceUpdateCanvases(); Object.FindFirstObjectByType<ScrollRect>().verticalNormalizedPosition = 0f; });
                 Shot(dir, "hud-portrait-live", hud =>
                 {
                     LiveHealthy(hud);
@@ -55,7 +56,7 @@ namespace RaidRift.EditorTools
                 // Bad network on a hot phone: amber/red bars, drop warning, low battery, muted mic.
                 Shot(dir, "hud-portrait-live-weak", hud =>
                 {
-                    hud.SetMode(true, "● LIVE 1:02:41");
+                    hud.SetMode(true, "● LIVE 62:41");
                     hud.SetLiveInfo("live", "HD · 4.5 Mbps", "");
                     hud.SeedBitrateHistory(new[] { 4400, 4300, 4500, 4100, 3900, 3600, 3000, 2600, 2400, 2100, 1900, 2300, 2000, 1600, 1500, 1300, 1400, 1100, 1200, 900, 1000, 1300, 1200, 1100, 900, 800, 1000, 1100, 900, 1200 });
                     hud.SetLiveStats(2, 1200);

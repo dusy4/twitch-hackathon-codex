@@ -808,15 +808,19 @@ namespace RaidRift
 
             // Mic level meter: a column of segments on the left edge, lit from the bottom (IRL Pro), mic glyph below.
             var meter = Rect("MicMeter", _safe);
-            Anchor(meter, Vector2.zero, Vector2.zero, new Vector2(0, 24), new Vector2(30, 24 + 44 + 16 * 19));
+            Anchor(meter, Vector2.zero, Vector2.zero, new Vector2(0, 24), new Vector2(34, 24 + 54 + 16 * 19));
             _micMeter = meter.gameObject;
-            var mg = Icon(meter, IconMic, 26, Dim);
-            Anchor(mg.rectTransform, Vector2.zero, new Vector2(1, 0), Vector2.zero, new Vector2(0, 34));
+            // Glass backing so unlit segments still read over bright rooms.
+            var back = Box("Back", meter, Glass, true);
+            Anchor(back, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
+            back.GetComponent<Image>().raycastTarget = false;
+            var mg = Icon(meter, IconMic, 24, Dim);
+            Anchor(mg.rectTransform, Vector2.zero, new Vector2(1, 0), new Vector2(0, 8), new Vector2(0, 44));
             _micSegments = new Image[16];
             for (int i = 0; i < _micSegments.Length; i++)
             {
-                var seg = Box("Seg", meter, Mint, true);
-                Anchor(seg, Vector2.zero, new Vector2(1, 0), new Vector2(4, 44 + i * 19), new Vector2(-4, 44 + i * 19 + 13));
+                var seg = Box("Seg", meter, Mint, false);
+                Anchor(seg, Vector2.zero, new Vector2(1, 0), new Vector2(9, 50 + i * 19), new Vector2(-9, 50 + i * 19 + 13));
                 seg.GetComponent<Image>().raycastTarget = false;
                 _micSegments[i] = seg.GetComponent<Image>();
             }

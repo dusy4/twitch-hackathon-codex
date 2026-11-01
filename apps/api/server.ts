@@ -2009,7 +2009,13 @@ export async function createApp(
   }
   app.get("/v1/native/world", async (req, reply) => {
     reply.header("Cache-Control", "private, no-store");
-    const state = (await world(await captureRoom(req))).state;
+    const raw = (await world(await captureRoom(req))).state;
+    // Phones up to 0.23.0 crash parsing `"steer": null` (indexer on a JSON null) and drop the whole world update:
+    // omit null steer for them.
+    const state = {
+      ...raw,
+      avatars: raw.avatars.map((a) => (a.steer == null ? (({ steer: _steer, ...rest }) => rest)(a) : a)),
+    } as unknown as typeof raw;
     // The phone renders only the first 12 heroes. Keep a sticky visible set per
     // room: shown heroes stay shown (no popping in and out); a hidden hero takes
     // the stalest slot only when it acted at least 10 s more recently, so real

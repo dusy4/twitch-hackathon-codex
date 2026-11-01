@@ -228,10 +228,10 @@ namespace RaidRift
                         Message = (string)a["message"] ?? "",
                         SpawnedAt = (long?)a["spawnedAt"] ?? 0,
                         Target = (string)a["target"],
-                        SteerX = (float?)a["steer"]?["x"] ?? 0f,
-                        SteerY = (float?)a["steer"]?["y"] ?? 0f,
-                        SteerUntil = (long?)a["steer"]?["until"] ?? 0,
-                        SteerSeq = (long?)a["steer"]?["seq"] ?? 0,
+                        SteerX = (float?)(a["steer"] as JObject)?["x"] ?? 0f,
+                        SteerY = (float?)(a["steer"] as JObject)?["y"] ?? 0f,
+                        SteerUntil = (long?)(a["steer"] as JObject)?["until"] ?? 0,
+                        SteerSeq = (long?)(a["steer"] as JObject)?["seq"] ?? 0,
                     });
                     if (w.Heroes.Count >= 12) break;
                 }
