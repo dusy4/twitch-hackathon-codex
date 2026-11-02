@@ -194,7 +194,8 @@ namespace RaidRift
         class Spot { public int n; public Vector3 pos; public GameObject marker; public float lastSeen; public string label; public TextMesh text; }
         readonly List<Spot> _spots = new List<Spot>();
         float _nextSpotRefresh;
-        public bool showSpots = true;
+        // Owner 2026-11-02: chat names real objects ("go to the bench"); numbered badges stay off the stream.
+        [System.NonSerialized] public bool showSpots = false;
         static readonly Vector2[] SpotSamples =
         {
             new Vector2(0.2f, 0.22f), new Vector2(0.5f, 0.2f), new Vector2(0.8f, 0.22f),
